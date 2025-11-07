@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────
+   Base Theme – SocialSphere
+   Palette: warm neutral base + cool blue accents
+────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    /* Core colors */
+    --color-bg: #f5f3ee;
+    --color-surface: #ede8e0;
+    --color-border: #dad5c9;
+    --color-text: #1f1b16;
+    --color-text-muted: #4a453f;
+
+    /* Accents */
+    --color-accent: #67b0c4;
+    --color-accent-hover: #4b83ad;
+    --color-border-accent: #a7927d;
+
+    /* Font scale */
+    --font-sans: "Inter", "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-(--color-bg) text-(--color-text) font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-extrabold tracking-tight text-(--color-text);
+  }
+
+  a {
+    @apply transition-colors duration-200 ease-in-out;
+  }
+
+  a:hover {
+    @apply text-(--color-accent-hover);
+  }
+
+  /* Subtle container widths */
+  .container {
+    @apply max-w-7xl mx-auto px-6 md:px-10;
+  }
+}
+
+/* ──────────────────────────────────────────────
+   Components – global reusable styles
+────────────────────────────────────────────── */
+
+@layer components {
+  /* Links*/
+  .link-primary {
+    @apply px-3 py-3 rounded-full text-sm font-medium text-white bg-(--color-accent)
+           hover:bg-(--color-accent-hover)
+           hover:text-white;
+  }
+
+  .link-secondary {
+    @apply px-3 py-3 rounded-full text-sm font-medium border border-(--color-border-accent)
+           text-(--color-text) hover:bg-(--color-surface) transition-colors;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply flex items-center gap-2 rounded-full bg-(--color-surface) hover:bg-(--color-accent) hover:text-white transition-colors px-3 py-1
+  }
+  
+  .btn-secondary {
+    @apply flex items-center gap-2 rounded-full hover:bg-(--color-surface) transition-colors px-3 py-1 border border-(--color-border-accent)
+  }
+
+  .btn-text {
+    @apply hidden md:inline font-medium text-sm
+  }
+
+
+  /* Section divider */
+  .section-divider {
+    @apply w-full h-px bg-linear-to-r from-transparent via-(--color-border) to-transparent my-12;
+  }
+
+  /* Page sections */
+  .section {
+    @apply py-16 md:py-24 px-6 md:px-16;
+  }
+
+  /* Subtle text variants */
+  .text-muted {
+    @apply text-(--color-text-muted);
+  }
+
+  .text-accent {
+    @apply text-(--color-accent);
+  }
+}
+
+/* ──────────────────────────────────────────────
+   Utilities – optional visual helpers
+────────────────────────────────────────────── */
+
+@layer utilities {
+  .hover-glow {
+    @apply transition-shadow duration-200 hover:shadow-lg hover:shadow-(--color-accent)/20;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
