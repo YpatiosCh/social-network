@@ -1,0 +1,38 @@
+
+
+services:
+  users:
+    build:
+      # Use repo root as build context so the Dockerfile can COPY files from
+      # the repository root (shared/ and go.mod/go.sum). The Dockerfile path
+      # is provided relative to the context.
+      context: .
+      dockerfile: services/users/Dockerfile
+    environment:
+       - DATABASE_URL=postgres://postgres:secret@users-db:5432/social_users?sslmode=disable
+       # Explicit DB_* variables for clarity and local tooling
+       - DB_HOST=users-db
+       - DB_PORT=5432
+       - DB_USER=postgres
+       - DB_PASSWORD=secret
+       - DB_NAME=social_users
+       - SSL_MODE=disable
+    depends_on:
+      - users-db
+
+  users-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: social_users
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d social_users"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+volumes:
+  users-db-data:
