@@ -1,3 +1,4 @@
+
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS citext;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -13,7 +14,7 @@ CREATE COLLATION IF NOT EXISTS case_insensitive_ai (
 -- Users table
 -----------------------------------------
 CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username CITEXT COLLATE case_insensitive_ai UNIQUE NOT NULL,
     email CITEXT COLLATE case_insensitive_ai UNIQUE NOT NULL,
     first_name VARCHAR(255) NOT NULL,
@@ -93,7 +94,7 @@ INSERT INTO group_type_settings VALUES
 ('custom', TRUE, TRUE, FALSE, TRUE);
 
 CREATE TABLE groups (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     group_owner BIGINT NOT NULL REFERENCES users(id) ON DELETE NO ACTION,
     group_title TEXT NOT NULL,
     group_description TEXT NOT NULL,

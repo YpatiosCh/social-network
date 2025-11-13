@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Enable extensions
 CREATE EXTENSION IF NOT EXISTS citext;
 
 ------------------------------------------
@@ -24,7 +24,7 @@ CREATE TABLE ext_groups (
 CREATE TYPE content_type AS ENUM ('post', 'comment', 'event');
 
 CREATE TABLE master_index (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     content_type content_type NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -94,7 +94,7 @@ CREATE INDEX idx_events_date ON events(event_date);
 -- Event responses
 ------------------------------------------
 CREATE TABLE event_response (
-     id BIGSERIAL PRIMARY KEY,
+     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
      event_id BIGINT REFERENCES events(id) ON DELETE CASCADE,
      user_id BIGINT NOT NULL REFERENCES ext_users(id),  
      going BOOLEAN,
@@ -109,7 +109,7 @@ CREATE INDEX idx_event_response_event ON event_response(event_id);
 -- Images
 ------------------------------------------
 CREATE TABLE images (
-     id BIGSERIAL PRIMARY KEY,
+     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
      file_name TEXT,
      entity_id BIGINT NOT NULL REFERENCES master_index(id) ON DELETE CASCADE,
      created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -122,7 +122,7 @@ CREATE INDEX idx_images_entity ON images(entity_id);
 -- Reactions
 ------------------------------------------
 CREATE TABLE reactions (
-    id BIGSERIAL PRIMARY KEY,
+   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     content_id BIGINT NOT NULL REFERENCES master_index(id) ON DELETE CASCADE,
     reaction_type TEXT NOT NULL,
     user_id BIGINT NOT NULL, -- in users service
@@ -136,7 +136,7 @@ CREATE INDEX idx_reactions_user ON reactions(user_id);
 
 
 ------------------------------------------
--- Trigger to auto instert to master_index
+-- Trigger to auto insert to master_index
 ------------------------------------------
 CREATE OR REPLACE FUNCTION add_to_master_index()
 RETURNS TRIGGER AS $$
