@@ -71,5 +71,4 @@ CREATE TABLE reactions (
     CONSTRAINT unique_user_reaction_per_content UNIQUE (user_id, message_id, reaction_type)
 );
 
-CREATE INDEX idx_reactions_content ON reactions(content_id);
 CREATE INDEX idx_reactions_user ON reactions(user_id);
