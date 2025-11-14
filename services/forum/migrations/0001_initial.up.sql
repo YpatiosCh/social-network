@@ -18,7 +18,7 @@ CREATE INDEX idx_master_type ON master_index(content_type);
 ------------------------------------------
 -- Posts
 ------------------------------------------
-CREATE TYPE intended_audience AS ENUM ('everyone','followers','selected');
+CREATE TYPE intended_audience AS ENUM ('everyone','followers','selected','group');
 
 CREATE TABLE IF NOT EXISTS posts (
     id BIGINT PRIMARY KEY REFERENCES master_index(id) ON DELETE CASCADE,
