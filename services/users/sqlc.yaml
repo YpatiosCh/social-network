@@ -1,7 +1,7 @@
 version: "1"
 packages:
   - name: "db"                     # Go package name for generated code
-    path: "./db"    # folder for generated Go files
+    path: "./db/sqlc"    # folder for generated Go files
     queries: "./db/queries/*.sql"
     schema: "./migrations/*.sql"
     engine: "postgresql"
