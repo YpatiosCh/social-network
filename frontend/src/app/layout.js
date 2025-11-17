@@ -1,20 +1,17 @@
-import "./globals.css";
-import BaseNav from "../components/layout/BaseNav"
+import './globals.css'
+import Footer from '@/components/layout/Footer'
 
-export const metadata = {
-  title: "SocialSphere - Welcome",
-};
-
-export default function RootLayout({ children }) {
-
-  let user = ""
-
+const RootLayout = ({ children }) => {
   return (
-    <html lang="en">
+    <html>
       <body>
-        <BaseNav user={user}/>
         {children}
-        </body>
+      <div className='bg-black'>
+        <Footer />
+      </div>
+      </body>
     </html>
-  );
+  )
 }
+
+export default RootLayout;
