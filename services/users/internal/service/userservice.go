@@ -262,3 +262,19 @@ func TranferGroupOwnerShip() {
 	//---------------------------------------------------------------------
 
 }
+
+func hashPasswordWithSalt() {
+
+}
+
+func comparePasswords() {
+
+}
+
+func issueToken() {
+
+}
+
+func checkToken() {
+
+}
