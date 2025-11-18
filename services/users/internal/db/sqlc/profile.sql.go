@@ -11,6 +11,28 @@ import (
 	"time"
 )
 
+const getUserBasic = `-- name: GetUserBasic :one
+SELECT
+    username,
+    avatar,
+    profile_public
+FROM users
+WHERE id = $1
+`
+
+type GetUserBasicRow struct {
+	Username      string         `json:"username"`
+	Avatar        sql.NullString `json:"avatar"`
+	ProfilePublic bool           `json:"profile_public"`
+}
+
+func (q *Queries) GetUserBasic(ctx context.Context, id int64) (GetUserBasicRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserBasic, id)
+	var i GetUserBasicRow
+	err := row.Scan(&i.Username, &i.Avatar, &i.ProfilePublic)
+	return i, err
+}
+
 const getUserProfile = `-- name: GetUserProfile :one
 SELECT
     id,
@@ -49,6 +71,65 @@ func (q *Queries) GetUserProfile(ctx context.Context, id int64) (GetUserProfileR
 		&i.ProfilePublic,
 	)
 	return i, err
+}
+
+const searchUsers = `-- name: SearchUsers :many
+SELECT
+    id,
+    username,
+    avatar,
+    profile_public
+FROM users
+WHERE deleted_at IS NULL
+  AND (
+        username % $1 OR
+        first_name % $1 OR
+        last_name % $1
+      )
+ORDER BY similarity(username, $1) DESC,
+         similarity(first_name, $1) DESC,
+         similarity(last_name, $1) DESC
+LIMIT $2
+`
+
+type SearchUsersParams struct {
+	Username string `json:"username"`
+	Limit    int32  `json:"limit"`
+}
+
+type SearchUsersRow struct {
+	ID            int64          `json:"id"`
+	Username      string         `json:"username"`
+	Avatar        sql.NullString `json:"avatar"`
+	ProfilePublic bool           `json:"profile_public"`
+}
+
+func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchUsers, arg.Username, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchUsersRow
+	for rows.Next() {
+		var i SearchUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Avatar,
+			&i.ProfilePublic,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateUserEmail = `-- name: UpdateUserEmail :exec
@@ -92,12 +173,12 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 const updateUserProfile = `-- name: UpdateUserProfile :one
 UPDATE users
 SET
-    first_name = COALESCE($2, first_name),
-    last_name = COALESCE($3, last_name),
+    first_name    = COALESCE($2, first_name),
+    last_name     = COALESCE($3, last_name),
     date_of_birth = COALESCE($4, date_of_birth),
-    avatar = COALESCE($5, avatar),
-    about_me = COALESCE($6, about_me),
-    updated_at = CURRENT_TIMESTAMP
+    avatar        = COALESCE($5, avatar),
+    about_me      = COALESCE($6, about_me),
+    updated_at    = CURRENT_TIMESTAMP
 WHERE id = $1
   AND deleted_at IS NULL
 RETURNING id, username, first_name, last_name, date_of_birth, avatar, about_me, profile_public, current_status, ban_ends_at, created_at, updated_at, deleted_at

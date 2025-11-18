@@ -143,6 +143,194 @@ func (q *Queries) DeclineGroupInvite(ctx context.Context, arg DeclineGroupInvite
 	return err
 }
 
+const getAllGroups = `-- name: GetAllGroups :many
+SELECT 
+  id,
+  group_title,
+  group_description,
+  members_count
+FROM groups
+WHERE deleted_at IS NULL
+`
+
+type GetAllGroupsRow struct {
+	ID               int64         `json:"id"`
+	GroupTitle       string        `json:"group_title"`
+	GroupDescription string        `json:"group_description"`
+	MembersCount     sql.NullInt32 `json:"members_count"`
+}
+
+func (q *Queries) GetAllGroups(ctx context.Context) ([]GetAllGroupsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAllGroups)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllGroupsRow
+	for rows.Next() {
+		var i GetAllGroupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.GroupTitle,
+			&i.GroupDescription,
+			&i.MembersCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getGroupInfo = `-- name: GetGroupInfo :one
+SELECT
+  id,
+  group_owner,
+  group_title,
+  group_description,
+  members_count
+FROM groups
+WHERE id=$1
+  AND deleted_at IS NULL
+`
+
+type GetGroupInfoRow struct {
+	ID               int64         `json:"id"`
+	GroupOwner       int64         `json:"group_owner"`
+	GroupTitle       string        `json:"group_title"`
+	GroupDescription string        `json:"group_description"`
+	MembersCount     sql.NullInt32 `json:"members_count"`
+}
+
+func (q *Queries) GetGroupInfo(ctx context.Context, id int64) (GetGroupInfoRow, error) {
+	row := q.db.QueryRowContext(ctx, getGroupInfo, id)
+	var i GetGroupInfoRow
+	err := row.Scan(
+		&i.ID,
+		&i.GroupOwner,
+		&i.GroupTitle,
+		&i.GroupDescription,
+		&i.MembersCount,
+	)
+	return i, err
+}
+
+const getGroupMembers = `-- name: GetGroupMembers :many
+SELECT
+    gm.user_id,
+    u.username,
+    u.avatar,
+    u.profile_public,
+    gm.role,
+    gm.joined_at
+FROM group_members gm
+JOIN users u
+    ON gm.user_id = u.id
+WHERE gm.group_id = $1
+  AND gm.deleted_at IS NULL
+`
+
+type GetGroupMembersRow struct {
+	UserID        int64          `json:"user_id"`
+	Username      string         `json:"username"`
+	Avatar        sql.NullString `json:"avatar"`
+	ProfilePublic bool           `json:"profile_public"`
+	Role          NullGroupRole  `json:"role"`
+	JoinedAt      sql.NullTime   `json:"joined_at"`
+}
+
+func (q *Queries) GetGroupMembers(ctx context.Context, groupID int64) ([]GetGroupMembersRow, error) {
+	rows, err := q.db.QueryContext(ctx, getGroupMembers, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetGroupMembersRow
+	for rows.Next() {
+		var i GetGroupMembersRow
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Username,
+			&i.Avatar,
+			&i.ProfilePublic,
+			&i.Role,
+			&i.JoinedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserGroups = `-- name: GetUserGroups :many
+SELECT DISTINCT
+    g.id AS group_id,
+    g.group_title,
+    g.group_description,
+    g.members_count,
+    CASE 
+        WHEN g.group_owner = $1 THEN 'owner'
+        ELSE gm.role
+    END AS role
+FROM groups g
+LEFT JOIN group_members gm
+    ON gm.group_id = g.id
+    AND gm.user_id = $1
+    AND gm.deleted_at IS NULL
+WHERE g.deleted_at IS NULL
+  AND (g.group_owner = $1 OR gm.user_id = $1)
+`
+
+type GetUserGroupsRow struct {
+	GroupID          int64         `json:"group_id"`
+	GroupTitle       string        `json:"group_title"`
+	GroupDescription string        `json:"group_description"`
+	MembersCount     sql.NullInt32 `json:"members_count"`
+	Role             interface{}   `json:"role"`
+}
+
+func (q *Queries) GetUserGroups(ctx context.Context, groupOwner int64) ([]GetUserGroupsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserGroups, groupOwner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserGroupsRow
+	for rows.Next() {
+		var i GetUserGroupsRow
+		if err := rows.Scan(
+			&i.GroupID,
+			&i.GroupTitle,
+			&i.GroupDescription,
+			&i.MembersCount,
+			&i.Role,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const leaveGroup = `-- name: LeaveGroup :exec
 UPDATE group_members
 SET deleted_at = CURRENT_TIMESTAMP
@@ -176,6 +364,54 @@ type RejectGroupJoinRequestParams struct {
 func (q *Queries) RejectGroupJoinRequest(ctx context.Context, arg RejectGroupJoinRequestParams) error {
 	_, err := q.db.ExecContext(ctx, rejectGroupJoinRequest, arg.GroupID, arg.UserID)
 	return err
+}
+
+const searchGroupsFuzzy = `-- name: SearchGroupsFuzzy :many
+SELECT
+    id,
+    group_title,
+    group_description,
+    members_count
+FROM groups
+WHERE deleted_at IS NULL
+  AND (similarity(group_title, $1) > 0.3
+       OR similarity(group_description, $1) > 0.3)
+ORDER BY GREATEST(similarity(group_title, $1), similarity(group_description, $1)) DESC
+`
+
+type SearchGroupsFuzzyRow struct {
+	ID               int64         `json:"id"`
+	GroupTitle       string        `json:"group_title"`
+	GroupDescription string        `json:"group_description"`
+	MembersCount     sql.NullInt32 `json:"members_count"`
+}
+
+func (q *Queries) SearchGroupsFuzzy(ctx context.Context, similarity string) ([]SearchGroupsFuzzyRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchGroupsFuzzy, similarity)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchGroupsFuzzyRow
+	for rows.Next() {
+		var i SearchGroupsFuzzyRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.GroupTitle,
+			&i.GroupDescription,
+			&i.MembersCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const sendGroupInvite = `-- name: SendGroupInvite :exec
@@ -221,5 +457,37 @@ WHERE id = $1
 
 func (q *Queries) SoftDeleteGroup(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, softDeleteGroup, id)
+	return err
+}
+
+const transferOwnership = `-- name: TransferOwnership :exec
+
+
+WITH demote AS (
+    UPDATE group_members AS gm_old
+    SET role = 'member'
+    WHERE gm_old.group_id = $1
+      AND gm_old.user_id = $2
+      AND gm_old.role = 'owner'
+),
+promote AS (
+    UPDATE group_members AS gm_new
+    SET role = 'owner'
+    WHERE gm_new.group_id = $1
+      AND gm_new.user_id = $3
+      AND gm_new.role = 'member'
+)
+SELECT 1
+`
+
+type TransferOwnershipParams struct {
+	GroupID  int64 `json:"group_id"`
+	UserID   int64 `json:"user_id"`
+	UserID_2 int64 `json:"user_id_2"`
+}
+
+// owners cannot leave the group (transfer ownership logic? TODO)
+func (q *Queries) TransferOwnership(ctx context.Context, arg TransferOwnershipParams) error {
+	_, err := q.db.ExecContext(ctx, transferOwnership, arg.GroupID, arg.UserID, arg.UserID_2)
 	return err
 }

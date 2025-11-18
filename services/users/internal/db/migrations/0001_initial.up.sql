@@ -1,6 +1,7 @@
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS citext;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Case-insensitive collation
 CREATE COLLATION IF NOT EXISTS case_insensitive_ai (
@@ -90,6 +91,7 @@ CREATE TABLE IF NOT EXISTS groups (
     group_owner BIGINT NOT NULL REFERENCES users(id) ON DELETE NO ACTION,
     group_title TEXT NOT NULL,
     group_description TEXT NOT NULL,
+    members_count INT DEFAULT 0, --TODO add trigger
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ
@@ -276,3 +278,53 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-----------------------------------------
+-- Trigger to update members count for group
+-----------------------------------------
+CREATE OR REPLACE FUNCTION update_group_members_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Member added or restored
+    IF (TG_OP = 'INSERT')
+       OR (TG_OP = 'UPDATE' AND OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL)
+    THEN
+        UPDATE groups
+        SET members_count = (
+            SELECT COUNT(*) 
+            FROM group_members 
+            WHERE group_id = NEW.group_id AND deleted_at IS NULL
+        )
+        WHERE id = NEW.group_id;
+        RETURN NEW;
+    END IF;
+
+    -- Member soft-deleted
+    IF (TG_OP = 'UPDATE' AND OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL)
+    THEN
+        UPDATE groups
+        SET members_count = (
+            SELECT COUNT(*) 
+            FROM group_members 
+            WHERE group_id = NEW.group_id AND deleted_at IS NULL
+        )
+        WHERE id = NEW.group_id;
+        RETURN NEW;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- When a member is added
+CREATE TRIGGER trg_group_members_count_insert
+AFTER INSERT ON group_members
+FOR EACH ROW
+EXECUTE FUNCTION update_group_members_count();
+
+-- When a member is soft-deleted or restored
+CREATE TRIGGER trg_group_members_count_update
+AFTER UPDATE ON group_members
+FOR EACH ROW
+EXECUTE FUNCTION update_group_members_count();

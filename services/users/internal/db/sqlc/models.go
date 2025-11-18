@@ -253,13 +253,14 @@ type FollowRequest struct {
 }
 
 type Group struct {
-	ID               int64        `json:"id"`
-	GroupOwner       int64        `json:"group_owner"`
-	GroupTitle       string       `json:"group_title"`
-	GroupDescription string       `json:"group_description"`
-	CreatedAt        time.Time    `json:"created_at"`
-	UpdatedAt        sql.NullTime `json:"updated_at"`
-	DeletedAt        sql.NullTime `json:"deleted_at"`
+	ID               int64         `json:"id"`
+	GroupOwner       int64         `json:"group_owner"`
+	GroupTitle       string        `json:"group_title"`
+	GroupDescription string        `json:"group_description"`
+	MembersCount     sql.NullInt32 `json:"members_count"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        sql.NullTime  `json:"updated_at"`
+	DeletedAt        sql.NullTime  `json:"deleted_at"`
 }
 
 type GroupInvite struct {
