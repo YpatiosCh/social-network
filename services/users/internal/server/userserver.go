@@ -15,6 +15,7 @@ import (
 // UserServer struct placeholder
 type UserServer struct {
 	// Add DB or other dependencies here later
+	pb.UnimplementedUserServiceServer
 }
 
 // RunGRPCServer starts the gRPC server and blocks
@@ -27,7 +28,7 @@ func RunGRPCServer(port string) {
 	grpcServer := grpc.NewServer()
 
 	// TODO: Register services here, e.g.,
-	// pb.RegisterUserServiceServer(grpcServer, &UserServer{})
+	pb.RegisterUserServiceServer(grpcServer, &UserServer{})
 
 	log.Printf("gRPC server listening on %s", port)
 	if err := grpcServer.Serve(lis); err != nil {
