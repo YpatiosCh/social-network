@@ -29,6 +29,6 @@ func main() {
 
 	log.Println("Service ready!")
 
-	// Start gRPC server and block
-	server.RunGRPCServer(":50052")
+	grpc := server.NewForumServer(":50052")
+	grpc.RunGRPCServer()
 }
