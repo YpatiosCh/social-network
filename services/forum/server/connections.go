@@ -15,7 +15,7 @@ func (s *Server) InitClients() {
 }
 
 func (s *Server) InitUserClient() error {
-	conn, err := grpc.NewClient(":50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("users:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("failed to dial user service: %v", err)
 	}

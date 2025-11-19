@@ -38,7 +38,7 @@ func GetBasicUserInfo(ctx context.Context, userID int64) (resp BasicUserInfo, er
 	//returns username, avatar, profile_public(bool)
 	//---------------------------------------------------------------------
 	// GetUserBasic(id)
-	return BasicUserInfo{}, nil
+	return BasicUserInfo{UserName: "Mitsos", Avatar: "M", PublicProfile: true}, nil
 }
 
 func GetUserProfile() {

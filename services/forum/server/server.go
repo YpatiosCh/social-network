@@ -35,9 +35,11 @@ func (s *Server) RunGRPCServer() {
 	// pb.RegisterUserServiceServer(grpcServer, &Server{})
 
 	log.Printf("gRPC server listening on %s", s.Port)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve gRPC: %v", err)
-	}
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve gRPC: %v", err)
+		}
+	}()
 
 	s.InitClients()
 
