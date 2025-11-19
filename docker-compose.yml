@@ -65,7 +65,7 @@ services:
       forum-db:
         condition: service_healthy
     ports:
-      - "50052:50052" 
+      - "50052:50051" 
 
 
   forum-db:
