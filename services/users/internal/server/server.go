@@ -18,7 +18,6 @@ type Server struct {
 }
 
 type Clients struct {
-	UserClient pb.UserServiceClient
 }
 
 // RunGRPCServer starts the gRPC server and blocks
@@ -41,6 +40,7 @@ func (s *Server) RunGRPCServer() {
 
 func NewUsersServer(port string) *Server {
 	return &Server{
-		Port: port,
+		Port:    port,
+		clients: Clients{},
 	}
 }

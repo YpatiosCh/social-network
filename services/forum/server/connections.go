@@ -15,10 +15,17 @@ import (
 
 // Initialize connections to clients
 func (s *Server) InitClients() {
-	if err := s.InitUserClient(); err != nil {
-		fmt.Println(err)
+	// List of initializer functions
+	initializers := []func() error{
+		s.InitUserClient,
+		// Add more here as you add more clients
 	}
-	// Add more clients
+
+	for _, initFn := range initializers {
+		if err := initFn(); err != nil {
+			fmt.Println(err)
+		}
+	}
 }
 
 // Connects to client and adds connection to s.Clients
