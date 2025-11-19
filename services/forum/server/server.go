@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	commonpb "social-network/shared/gen/common"
 	pb "social-network/shared/gen/users"
@@ -34,15 +35,15 @@ func (s *Server) RunGRPCServer() {
 
 	// pb.RegisterUserServiceServer(grpcServer, &Server{})
 
-	log.Printf("gRPC server listening on %s", s.Port)
-	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve gRPC: %v", err)
-		}
-	}()
+	// ================================================
+	// TEST GRPC CONN
+	// ================================================
 
+	// Wait for other servers to run first
+	time.Sleep(time.Second)
 	s.InitClients()
 
+	// Example call to UserClient
 	resp, err := s.clients.UserClient.GetBasicUserInfo(context.Background(), &commonpb.UserId{
 		Id: 1234,
 	})
@@ -50,6 +51,14 @@ func (s *Server) RunGRPCServer() {
 		fmt.Println(err)
 	}
 	fmt.Println(resp.String())
+
+	// -------------------------------------------------
+
+	log.Printf("gRPC server listening on %s", s.Port)
+
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve gRPC: %v", err)
+	}
 }
 
 func NewForumServer(port string) *Server {

@@ -28,7 +28,7 @@ func main() {
 	}
 
 	log.Println("Service ready!")
-
+	service := server.NewUsersServer("users:50051")
 	// Start gRPC server and block
-	server.RunGRPCServer("users:50051")
+	service.RunGRPCServer()
 }

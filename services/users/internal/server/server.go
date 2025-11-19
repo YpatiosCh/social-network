@@ -13,13 +13,19 @@ import (
 type Server struct {
 	// Add DB or other dependencies here later
 	pb.UnimplementedUserServiceServer
+	clients Clients
+	Port    string
+}
+
+type Clients struct {
+	UserClient pb.UserServiceClient
 }
 
 // RunGRPCServer starts the gRPC server and blocks
-func RunGRPCServer(port string) {
-	lis, err := net.Listen("tcp", port)
+func (s *Server) RunGRPCServer() {
+	lis, err := net.Listen("tcp", s.Port)
 	if err != nil {
-		log.Fatalf("Failed to listen on %s: %v", port, err)
+		log.Fatalf("Failed to listen on %s: %v", s.Port, err)
 	}
 
 	grpcServer := grpc.NewServer()
@@ -27,8 +33,14 @@ func RunGRPCServer(port string) {
 	// TODO: Register services here, e.g.,
 	pb.RegisterUserServiceServer(grpcServer, &Server{})
 
-	log.Printf("gRPC server listening on %s", port)
+	log.Printf("gRPC server listening on %s", s.Port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve gRPC: %v", err)
+	}
+}
+
+func NewUsersServer(port string) *Server {
+	return &Server{
+		Port: port,
 	}
 }
