@@ -36,9 +36,9 @@ type RegisterUserRequest struct {
 	Username    string
 	FirstName   string
 	LastName    string
-	DateOfBirth time.Time
-	Avatar      string
-	About       string
+	DateOfBirth string
+	Avatar      *string
+	About       *string
 	Public      bool
 	Email       string
 	Password    string

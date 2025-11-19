@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 
+	"social-network/services/users/internal/db/sqlc"
 	"social-network/services/users/internal/server"
+	userservice "social-network/services/users/internal/service"
 	"social-network/shared/db"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -28,6 +30,11 @@ func main() {
 	}
 
 	log.Println("Service ready!")
+
+	queries := sqlc.New(pool)
+	userService := userservice.NewUserService(queries, pool)
+	_ = userService
+
 	service := server.NewUsersServer("users:50051")
 	// Start gRPC server and block
 	service.RunGRPCServer()

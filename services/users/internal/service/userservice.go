@@ -2,17 +2,87 @@ package userservice
 
 import (
 	"context"
+	"errors"
+	"social-network/services/users/internal/db/sqlc"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterUser() {
+type UserService struct {
+	db   sqlc.Querier  // interface, can be *sqlc.Queries or mock
+	pool *pgxpool.Pool // needed to start transactions
+}
 
-	//called with: username, first_name, last_name, date_of_birth, avatar, about_me, profile_public(bool), email, password hash, salt
-	//returns: user_id or error
-	//---------------------------------------------------------------------
-	//InsertNewUser, get id
-	//hash password, add salt (is this the service's responsibility? Probably at gateway))
-	//if no conflict insert InsertNewUserAuth
-	//if no error LoginUser(id)
+// NewUserService constructs a new UserService
+func NewUserService(db sqlc.Querier, pool *pgxpool.Pool) *UserService {
+	return &UserService{
+		db:   db,
+		pool: pool,
+	}
+}
+
+func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest) (UserId, error) {
+
+	// convert date
+	dobTime, err := time.Parse("2006-01-02", req.DateOfBirth)
+	if err != nil {
+		return 0, errors.New("invalid date format: expected YYYY-MM-DD")
+	}
+
+	dob := pgtype.Date{
+		Time:  dobTime,
+		Valid: true,
+	}
+
+	//hash password
+	passwordHash, err := hashPassword(req.Password)
+	if err != nil {
+		return 0, err
+	}
+
+	//start transaction
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := s.db.(*sqlc.Queries).WithTx(tx)
+
+	// Insert user
+	userID, err := qtx.InsertNewUser(ctx, sqlc.InsertNewUserParams{
+		Username:      req.Username,
+		FirstName:     req.FirstName,
+		LastName:      req.LastName,
+		DateOfBirth:   dob,
+		Avatar:        req.Avatar,
+		AboutMe:       req.About,
+		ProfilePublic: req.Public,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	// Insert auth
+	if err := qtx.InsertNewUserAuth(ctx, sqlc.InsertNewUserAuthParams{
+		UserID:       userID,
+		Email:        req.Email,
+		PasswordHash: passwordHash,
+		Salt:         "", //I think we can remove this
+	}); err != nil {
+		return 0, err
+	}
+
+	// Commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+
+	return UserId(userID), nil
+
 }
 
 func LoginUser() {
@@ -251,12 +321,16 @@ func TranferGroupOwnerShip() { //low priority
 
 }
 
-func hashPasswordWithSalt() { //here or in gateway?
-
+// HashPassword hashes a password using bcrypt.
+func hashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(hash), err
 }
 
-func comparePasswords() {
-
+// CheckPassword compares a hashed password with a plain-text password.
+func checkPassword(hashedPassword, plainPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
+	return err == nil
 }
 
 func issueToken() { //here or in gateway?
