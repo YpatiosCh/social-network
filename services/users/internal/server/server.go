@@ -18,6 +18,7 @@ type Server struct {
 }
 
 type Clients struct {
+	Example pb.UserServiceClient
 }
 
 // RunGRPCServer starts the gRPC server and blocks
