@@ -327,3 +327,40 @@ CREATE TRIGGER trg_group_members_count_update
 AFTER UPDATE ON group_members
 FOR EACH ROW
 EXECUTE FUNCTION update_group_members_count();
+
+-----------------------------------------
+-- Trigger to automatically accept pending follow requests if profile changes to public
+-----------------------------------------
+
+CREATE OR REPLACE FUNCTION handle_private_to_public_accept()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only act if the profile switches from private to public
+    IF OLD.profile_public = FALSE AND NEW.profile_public = TRUE THEN
+        -- Insert all pending follow requests as actual follows
+        INSERT INTO follows (follower_id, following_id, created_at)
+        SELECT requester_id, target_id, CURRENT_TIMESTAMP
+        FROM follow_requests
+        WHERE target_id = NEW.id
+          AND status = 'pending'
+          AND deleted_at IS NULL
+        ON CONFLICT DO NOTHING;
+
+        -- Mark the processed follow requests as accepted
+        UPDATE follow_requests
+        SET status = 'accepted', updated_at = CURRENT_TIMESTAMP
+        WHERE target_id = NEW.id
+          AND status = 'pending'
+          AND deleted_at IS NULL;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach trigger to users table
+CREATE TRIGGER trg_handle_private_to_public_accept
+AFTER UPDATE ON users
+FOR EACH ROW
+WHEN (OLD.profile_public = FALSE AND NEW.profile_public = TRUE)
+EXECUTE FUNCTION handle_private_to_public_accept();

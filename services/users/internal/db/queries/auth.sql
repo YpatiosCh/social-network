@@ -21,7 +21,12 @@ INSERT INTO auth_user (
        $1, $2, $3
 );
 
-
+-- name: GetUserPassword :one
+SELECT 
+    password_hash
+FROM
+    auth_user
+WHERE user_id=$1;
 
 -- name: GetUserForLogin :one
 SELECT

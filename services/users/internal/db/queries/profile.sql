@@ -25,16 +25,21 @@ WHERE id = $1;
 -- name: UpdateUserProfile :one
 UPDATE users
 SET
-    first_name    = COALESCE($2, first_name),
-    last_name     = COALESCE($3, last_name),
-    date_of_birth = COALESCE($4, date_of_birth),
-    avatar        = COALESCE($5, avatar),
-    about_me      = COALESCE($6, about_me),
+    username      = COALESCE($2, username),
+    first_name    = COALESCE($3, first_name),
+    last_name     = COALESCE($4, last_name),
+    date_of_birth = COALESCE($5, date_of_birth),
+    avatar        = COALESCE($6, avatar),
+    about_me      = COALESCE($7, about_me),
     updated_at    = CURRENT_TIMESTAMP
 WHERE id = $1
   AND deleted_at IS NULL
 RETURNING *;
 
+-- name: UpdateProfilePrivacy :exec
+UPDATE users
+SET profile_public=$2
+WHERE id=$1;
 
 -- name: UpdateUserPassword :exec
 UPDATE auth_user

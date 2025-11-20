@@ -32,6 +32,7 @@ type Querier interface {
 	GetUserForLogin(ctx context.Context, username string) (GetUserForLoginRow, error)
 	GetUserGroupRole(ctx context.Context, arg GetUserGroupRoleParams) (NullGroupRole, error)
 	GetUserGroups(ctx context.Context, groupOwner int64) ([]GetUserGroupsRow, error)
+	GetUserPassword(ctx context.Context, userID int64) (string, error)
 	GetUserProfile(ctx context.Context, id int64) (GetUserProfileRow, error)
 	IncrementFailedLoginAttempts(ctx context.Context, userID int64) error
 	InsertNewUser(ctx context.Context, arg InsertNewUserParams) (int64, error)
@@ -55,6 +56,7 @@ type Querier interface {
 	//2: following_id
 	// returns followed or requested depending on target's privacy settings
 	UnfollowUser(ctx context.Context, arg UnfollowUserParams) (Follow, error)
+	UpdateProfilePrivacy(ctx context.Context, arg UpdateProfilePrivacyParams) error
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error)

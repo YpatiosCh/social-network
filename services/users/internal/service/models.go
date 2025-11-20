@@ -4,42 +4,9 @@ import (
 	"time"
 )
 
-type UserId int64
-
-type GroupId int64
-
-type GroupRole string
-
-type LoginReq struct {
-	Identifier string
-	Password   string
-}
-
-// returned by login, basicUser,searchUsers([]), getFollowers([]), getFollowing([])
-type User struct {
-	UserId   int64
-	Username string
-	Avatar   *string
-	Public   bool
-}
-
-// getGroupMembers([])
-type GroupUser struct {
-	UserId    int64
-	Username  string
-	Avatar    *string
-	Public    bool
-	GroupRole string //only applicable in group members
-}
-
-// returned by getAllGroups([]), getUserGroups([]),getGroupInfo, searchGroup([])
-type Group struct {
-	GroupId          int64
-	GroupTitle       string
-	GroupDescription string
-	MembersCount     *int32
-	Role             string
-}
+//-------------------------------------------
+// Auth
+//-------------------------------------------
 
 type RegisterUserRequest struct {
 	Username    string
@@ -62,12 +29,40 @@ type LoginRequest struct {
 	Password   string
 }
 
+type UpdatePasswordRequest struct {
+	UserId      int64
+	OldPassword string
+	NewPassword string
+}
+
+type UpdateEmailRequest struct {
+	UserId int64
+	Email  string
+}
+
+//-------------------------------------------
+// Profile
+//-------------------------------------------
+
+type UserId int64
+
+type User struct {
+	UserId   int64
+	Username string
+	Avatar   *string
+	Public   bool
+}
+
+type UserSearchReq struct {
+	SearchTerm string
+	Limit      int32
+}
+
 type UserProfileRequest struct {
 	UserId      int64
 	RequesterId int64
 }
 
-// returned by getUserProfile, updateUserProfile
 type UserProfileResponse struct {
 	UserId         int64
 	Username       string
@@ -82,42 +77,42 @@ type UserProfileResponse struct {
 	Groups         []Group
 }
 
-type UserSearchReq struct {
-	SearchTerm string
-	Limit      int32
-}
-
 type UpdateProfileRequest struct {
-	Username    string
-	FirstName   string
-	LastName    string
-	DateOfBirth time.Time
-	Avatar      string
-	About       string
-	Public      bool
-}
-
-type GetFollowersReq struct {
-	FollowingID int64
-	Limit       int32
-	Offset      int32
-}
-
-type GetFollowingReq struct {
-	FollowerID int64
-	Limit      int32
-	Offset     int32
-}
-
-type UpdatePasswordRequest struct {
 	UserId      int64
-	OldPassword string
-	Password    string
+	Username    *string
+	FirstName   *string
+	LastName    *string
+	DateOfBirth *string
+	Avatar      *string
+	About       *string
 }
 
-type UpdateEmailRequest struct {
+type UpdateProfilePrivacyRequest struct {
 	UserId int64
-	Email  string
+	Public bool
+}
+
+// -------------------------------------------
+// Groups
+// -------------------------------------------
+type GroupId int64
+
+type GroupRole string
+
+type GroupUser struct {
+	UserId    int64
+	Username  string
+	Avatar    *string
+	Public    bool
+	GroupRole string
+}
+
+type Group struct {
+	GroupId          int64
+	GroupTitle       string
+	GroupDescription string
+	MembersCount     *int32
+	Role             string
 }
 
 type InviteToGroupOrCancelRequest struct {
@@ -161,4 +156,20 @@ type CreateGroupRequest struct {
 type GroupRoleReq struct {
 	GroupId int64
 	UserId  int64
+}
+
+// -------------------------------------------
+// Followers
+// -------------------------------------------
+
+type GetFollowersReq struct {
+	FollowingID int64
+	Limit       int32
+	Offset      int32
+}
+
+type GetFollowingReq struct {
+	FollowerID int64
+	Limit      int32
+	Offset     int32
 }

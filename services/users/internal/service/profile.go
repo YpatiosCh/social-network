@@ -4,6 +4,8 @@ import (
 	"context"
 	"social-network/services/users/internal/db/sqlc"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (s *UserService) GetBasicUserInfo(ctx context.Context, userId int64) (resp User, err error) {
@@ -98,12 +100,63 @@ func (s *UserService) SearchUsers(ctx context.Context, req UserSearchReq) ([]Use
 	return users, nil
 }
 
-func UpdateUserProfile() {
-	//called with user_id and any of: username (TODO), first_name, last_name, date_of_birth, avatar, about_me
-	//returns full profile
-	//request needs to come from same user
-	//---------------------------------------------------------------------
+func (s *UserService) UpdateUserProfile(ctx context.Context, req UpdateProfileRequest) (UserProfileResponse, error) {
+	var dob *pgtype.Date
+	if req.DateOfBirth != nil {
+		dobTime, err := time.Parse("2006-01-02", *req.DateOfBirth)
+		if err != nil {
+			return UserProfileResponse{}, ErrInvalidDateFormat
+		}
 
-	//UpdateUserProflie
-	//TODO check how to not update all fields but only changes (nil pointers?)
+		dob = &pgtype.Date{
+			Time:  dobTime,
+			Valid: true,
+		}
+	}
+
+	row, err := s.db.UpdateUserProfile(ctx, sqlc.UpdateUserProfileParams{
+		ID:          req.UserId,
+		Username:    *req.Username,
+		FirstName:   *req.FirstName,
+		LastName:    *req.LastName,
+		DateOfBirth: *dob,
+		Avatar:      req.Avatar,
+		AboutMe:     req.About,
+	})
+	if err != nil {
+		return UserProfileResponse{}, err
+	}
+
+	newDob := time.Time{}
+	if row.DateOfBirth.Valid {
+		newDob = row.DateOfBirth.Time
+	}
+
+	profile := UserProfileResponse{
+		UserId:      row.ID,
+		Username:    row.Username,
+		FirstName:   row.FirstName,
+		LastName:    row.LastName,
+		DateOfBirth: newDob,
+		Avatar:      row.Avatar,
+		About:       row.AboutMe,
+		Public:      row.ProfilePublic,
+	}
+
+	return profile, nil
+
+	//TODO This doesn't work (stupid sqlc). Need to see how to update only changed fields, preferably without having a different query for each one
+}
+
+func (s *UserService) UpdateProfilePrivacy(ctx context.Context, req UpdateProfilePrivacyRequest) error {
+
+	err := s.db.UpdateProfilePrivacy(ctx, sqlc.UpdateProfilePrivacyParams{
+		ID:            req.UserId,
+		ProfilePublic: req.Public,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

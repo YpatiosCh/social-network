@@ -64,6 +64,21 @@ func (q *Queries) GetUserForLogin(ctx context.Context, username string) (GetUser
 	return i, err
 }
 
+const getUserPassword = `-- name: GetUserPassword :one
+SELECT 
+    password_hash
+FROM
+    auth_user
+WHERE user_id=$1
+`
+
+func (q *Queries) GetUserPassword(ctx context.Context, userID int64) (string, error) {
+	row := q.db.QueryRow(ctx, getUserPassword, userID)
+	var password_hash string
+	err := row.Scan(&password_hash)
+	return password_hash, err
+}
+
 const incrementFailedLoginAttempts = `-- name: IncrementFailedLoginAttempts :exec
 UPDATE auth_user
 SET failed_attempts = failed_attempts + 1

@@ -62,7 +62,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 
 }
 
-func (s *UserService) LoginUser(ctx context.Context, req LoginReq) (User, error) {
+func (s *UserService) LoginUser(ctx context.Context, req LoginRequest) (User, error) {
 	var u User
 
 	err := s.runTx(ctx, func(q *sqlc.Queries) error {
@@ -95,18 +95,42 @@ func (s *UserService) LoginUser(ctx context.Context, req LoginReq) (User, error)
 	return u, nil
 }
 
-func UpdateUserPassword() {
-	//called with user_id, old password, new password_hash, salt
-	//returns success or error
-	//request needs to come from same user
-	//---------------------------------------------------------------------
-	//UpdateUserPassword
+func (s *UserService) UpdateUserPassword(ctx context.Context, req UpdatePasswordRequest) error {
+	//TODO think whether transaction is needed here
+
+	hashedPassword, err := s.db.GetUserPassword(ctx, req.UserId)
+	if err != nil {
+		return err
+	}
+
+	if !checkPassword(hashedPassword, req.OldPassword) {
+		return ErrNotAuthorized
+	}
+
+	newPasswordHash, err := hashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{
+		UserID:       req.UserId,
+		PasswordHash: newPasswordHash,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func UpdateUserEmail() {
-	//called with user_id, new email
-	//returns success or error
-	//request needs to come from same user
-	//---------------------------------------------------------------------
-	//UpdateUserEmail
+func (s *UserService) UpdateUserEmail(ctx context.Context, req UpdateEmailRequest) error {
+	//reminder: userId always from token
+	err := s.db.UpdateUserEmail(ctx, sqlc.UpdateUserEmailParams{
+		UserID: req.UserId,
+		Email:  req.Email,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

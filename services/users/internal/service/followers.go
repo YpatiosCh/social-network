@@ -54,10 +54,26 @@ func (s *UserService) GetFollowingPaginated(ctx context.Context, req GetFollowin
 
 }
 
-func FollowRequest() {
+func FollowUser() {
+
+}
+
+func UnfFollowUser() {
 
 }
 
 func HandleFollowRequest() {
+
+}
+
+func IsFollowing() {
+
+}
+
+func IsFollowingEither() {
+
+}
+
+func GetMutualFollowers() {
 
 }

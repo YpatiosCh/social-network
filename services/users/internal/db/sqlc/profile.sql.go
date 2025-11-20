@@ -138,6 +138,22 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 	return items, nil
 }
 
+const updateProfilePrivacy = `-- name: UpdateProfilePrivacy :exec
+UPDATE users
+SET profile_public=$2
+WHERE id=$1
+`
+
+type UpdateProfilePrivacyParams struct {
+	ID            int64
+	ProfilePublic bool
+}
+
+func (q *Queries) UpdateProfilePrivacy(ctx context.Context, arg UpdateProfilePrivacyParams) error {
+	_, err := q.db.Exec(ctx, updateProfilePrivacy, arg.ID, arg.ProfilePublic)
+	return err
+}
+
 const updateUserEmail = `-- name: UpdateUserEmail :exec
 UPDATE auth_user
 SET
@@ -177,11 +193,12 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 const updateUserProfile = `-- name: UpdateUserProfile :one
 UPDATE users
 SET
-    first_name    = COALESCE($2, first_name),
-    last_name     = COALESCE($3, last_name),
-    date_of_birth = COALESCE($4, date_of_birth),
-    avatar        = COALESCE($5, avatar),
-    about_me      = COALESCE($6, about_me),
+    username      = COALESCE($2, username),
+    first_name    = COALESCE($3, first_name),
+    last_name     = COALESCE($4, last_name),
+    date_of_birth = COALESCE($5, date_of_birth),
+    avatar        = COALESCE($6, avatar),
+    about_me      = COALESCE($7, about_me),
     updated_at    = CURRENT_TIMESTAMP
 WHERE id = $1
   AND deleted_at IS NULL
@@ -190,6 +207,7 @@ RETURNING id, username, first_name, last_name, date_of_birth, avatar, about_me, 
 
 type UpdateUserProfileParams struct {
 	ID          int64
+	Username    string
 	FirstName   string
 	LastName    string
 	DateOfBirth pgtype.Date
@@ -200,6 +218,7 @@ type UpdateUserProfileParams struct {
 func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUserProfile,
 		arg.ID,
+		arg.Username,
 		arg.FirstName,
 		arg.LastName,
 		arg.DateOfBirth,
