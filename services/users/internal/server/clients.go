@@ -9,8 +9,6 @@ import (
 	"social-network/shared/ports"
 	"time"
 
-	explPb "social-network/shared/gen/users"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
@@ -56,6 +54,7 @@ func (s *Server) InitTemplateClient(opts []grpc.DialOption) (err error) {
 	if err != nil {
 		err = fmt.Errorf("failed to dial user service: %v", err)
 	}
-	s.clients.Example = explPb.NewUserServiceClient(conn)
+	_ = conn
+	// s.Clients.Example = explPb.NewUserServiceClient(conn)
 	return err
 }

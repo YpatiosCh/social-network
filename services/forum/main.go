@@ -6,7 +6,6 @@ import (
 
 	"social-network/services/forum/server"
 	"social-network/shared/db"
-	"social-network/shared/ports"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
@@ -30,6 +29,6 @@ func main() {
 
 	log.Println("Service ready!")
 
-	servive := server.NewForumServer(ports.Forum)
+	servive := server.NewForumServer()
 	servive.RunGRPCServer()
 }

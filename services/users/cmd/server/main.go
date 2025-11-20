@@ -33,9 +33,7 @@ func main() {
 
 	queries := sqlc.New(pool)
 	userService := userservice.NewUserService(queries, pool)
-	_ = userService
 
-	service := server.NewUsersServer("users:50051", userService)
-	// Start gRPC server and block
+	service := server.NewUsersServer(userService)
 	service.RunGRPCServer()
 }

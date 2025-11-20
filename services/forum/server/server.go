@@ -9,6 +9,7 @@ import (
 
 	commonpb "social-network/shared/gen/common"
 	pb "social-network/shared/gen/users"
+	"social-network/shared/ports"
 
 	"google.golang.org/grpc"
 )
@@ -61,8 +62,8 @@ func (s *Server) RunGRPCServer() {
 	}
 }
 
-func NewForumServer(port string) *Server {
+func NewForumServer() *Server {
 	return &Server{
-		Port: port,
+		Port: ports.Forum,
 	}
 }

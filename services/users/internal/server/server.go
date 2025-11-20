@@ -4,23 +4,23 @@ import (
 	"log"
 	"net"
 
-	userservice "social-network/services/users/internal/service"
+	us "social-network/services/users/internal/service"
 	pb "social-network/shared/gen/users"
+	"social-network/shared/ports"
 
 	"google.golang.org/grpc"
 )
 
-// Server struct placeholder
+// Holds Client conns, services and handler funcs
 type Server struct {
-	// Add DB or other dependencies here later
 	pb.UnimplementedUserServiceServer
-	clients Clients
+	Clients Clients
 	Port    string
-	Service *userservice.UserService
+	Service *us.UserService
 }
 
+// Holds connections to clients
 type Clients struct {
-	Example pb.UserServiceClient
 }
 
 // RunGRPCServer starts the gRPC server and blocks
@@ -41,10 +41,10 @@ func (s *Server) RunGRPCServer() {
 	}
 }
 
-func NewUsersServer(port string, service *userservice.UserService) *Server {
+func NewUsersServer(service *us.UserService) *Server {
 	return &Server{
-		Port:    port,
-		clients: Clients{},
+		Port:    ports.Users,
+		Clients: Clients{},
 		Service: service,
 	}
 }
