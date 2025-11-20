@@ -2,7 +2,6 @@ package userservice
 
 import (
 	"context"
-	"errors"
 	"social-network/services/users/internal/db/sqlc"
 	"time"
 
@@ -29,7 +28,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 	// convert date
 	dobTime, err := time.Parse("2006-01-02", req.DateOfBirth)
 	if err != nil {
-		return 0, errors.New("invalid date format: expected YYYY-MM-DD")
+		return 0, ErrInvalidDateFormat
 	}
 
 	dob := pgtype.Date{
@@ -43,58 +42,72 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 		return 0, err
 	}
 
-	//start transaction
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback(ctx)
+	var newId int64
 
-	qtx := s.db.(*sqlc.Queries).WithTx(tx)
+	err = s.runTx(ctx, func(q *sqlc.Queries) error {
 
-	// Insert user
-	userID, err := qtx.InsertNewUser(ctx, sqlc.InsertNewUserParams{
-		Username:      req.Username,
-		FirstName:     req.FirstName,
-		LastName:      req.LastName,
-		DateOfBirth:   dob,
-		Avatar:        req.Avatar,
-		AboutMe:       req.About,
-		ProfilePublic: req.Public,
+		// Insert user
+		userId, err := q.InsertNewUser(ctx, sqlc.InsertNewUserParams{
+			Username:      req.Username,
+			FirstName:     req.FirstName,
+			LastName:      req.LastName,
+			DateOfBirth:   dob,
+			Avatar:        req.Avatar,
+			AboutMe:       req.About,
+			ProfilePublic: req.Public,
+		})
+		if err != nil {
+			return err //TODO check how to return correct error
+		}
+		newId = userId
+
+		// Insert auth
+		return q.InsertNewUserAuth(ctx, sqlc.InsertNewUserAuthParams{
+			UserID:       userId,
+			Email:        req.Email,
+			PasswordHash: passwordHash,
+		})
 	})
+
 	if err != nil {
-		return 0, err
+		return 0, err //TODO check how to return correct error
 	}
 
-	// Insert auth
-	if err := qtx.InsertNewUserAuth(ctx, sqlc.InsertNewUserAuthParams{
-		UserID:       userID,
-		Email:        req.Email,
-		PasswordHash: passwordHash,
-		Salt:         "", //I think we can remove this
-	}); err != nil {
-		return 0, err
-	}
-
-	// Commit transaction
-	if err := tx.Commit(ctx); err != nil {
-		return 0, err
-	}
-
-	return UserId(userID), nil
+	return UserId(newId), nil
 
 }
 
-func LoginUser() {
-	//called with: username (and/or email?), password
-	//returns user_id,username,avatar,profile_public, or error
-	//---------------------------------------------------------------------
-	//BY EMAIL OR ONLY USERNAME???? (discuss with front)
-	//GetUserForLogin (id, username, password hash, salt), check status=active (maybe also email TODO)
-	//check password correct
-	//if failed login IncrementFailedLoginAttempts
-	//if success ResetFailedLoginAttempts
-	//issue token (user service or api gateway?)
+func (s *UserService) LoginUser(ctx context.Context, req LoginReq) (User, error) {
+	var u User
+
+	err := s.runTx(ctx, func(q *sqlc.Queries) error {
+		row, err := q.GetUserForLogin(ctx, req.Identifier)
+		if err != nil {
+			return err
+		}
+
+		u = User{
+			UserId:   row.ID,
+			Username: row.Username,
+			Avatar:   row.Avatar,
+			Public:   row.ProfilePublic,
+		}
+
+		if !checkPassword(row.PasswordHash, req.Password) {
+			q.IncrementFailedLoginAttempts(ctx, row.ID)
+			return err
+		}
+		q.ResetFailedLoginAttempts(ctx, u.UserId)
+		return nil
+	})
+
+	if err != nil {
+		return User{}, ErrWrongCredentials
+	}
+
+	//TODO what happens when eg failed login attempts > 3? Add logic?
+
+	return u, nil
 }
 
 type BasicUserInfo struct {
@@ -111,16 +124,52 @@ func GetBasicUserInfo(ctx context.Context, userID int64) (resp BasicUserInfo, er
 	return BasicUserInfo{UserName: "Mitsos", Avatar: "M", PublicProfile: true}, nil
 }
 
-func GetUserProfile() {
-	//called with: user_id, viewer_id (to check permission to view)
-	//returns id, username, first_name, last_name, date_of_birth, avatar, about_me, profile_public, number of followers, number of following, list of groups
-	//---------------------------------------------------------------------
-	// check if user has permission to see (public profile or isFollower)
-	// GetUserProlife(id)
+func (s *UserService) GetUserProfile(ctx context.Context, req UserProfileRequest) (UserProfileResponse, error) {
+	var profile UserProfileResponse
+	err := s.runTx(ctx, func(q *sqlc.Queries) error { //TODO consider not using a transaction for everything
+		// TODO helper: check if user has permission to see (public profile or isFollower)
+		row, err := q.GetUserProfile(ctx, req.UserId)
+		if err != nil {
+			return err
+		}
 
-	// number of followers, following (TODO keep in profile with trigger?)
-	// number of groups? (TODO keep in profile with trigger?)
-	// which groups
+		dob := time.Time{}
+		if row.DateOfBirth.Valid {
+			dob = row.DateOfBirth.Time
+		}
+
+		profile = UserProfileResponse{
+			UserId:      row.ID,
+			Username:    row.Username,
+			FirstName:   row.FirstName,
+			LastName:    row.LastName,
+			DateOfBirth: dob,
+			Avatar:      row.Avatar,
+			About:       row.AboutMe,
+			Public:      row.ProfilePublic,
+		}
+		profile.FollowersCount, err = q.GetFollowerCount(ctx, profile.UserId)
+		if err != nil {
+			return err
+		}
+		profile.FollowingCount, err = q.GetFollowingCount(ctx, profile.UserId)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return UserProfileResponse{}, err
+	}
+
+	profile.Groups, err = s.GetUserGroups(ctx, profile.UserId)
+	if err != nil {
+		return UserProfileResponse{}, err
+	}
+
+	return profile, nil
 
 	// THIS CAN BE HANDLED BY THE API GATEWAY (and different call from front):
 	// from forum service get all posts paginated (and number of posts)
@@ -153,19 +202,43 @@ func UpdateUserEmail() {
 	//UpdateUserEmail
 }
 
-func GetAllGroups() {
-	//called with nothing
-	//returns list of groups containing group_id, group_title, group_description, members_count
-	//---------------------------------------------------------------------
-	//GetAllGroups
+func (s *UserService) GetAllGroups(ctx context.Context) ([]Group, error) {
+	rows, err := s.db.GetAllGroups(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	groups := make([]Group, 0, len(rows))
+	for _, r := range rows {
+		groups = append(groups, Group{
+			GroupId:          r.ID,
+			GroupTitle:       r.GroupTitle,
+			GroupDescription: r.GroupDescription,
+			MembersCount:     r.MembersCount,
+		})
+	}
+
+	return groups, nil
 }
 
-func GetUserGroups() {
-	//called with user_id
-	//returns list of groups containing group_id, group_title, group_description, members_count
-	//---------------------------------------------------------------------
+func (s *UserService) GetUserGroups(ctx context.Context, userId int64) ([]Group, error) {
+	rows, err := s.db.GetUserGroups(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
 
-	//GetUserGroups
+	groups := make([]Group, 0, len(rows))
+	for _, r := range rows {
+		groups = append(groups, Group{
+			GroupId:          r.GroupID,
+			GroupTitle:       r.GroupTitle,
+			GroupDescription: r.GroupDescription,
+			MembersCount:     r.MembersCount,
+			Role:             r.Role,
+		})
+	}
+
+	return groups, nil
 }
 
 func GetGroupInfo() {

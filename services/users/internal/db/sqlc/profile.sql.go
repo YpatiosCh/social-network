@@ -39,7 +39,7 @@ SELECT
     username,
     first_name,
     last_name,
-    date_of_birth
+    date_of_birth,
     avatar,
     about_me,
     profile_public
@@ -53,7 +53,8 @@ type GetUserProfileRow struct {
 	Username      string
 	FirstName     string
 	LastName      string
-	Avatar        pgtype.Date
+	DateOfBirth   pgtype.Date
+	Avatar        *string
 	AboutMe       *string
 	ProfilePublic bool
 }
@@ -66,6 +67,7 @@ func (q *Queries) GetUserProfile(ctx context.Context, id int64) (GetUserProfileR
 		&i.Username,
 		&i.FirstName,
 		&i.LastName,
+		&i.DateOfBirth,
 		&i.Avatar,
 		&i.AboutMe,
 		&i.ProfilePublic,
@@ -151,7 +153,6 @@ const updateUserPassword = `-- name: UpdateUserPassword :exec
 UPDATE auth_user
 SET
     password_hash = $2,
-    salt = $3,
     updated_at = CURRENT_TIMESTAMP
 WHERE user_id = $1
 `
@@ -159,11 +160,10 @@ WHERE user_id = $1
 type UpdateUserPasswordParams struct {
 	UserID       int64
 	PasswordHash string
-	Salt         string
 }
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
-	_, err := q.db.Exec(ctx, updateUserPassword, arg.UserID, arg.PasswordHash, arg.Salt)
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.UserID, arg.PasswordHash)
 	return err
 }
 

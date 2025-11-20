@@ -4,7 +4,7 @@ SELECT
     username,
     first_name,
     last_name,
-    date_of_birth
+    date_of_birth,
     avatar,
     about_me,
     profile_public
@@ -39,7 +39,6 @@ RETURNING *;
 UPDATE auth_user
 SET
     password_hash = $2,
-    salt = $3,
     updated_at = CURRENT_TIMESTAMP
 WHERE user_id = $1;
 

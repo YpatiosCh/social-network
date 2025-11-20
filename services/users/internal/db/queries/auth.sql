@@ -16,10 +16,9 @@ RETURNING id;
 INSERT INTO auth_user (
     user_id,
     email,
-    password_hash,
-    salt
+    password_hash
 ) VALUES (
-       $1, $2, $3, $4
+       $1, $2, $3
 );
 
 
@@ -28,11 +27,12 @@ INSERT INTO auth_user (
 SELECT
     u.id,
     u.username,
-    au.password_hash,
-    au.salt
+    u.avatar,
+    u.profile_public,
+    au.password_hash
 FROM users u
 JOIN auth_user au ON au.user_id = u.id
-WHERE u.username = $1
+WHERE (u.username = $1 OR au.email = $1)
   AND u.current_status = 'active'
   AND u.deleted_at IS NULL;
 

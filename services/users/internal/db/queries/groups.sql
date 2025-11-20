@@ -109,7 +109,7 @@ SELECT DISTINCT
     g.members_count,
     CASE 
         WHEN g.group_owner = $1 THEN 'owner'
-        ELSE gm.role
+        ELSE 'member'
     END AS role
 FROM groups g
 LEFT JOIN group_members gm

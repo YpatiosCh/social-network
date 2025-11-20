@@ -6,11 +6,16 @@ type UserId int64
 
 type GroupId int64
 
+type LoginReq struct {
+	Identifier string
+	Password   string
+}
+
 //returned by login, basicUser,searchUsers([]), getFollowers([]), getFollowing([])
 type User struct {
 	UserId   int64
 	Username string
-	Avatar   string
+	Avatar   *string
 	Public   bool
 }
 
@@ -26,10 +31,10 @@ type GroupUser struct {
 //returned by getAllGroups([]), getUserGroups([]),getGroupInfo, searchGroup([])
 type Group struct {
 	GroupId          int64
-	OwnerId          int64
 	GroupTitle       string
 	GroupDescription string
-	MembersCount     int
+	MembersCount     *int32
+	Role             string
 }
 
 type RegisterUserRequest struct {
@@ -65,11 +70,11 @@ type UserProfileResponse struct {
 	FirstName      string
 	LastName       string
 	DateOfBirth    time.Time
-	Avatar         string
-	About          string
+	Avatar         *string
+	About          *string
 	Public         bool
-	FollowersCount int
-	FollowingCount int
+	FollowersCount int64
+	FollowingCount int64
 	Groups         []Group
 }
 

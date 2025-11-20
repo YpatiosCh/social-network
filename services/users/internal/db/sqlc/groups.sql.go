@@ -278,7 +278,7 @@ SELECT DISTINCT
     g.members_count,
     CASE 
         WHEN g.group_owner = $1 THEN 'owner'
-        ELSE gm.role
+        ELSE 'member'
     END AS role
 FROM groups g
 LEFT JOIN group_members gm
@@ -294,7 +294,7 @@ type GetUserGroupsRow struct {
 	GroupTitle       string
 	GroupDescription string
 	MembersCount     *int32
-	Role             interface{}
+	Role             string
 }
 
 func (q *Queries) GetUserGroups(ctx context.Context, groupOwner int64) ([]GetUserGroupsRow, error) {

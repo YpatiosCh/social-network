@@ -280,7 +280,6 @@ type AuthUser struct {
 	UserID         int64
 	Email          string
 	PasswordHash   string
-	Salt           string
 	CreatedAt      pgtype.Timestamptz
 	UpdatedAt      pgtype.Timestamptz
 	FailedAttempts int32

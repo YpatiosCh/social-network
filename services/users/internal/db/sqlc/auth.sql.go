@@ -33,20 +33,22 @@ const getUserForLogin = `-- name: GetUserForLogin :one
 SELECT
     u.id,
     u.username,
-    au.password_hash,
-    au.salt
+    u.avatar,
+    u.profile_public,
+    au.password_hash
 FROM users u
 JOIN auth_user au ON au.user_id = u.id
-WHERE u.username = $1
+WHERE (u.username = $1 OR au.email = $1)
   AND u.current_status = 'active'
   AND u.deleted_at IS NULL
 `
 
 type GetUserForLoginRow struct {
-	ID           int64
-	Username     string
-	PasswordHash string
-	Salt         string
+	ID            int64
+	Username      string
+	Avatar        *string
+	ProfilePublic bool
+	PasswordHash  string
 }
 
 func (q *Queries) GetUserForLogin(ctx context.Context, username string) (GetUserForLoginRow, error) {
@@ -55,8 +57,9 @@ func (q *Queries) GetUserForLogin(ctx context.Context, username string) (GetUser
 	err := row.Scan(
 		&i.ID,
 		&i.Username,
+		&i.Avatar,
+		&i.ProfilePublic,
 		&i.PasswordHash,
-		&i.Salt,
 	)
 	return i, err
 }
@@ -116,10 +119,9 @@ const insertNewUserAuth = `-- name: InsertNewUserAuth :exec
 INSERT INTO auth_user (
     user_id,
     email,
-    password_hash,
-    salt
+    password_hash
 ) VALUES (
-       $1, $2, $3, $4
+       $1, $2, $3
 )
 `
 
@@ -127,16 +129,10 @@ type InsertNewUserAuthParams struct {
 	UserID       int64
 	Email        string
 	PasswordHash string
-	Salt         string
 }
 
 func (q *Queries) InsertNewUserAuth(ctx context.Context, arg InsertNewUserAuthParams) error {
-	_, err := q.db.Exec(ctx, insertNewUserAuth,
-		arg.UserID,
-		arg.Email,
-		arg.PasswordHash,
-		arg.Salt,
-	)
+	_, err := q.db.Exec(ctx, insertNewUserAuth, arg.UserID, arg.Email, arg.PasswordHash)
 	return err
 }
 

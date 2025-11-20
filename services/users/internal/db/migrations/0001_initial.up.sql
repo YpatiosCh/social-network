@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS auth_user (
     user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     email CITEXT COLLATE case_insensitive_ai UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    salt TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ,
     failed_attempts INTEGER NOT NULL DEFAULT 0,
