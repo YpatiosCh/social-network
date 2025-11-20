@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"social-network/services/users/internal/db/sqlc"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // runTx runs a function inside a database transaction.
@@ -29,4 +31,16 @@ func (s *UserService) runTx(ctx context.Context, fn func(q *sqlc.Queries) error)
 	}
 
 	return tx.Commit(ctx)
+}
+
+// HashPassword hashes a password using bcrypt.
+func hashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(hash), err
+}
+
+// CheckPassword compares a hashed password with a plain-text password.
+func checkPassword(hashedPassword, plainPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
+	return err == nil
 }

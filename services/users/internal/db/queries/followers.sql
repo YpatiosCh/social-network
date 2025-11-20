@@ -13,7 +13,7 @@ RETURNING *;
 
 
 -- name: GetFollowers :many
-SELECT u.id, u.username, u.first_name, u.last_name, f.created_at AS followed_at
+SELECT u.id, u.username, u.avatar,u.profile_public, f.created_at AS followed_at
 FROM follows f
 JOIN users u ON u.id = f.follower_id
 WHERE f.following_id = $1

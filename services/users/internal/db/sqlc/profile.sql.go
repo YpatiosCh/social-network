@@ -13,6 +13,7 @@ import (
 
 const getUserBasic = `-- name: GetUserBasic :one
 SELECT
+    id,
     username,
     avatar,
     profile_public
@@ -21,6 +22,7 @@ WHERE id = $1
 `
 
 type GetUserBasicRow struct {
+	ID            int64
 	Username      string
 	Avatar        *string
 	ProfilePublic bool
@@ -29,7 +31,12 @@ type GetUserBasicRow struct {
 func (q *Queries) GetUserBasic(ctx context.Context, id int64) (GetUserBasicRow, error) {
 	row := q.db.QueryRow(ctx, getUserBasic, id)
 	var i GetUserBasicRow
-	err := row.Scan(&i.Username, &i.Avatar, &i.ProfilePublic)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Avatar,
+		&i.ProfilePublic,
+	)
 	return i, err
 }
 

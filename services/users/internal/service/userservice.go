@@ -7,7 +7,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -110,23 +109,24 @@ func (s *UserService) LoginUser(ctx context.Context, req LoginReq) (User, error)
 	return u, nil
 }
 
-type BasicUserInfo struct {
-	UserName      string
-	Avatar        string
-	PublicProfile bool
-}
+func (s *UserService) GetBasicUserInfo(ctx context.Context, userId int64) (resp User, err error) {
+	row, err := s.db.GetUserBasic(ctx, userId)
+	if err != nil {
+		return User{}, err
+	}
+	u := User{
+		UserId:   row.ID,
+		Username: row.Username,
+		Avatar:   row.Avatar,
+		Public:   row.ProfilePublic,
+	}
+	return u, nil
 
-func GetBasicUserInfo(ctx context.Context, userID int64) (resp BasicUserInfo, err error) {
-	//called with: user_id
-	//returns username, avatar, profile_public(bool)
-	//---------------------------------------------------------------------
-	// GetUserBasic(id)
-	return BasicUserInfo{UserName: "Mitsos", Avatar: "M", PublicProfile: true}, nil
 }
 
 func (s *UserService) GetUserProfile(ctx context.Context, req UserProfileRequest) (UserProfileResponse, error) {
 	var profile UserProfileResponse
-	err := s.runTx(ctx, func(q *sqlc.Queries) error { //TODO consider not using a transaction for everything
+	err := s.runTx(ctx, func(q *sqlc.Queries) error { //TODO consider not using a transaction here?
 		// TODO helper: check if user has permission to see (public profile or isFollower)
 		row, err := q.GetUserProfile(ctx, req.UserId)
 		if err != nil {
@@ -148,14 +148,6 @@ func (s *UserService) GetUserProfile(ctx context.Context, req UserProfileRequest
 			About:       row.AboutMe,
 			Public:      row.ProfilePublic,
 		}
-		profile.FollowersCount, err = q.GetFollowerCount(ctx, profile.UserId)
-		if err != nil {
-			return err
-		}
-		profile.FollowingCount, err = q.GetFollowingCount(ctx, profile.UserId)
-		if err != nil {
-			return err
-		}
 
 		return nil
 	})
@@ -164,45 +156,29 @@ func (s *UserService) GetUserProfile(ctx context.Context, req UserProfileRequest
 		return UserProfileResponse{}, err
 	}
 
-	profile.Groups, err = s.GetUserGroups(ctx, profile.UserId)
+	profile.FollowersCount, err = s.db.GetFollowerCount(ctx, profile.UserId)
+	if err != nil {
+		return UserProfileResponse{}, err
+	}
+	profile.FollowingCount, err = s.db.GetFollowingCount(ctx, profile.UserId)
+	if err != nil {
+		return UserProfileResponse{}, err
+	}
+
+	profile.Groups, err = s.GetUserGroupsPaginated(ctx, profile.UserId) //if pagination then it should be separate call and I should probably have a groups count
 	if err != nil {
 		return UserProfileResponse{}, err
 	}
 
 	return profile, nil
 
-	// THIS CAN BE HANDLED BY THE API GATEWAY (and different call from front):
+	// possibly usergroups also a different call
 	// from forum service get all posts paginated (and number of posts)
 	// and within all posts check each one if viewer has permission
 }
 
-func UpdateUserProfile() {
-	//called with user_id and any of: username (TODO), first_name, last_name, date_of_birth, avatar, about_me
-	//returns full profile
-	//request needs to come from same user
-	//---------------------------------------------------------------------
-
-	//UpdateUserProflie
-	//TODO check how to not update all fields but only changes (nil pointers?)
-}
-
-func UpdateUserPassword() {
-	//called with user_id, old password, new password_hash, salt
-	//returns success or error
-	//request needs to come from same user
-	//---------------------------------------------------------------------
-	//UpdateUserPassword
-}
-
-func UpdateUserEmail() {
-	//called with user_id, new email
-	//returns success or error
-	//request needs to come from same user
-	//---------------------------------------------------------------------
-	//UpdateUserEmail
-}
-
-func (s *UserService) GetAllGroups(ctx context.Context) ([]Group, error) {
+func (s *UserService) GetAllGroupsPaginated(ctx context.Context) ([]Group, error) {
+	//TODO add pagination (sort how?)
 	rows, err := s.db.GetAllGroups(ctx)
 	if err != nil {
 		return nil, err
@@ -221,7 +197,8 @@ func (s *UserService) GetAllGroups(ctx context.Context) ([]Group, error) {
 	return groups, nil
 }
 
-func (s *UserService) GetUserGroups(ctx context.Context, userId int64) ([]Group, error) {
+func (s *UserService) GetUserGroupsPaginated(ctx context.Context, userId int64) ([]Group, error) {
+	//TODO add pagination (sort how?)
 	rows, err := s.db.GetUserGroups(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -241,49 +218,117 @@ func (s *UserService) GetUserGroups(ctx context.Context, userId int64) ([]Group,
 	return groups, nil
 }
 
-func GetGroupInfo() {
-	//called with group_id
-	//returns group_id, group_title, group_description, members_count (owner?)
-	//---------------------------------------------------------------------
+func (s *UserService) GetGroupInfo(ctx context.Context, groupId int64) (Group, error) {
+	row, err := s.db.GetGroupInfo(ctx, groupId)
+	if err != nil {
+		return Group{}, nil
+	}
+	group := Group{
+		GroupId:          row.ID,
+		GroupTitle:       row.GroupTitle,
+		GroupDescription: row.GroupDescription,
+		MembersCount:     row.MembersCount,
+	}
 
-	//GetGroupInfo
+	return group, nil
 
 	//different calls for chat and posts (API GATEWAY)
 }
 
-func GetGroupMembers() {
-	//called with group_id
-	//returns list of members containing user_id, username, avatar, profile_public(bool), role(owner or member), joined_at
-	//---------------------------------------------------------------------
+func (s *UserService) GetGroupMembers(ctx context.Context, groupId int64) ([]GroupUser, error) {
+	//TODO add pagination (sort how?)
+	rows, err := s.db.GetGroupMembers(ctx, groupId)
+	if err != nil {
+		return nil, err
+	}
+	members := make([]GroupUser, 0, len(rows))
 
-	//getGroupMembers
+	for _, r := range rows {
+		var role string
+		if r.Role.Valid {
+			role = string(r.Role.GroupRole)
+		}
+
+		members = append(members, GroupUser{
+			UserId:    r.UserID,
+			Username:  r.Username,
+			Avatar:    r.Avatar,
+			Public:    r.ProfilePublic,
+			GroupRole: role,
+		})
+	}
+	return members, nil
 }
 
-func SeachByUsers() {
-	//called with search term
-	//returns list of users containing user_id, username, avatar, profile_public(bool)
-	//---------------------------------------------------------------------
+func (s *UserService) SearchUsers(ctx context.Context, req UserSearchReq) ([]User, error) {
 
-	//SearchUsers by username or name
+	rows, err := s.db.SearchUsers(ctx, sqlc.SearchUsersParams{
+		Username: req.SearchTerm,
+		Limit:    req.Limit,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	users := make([]User, 0, len(rows))
+	for _, r := range rows {
+		users = append(users, User{
+			UserId:   r.ID,
+			Username: r.Username,
+			Avatar:   r.Avatar,
+			Public:   r.ProfilePublic,
+		})
+	}
+
+	return users, nil
 }
 
-func SearchGroup() {
-	//called with search term
-	//returns list of groups containing group_id, group_title, group_description, members_count
-	//---------------------------------------------------------------------
+func (s *UserService) SearchGroups(ctx context.Context, searchTerm string) ([]Group, error) {
+	//TODO add pagination? (sort how?)
+	rows, err := s.db.SearchGroupsFuzzy(ctx, searchTerm)
+	if err != nil {
+		return []Group{}, err
+	}
+	groups := make([]Group, 0, len(rows))
+	for _, r := range rows {
+		groups = append(groups, Group{
+			GroupId:          r.ID,
+			GroupTitle:       r.GroupTitle,
+			GroupDescription: r.GroupDescription,
+			MembersCount:     r.MembersCount,
+		})
+	}
 
-	//SeachGroupsFuzzy
+	return groups, nil
+	//Do we want to include userId so that we also have the info if the user is a member, owner, or nothing?
 }
 
-func GetFollowers() {
-	//called with user_id
-	//returns list of users containing user_id, username, avatar, profile_public(bool)
-	//---------------------------------------------------------------------
+func (s *UserService) GetFollowersPaginated(ctx context.Context, req GetFollowersReq) ([]User, error) {
+	//paginated, sorted by newest first
+	rows, err := s.db.GetFollowers(ctx, sqlc.GetFollowersParams{
+		FollowingID: req.FollowingID,
+		Limit:       req.Limit,
+		Offset:      req.Offset,
+	})
+	if err != nil {
+		return []User{}, err
+	}
+	users := make([]User, 0, len(rows))
+	for _, r := range rows {
+		users = append(users, User{
+			UserId:   r.ID,
+			Username: r.Username,
+			Avatar:   r.Avatar,
+			Public:   r.ProfilePublic,
+		})
+	}
 
-	//GetFollowers() TODO FIX RETURNS
+	return users, nil
+
 }
 
-func GetFollowing() {
+func (s *UserService) GetFollowingPaginated(ctx context.Context) {
 	//called with user_id
 	//returns list of users containing user_id, username, avatar, profile_public(bool)
 	//---------------------------------------------------------------------
@@ -375,6 +420,31 @@ func CreateGroup() {
 	//CreateGroup
 	//AddGroupOwnerAsMember
 }
+func UpdateUserProfile() {
+	//called with user_id and any of: username (TODO), first_name, last_name, date_of_birth, avatar, about_me
+	//returns full profile
+	//request needs to come from same user
+	//---------------------------------------------------------------------
+
+	//UpdateUserProflie
+	//TODO check how to not update all fields but only changes (nil pointers?)
+}
+
+func UpdateUserPassword() {
+	//called with user_id, old password, new password_hash, salt
+	//returns success or error
+	//request needs to come from same user
+	//---------------------------------------------------------------------
+	//UpdateUserPassword
+}
+
+func UpdateUserEmail() {
+	//called with user_id, new email
+	//returns success or error
+	//request needs to come from same user
+	//---------------------------------------------------------------------
+	//UpdateUserEmail
+}
 
 func DeleteGroup() { //low priorty
 	//called with group_id, owner_id
@@ -391,26 +461,6 @@ func TranferGroupOwnerShip() { //low priority
 	//returns success or error
 	//request needs to come from previous owner (or admin - not implemented)
 	//---------------------------------------------------------------------
-
-}
-
-// HashPassword hashes a password using bcrypt.
-func hashPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(hash), err
-}
-
-// CheckPassword compares a hashed password with a plain-text password.
-func checkPassword(hashedPassword, plainPassword string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
-	return err == nil
-}
-
-func issueToken() { //here or in gateway?
-
-}
-
-func checkToken() { //in shared?
 
 }
 
@@ -438,3 +488,17 @@ func UnbanUser() { //low priority
 	//---------------------------------------------------------------------
 	//UnbanUser(id)
 }
+
+// kept temporarily for grpc
+// -----------------------------------------------------------------------------------
+type BasicUserInfo struct {
+	UserName      string
+	Avatar        string
+	PublicProfile bool
+}
+
+func GetBasicUserInfo(ctx context.Context, userID int64) (resp BasicUserInfo, err error) {
+	return BasicUserInfo{UserName: "Mitsos", Avatar: "M", PublicProfile: true}, nil
+}
+
+//-----------------------------------------------------------------------------------

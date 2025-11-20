@@ -14,6 +14,7 @@ WHERE id = $1
 
 -- name: GetUserBasic :one
 SELECT
+    id,
     username,
     avatar,
     profile_public

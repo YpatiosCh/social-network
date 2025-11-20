@@ -23,7 +23,7 @@ type User struct {
 type GroupUser struct {
 	UserId    int64
 	Username  string
-	Avatar    string
+	Avatar    *string
 	Public    bool
 	GroupRole string //only applicable in group members
 }
@@ -78,6 +78,11 @@ type UserProfileResponse struct {
 	Groups         []Group
 }
 
+type UserSearchReq struct {
+	SearchTerm string
+	Limit      int32
+}
+
 type UpdateProfileRequest struct {
 	Username    string
 	FirstName   string
@@ -86,6 +91,12 @@ type UpdateProfileRequest struct {
 	Avatar      string
 	About       string
 	Public      bool
+}
+
+type GetFollowersReq struct {
+	FollowingID int64
+	Limit       int32
+	Offset      int32
 }
 
 type UpdatePasswordRequest struct {
