@@ -329,24 +329,38 @@ FOR EACH ROW
 EXECUTE FUNCTION update_group_members_count();
 
 -----------------------------------------
--- Trigger to automatically accept pending follow requests if profile changes to public
+-- Trigger to add follower when follow request is accepted
 -----------------------------------------
-
-CREATE OR REPLACE FUNCTION handle_private_to_public_accept()
+CREATE OR REPLACE FUNCTION add_follower_on_accept()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Only act if the profile switches from private to public
-    IF OLD.profile_public = FALSE AND NEW.profile_public = TRUE THEN
-        -- Insert all pending follow requests as actual follows
+    -- Only act if the request changed to 'accepted'
+    IF NEW.status = 'accepted' AND OLD.status IS DISTINCT FROM 'accepted' THEN
+        -- Insert follower, ignore conflicts
         INSERT INTO follows (follower_id, following_id, created_at)
-        SELECT requester_id, target_id, CURRENT_TIMESTAMP
-        FROM follow_requests
-        WHERE target_id = NEW.id
-          AND status = 'pending'
-          AND deleted_at IS NULL
+        VALUES (NEW.requester_id, NEW.target_id, CURRENT_TIMESTAMP)
         ON CONFLICT DO NOTHING;
+    END IF;
 
-        -- Mark the processed follow requests as accepted
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_add_follower_on_accept
+AFTER UPDATE ON follow_requests
+FOR EACH ROW
+WHEN (NEW.status = 'accepted' AND OLD.status IS DISTINCT FROM 'accepted')
+EXECUTE FUNCTION add_follower_on_accept();
+
+-----------------------------------------
+-- Trigger to accept pending follow requests when a profile changes to public
+-----------------------------------------
+CREATE OR REPLACE FUNCTION accept_pending_requests_on_public()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only act if profile switches from private to public
+    IF OLD.profile_public = FALSE AND NEW.profile_public = TRUE THEN
+        -- Bulk update: mark all pending requests as accepted
         UPDATE follow_requests
         SET status = 'accepted', updated_at = CURRENT_TIMESTAMP
         WHERE target_id = NEW.id
@@ -358,9 +372,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Attach trigger to users table
-CREATE TRIGGER trg_handle_private_to_public_accept
+CREATE TRIGGER trg_accept_pending_requests_on_public
 AFTER UPDATE ON users
 FOR EACH ROW
 WHEN (OLD.profile_public = FALSE AND NEW.profile_public = TRUE)
-EXECUTE FUNCTION handle_private_to_public_accept();
+EXECUTE FUNCTION accept_pending_requests_on_public();
+

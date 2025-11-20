@@ -162,6 +162,17 @@ type GroupRoleReq struct {
 // Followers
 // -------------------------------------------
 
+type FollowUserReq struct {
+	FollowerId   int64
+	TargetUserId int64
+}
+
+type HandleFollowRequestReq struct {
+	UserId      int64
+	RequesterId int64
+	Accept      bool
+}
+
 type GetFollowersReq struct {
 	FollowingID int64
 	Limit       int32

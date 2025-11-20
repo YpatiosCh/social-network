@@ -100,6 +100,7 @@ func (s *UserService) SearchUsers(ctx context.Context, req UserSearchReq) ([]Use
 	return users, nil
 }
 
+// TODO This doesn't work (stupid sqlc). Need to see how to update only changed fields, preferably without having a different query for each one
 func (s *UserService) UpdateUserProfile(ctx context.Context, req UpdateProfileRequest) (UserProfileResponse, error) {
 	var dob *pgtype.Date
 	if req.DateOfBirth != nil {
@@ -145,7 +146,6 @@ func (s *UserService) UpdateUserProfile(ctx context.Context, req UpdateProfileRe
 
 	return profile, nil
 
-	//TODO This doesn't work (stupid sqlc). Need to see how to update only changed fields, preferably without having a different query for each one
 }
 
 func (s *UserService) UpdateProfilePrivacy(ctx context.Context, req UpdateProfilePrivacyRequest) error {

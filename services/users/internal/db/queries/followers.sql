@@ -5,10 +5,10 @@ SELECT follow_user($1, $2);
 -- returns followed or requested depending on target's privacy settings
 
 
--- name: UnfollowUser :one
+-- name: UnfollowUser :exec
 DELETE FROM follows
-WHERE follower_id = $1 AND following_id = $2
-RETURNING *;
+WHERE follower_id = $1 AND following_id = $2;
+
 
 
 

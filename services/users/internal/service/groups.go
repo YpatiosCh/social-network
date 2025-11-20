@@ -257,20 +257,22 @@ func CreateGroup() {
 	//AddGroupOwnerAsMember
 }
 
-func DeleteGroup() { //low priorty
-	//called with group_id, owner_id
-	//returns success or error
-	//request needs to come from owner
-	//---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// low priority
+// ---------------------------------------------------------------------
+func DeleteGroup() {}
 
-	//initiated by ownder
-	//SoftDeleteGroup
-}
+//called with group_id, owner_id
+//returns success or error
+//request needs to come from owner
+//---------------------------------------------------------------------
 
-func TranferGroupOwnerShip() { //low priority
-	//called with group_id,previous_owner_id, new_owner_id
-	//returns success or error
-	//request needs to come from previous owner (or admin - not implemented)
-	//---------------------------------------------------------------------
+//initiated by ownder
+//SoftDeleteGroup
 
-}
+func TranferGroupOwnerShip() {}
+
+//called with group_id,previous_owner_id, new_owner_id
+//returns success or error
+//request needs to come from previous owner (or admin - not implemented)
+//---------------------------------------------------------------------

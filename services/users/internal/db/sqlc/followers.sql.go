@@ -269,12 +269,11 @@ func (q *Queries) RejectFollowRequest(ctx context.Context, arg RejectFollowReque
 	return err
 }
 
-const unfollowUser = `-- name: UnfollowUser :one
+const unfollowUser = `-- name: UnfollowUser :exec
 
 
 DELETE FROM follows
 WHERE follower_id = $1 AND following_id = $2
-RETURNING follower_id, following_id, created_at
 `
 
 type UnfollowUserParams struct {
@@ -285,9 +284,7 @@ type UnfollowUserParams struct {
 // 1: follower_id
 // 2: following_id
 // returns followed or requested depending on target's privacy settings
-func (q *Queries) UnfollowUser(ctx context.Context, arg UnfollowUserParams) (Follow, error) {
-	row := q.db.QueryRow(ctx, unfollowUser, arg.FollowerID, arg.FollowingID)
-	var i Follow
-	err := row.Scan(&i.FollowerID, &i.FollowingID, &i.CreatedAt)
-	return i, err
+func (q *Queries) UnfollowUser(ctx context.Context, arg UnfollowUserParams) error {
+	_, err := q.db.Exec(ctx, unfollowUser, arg.FollowerID, arg.FollowingID)
+	return err
 }
