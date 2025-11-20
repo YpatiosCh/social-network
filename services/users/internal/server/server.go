@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 
+	userservice "social-network/services/users/internal/service"
 	pb "social-network/shared/gen/users"
 
 	"google.golang.org/grpc"
@@ -15,6 +16,7 @@ type Server struct {
 	pb.UnimplementedUserServiceServer
 	clients Clients
 	Port    string
+	Service *userservice.UserService
 }
 
 type Clients struct {
@@ -39,9 +41,10 @@ func (s *Server) RunGRPCServer() {
 	}
 }
 
-func NewUsersServer(port string) *Server {
+func NewUsersServer(port string, service *userservice.UserService) *Server {
 	return &Server{
 		Port:    port,
 		clients: Clients{},
+		Service: service,
 	}
 }
