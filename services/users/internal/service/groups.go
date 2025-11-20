@@ -121,14 +121,14 @@ func (s *UserService) InviteToGroupOrCancel(ctx context.Context, req InviteToGro
 		}
 	} else {
 
-		role, err := s.GetUserGroupRole(ctx, GroupRoleReq{
+		isMember, err := s.isGroupMember(ctx, GeneralGroupReq{
 			GroupId: req.GroupId,
 			UserId:  req.InviterId,
 		})
 		if err != nil {
 			return err
 		}
-		if role == "" {
+		if !isMember {
 			return ErrNotAuthorized
 		}
 
@@ -143,20 +143,6 @@ func (s *UserService) InviteToGroupOrCancel(ctx context.Context, req InviteToGro
 	}
 
 	return nil
-}
-
-func (s *UserService) GetUserGroupRole(ctx context.Context, req GroupRoleReq) (GroupRole, error) {
-	role, err := s.db.GetUserGroupRole(ctx, sqlc.GetUserGroupRoleParams{
-		GroupID: req.GroupId,
-		UserID:  req.UserId,
-	})
-	if err != nil {
-		return "", err
-	}
-	if !role.Valid {
-		return "", err
-	}
-	return GroupRole(role.GroupRole), nil
 }
 
 func (s *UserService) RequestJoinGroupOrCancel(ctx context.Context, req GroupJoinOrCancelRequest) error {
@@ -185,25 +171,14 @@ func (s *UserService) RequestJoinGroupOrCancel(ctx context.Context, req GroupJoi
 func (s *UserService) RespondToGroupInvite(ctx context.Context, req HandleGroupInviteRequest) error {
 	//userId needs to come from token, to make sure the user is not trying to answer invite not for them
 	if req.Accepted {
-		err := s.runTx(ctx, func(q *sqlc.Queries) error {
-			err := q.AcceptGroupInvite(ctx, sqlc.AcceptGroupInviteParams{
-				GroupID:    req.GroupId,
-				ReceiverID: req.InvitedId,
-			})
-			if err != nil {
-				return err
-			}
-			err = q.AddUserToGroup(ctx, sqlc.AddUserToGroupParams{
-				GroupID: req.GroupId,
-				UserID:  req.InvitedId,
-			})
-			if err != nil {
-				return err
-			}
-			return nil
+
+		err := s.db.AcceptGroupInvite(ctx, sqlc.AcceptGroupInviteParams{
+			GroupID:    req.GroupId,
+			ReceiverID: req.InvitedId,
 		})
 		if err != nil {
 			return err
+
 		}
 	} else {
 		err := s.db.DeclineGroupInvite(ctx, sqlc.DeclineGroupInviteParams{
@@ -217,44 +192,109 @@ func (s *UserService) RespondToGroupInvite(ctx context.Context, req HandleGroupI
 	return nil
 }
 
-func HandleGroupJoinRequest() {
-	//called with group_id,user_id (who requested to join),owner_id(who responds), bool (accept or decline)
-	//returns success or error
-	//request needs to come from group owner
-	//---------------------------------------------------------------------
+func (s *UserService) HandleGroupJoinRequest(ctx context.Context, req HandleJoinRequest) error {
+	//check owner has indeed the owner role
+	//check owner has indeed the owner role
+	isOwner, err := s.isGroupOwner(ctx, GeneralGroupReq{
+		GroupId: req.GroupId,
+		UserId:  req.OwnerId,
+	})
+	if err != nil {
+		return err
+	}
+	if !isOwner {
+		return ErrNotAuthorized
+	}
 
-	//yes or no
-	//AcceptGroupJoinRequest & addUserToGroup
-	//RejectGroupJoinRequest
+	if req.Accepted {
+		err = s.db.AcceptGroupJoinRequest(ctx, sqlc.AcceptGroupJoinRequestParams{
+			GroupID: req.GroupId,
+			UserID:  req.RequesterId,
+		})
+	} else {
+		err = s.db.RejectGroupJoinRequest(ctx, sqlc.RejectGroupJoinRequestParams{
+			GroupID: req.GroupId,
+			UserID:  req.RequesterId,
+		})
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func LeaveGroup() {
-	//called with group_id,user_id
-	//returns success or error
-	//request needs to come from same user
-	//---------------------------------------------------------------------
-
-	//initiated by user
-	//LeaveGroup
+func (s *UserService) LeaveGroup(ctx context.Context, req GeneralGroupReq) error {
+	err := s.db.LeaveGroup(ctx, sqlc.LeaveGroupParams{
+		GroupID: req.GroupId,
+		UserID:  req.UserId,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func RemoveFromGroup() {
-	//called with group_id,user_id (who is removed), owner_id(making the request)
-	//returns success or error
-	//request needs to come from group owner
-	//---------------------------------------------------------------------
+func (s *UserService) RemoveFromGroup(ctx context.Context, req RemoveFromGroupRequest) error {
+	//check owner has indeed the owner role
+	isOwner, err := s.isGroupOwner(ctx, GeneralGroupReq{
+		GroupId: req.GroupId,
+		UserId:  req.OwnerId,
+	})
+	if err != nil {
+		return err
+	}
+	if !isOwner {
+		return ErrNotAuthorized
+	}
 
-	//initiated by owner
-	//LeaveGroup
+	err = s.LeaveGroup(ctx, GeneralGroupReq{
+		GroupId: req.GroupId,
+		UserId:  req.MemberId,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func CreateGroup() {
-	//called with owner_id, group_title, group_description
-	//returns group_id
-	//---------------------------------------------------------------------
+func (s *UserService) CreateGroup(ctx context.Context, req CreateGroupRequest) (GroupId, error) {
+	groupId, err := s.db.CreateGroup(ctx, sqlc.CreateGroupParams{
+		GroupOwner:       req.OwnerId,
+		GroupTitle:       req.GroupTitle,
+		GroupDescription: req.GroupDescription,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return GroupId(groupId), nil
+}
 
-	//CreateGroup
-	//AddGroupOwnerAsMember
+func (s *UserService) isGroupOwner(ctx context.Context, req GeneralGroupReq) (bool, error) {
+	isOwner, err := s.db.IsUserGroupOwner(ctx, sqlc.IsUserGroupOwnerParams{
+		ID:         req.GroupId,
+		GroupOwner: req.UserId,
+	})
+	if err != nil {
+		return false, err
+	}
+	if !isOwner {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (s *UserService) isGroupMember(ctx context.Context, req GeneralGroupReq) (bool, error) {
+	isMember, err := s.db.IsUserGroupMember(ctx, sqlc.IsUserGroupMemberParams{
+		GroupID: req.GroupId,
+		UserID:  req.UserId,
+	})
+	if err != nil {
+		return false, err
+	}
+	if !isMember {
+		return false, nil
+	}
+	return true, nil
 }
 
 // ---------------------------------------------------------------------

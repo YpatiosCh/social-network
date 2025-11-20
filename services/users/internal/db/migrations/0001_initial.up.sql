@@ -378,3 +378,72 @@ FOR EACH ROW
 WHEN (OLD.profile_public = FALSE AND NEW.profile_public = TRUE)
 EXECUTE FUNCTION accept_pending_requests_on_public();
 
+
+
+-----------------------------------------
+-- Trigger to add user as group member when join request accepted
+-----------------------------------------
+CREATE OR REPLACE FUNCTION add_group_member_on_join_accept()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only act when a join request is accepted
+    IF NEW.status = 'accepted' AND OLD.status IS DISTINCT FROM 'accepted' THEN
+        INSERT INTO group_members (group_id, user_id, role, joined_at)
+        VALUES (NEW.group_id, NEW.user_id, 'member', CURRENT_TIMESTAMP)
+        ON CONFLICT DO NOTHING;  -- Already a member? No problem.
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_add_group_member_on_join_accept
+AFTER UPDATE ON group_join_requests
+FOR EACH ROW
+WHEN (NEW.status = 'accepted' AND OLD.status IS DISTINCT FROM 'accepted')
+EXECUTE FUNCTION add_group_member_on_join_accept();
+
+
+
+-----------------------------------------
+-- Trigger to add user as group member when group invite accepted
+-----------------------------------------
+CREATE OR REPLACE FUNCTION add_group_member_on_invite_accept()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only act when an invite is accepted
+    IF NEW.status = 'accepted' AND OLD.status IS DISTINCT FROM 'accepted' THEN
+        INSERT INTO group_members (group_id, user_id, role, joined_at)
+        VALUES (NEW.group_id, NEW.receiver_id, 'member', CURRENT_TIMESTAMP)
+        ON CONFLICT DO NOTHING;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_add_group_member_on_invite_accept
+AFTER UPDATE ON group_invites
+FOR EACH ROW
+WHEN (NEW.status = 'accepted' AND OLD.status IS DISTINCT FROM 'accepted')
+EXECUTE FUNCTION add_group_member_on_invite_accept();
+
+
+-----------------------------------------
+-- Trigger to add group owner as member on group creation
+-----------------------------------------
+CREATE OR REPLACE FUNCTION add_group_owner_as_member()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO group_members (group_id, user_id, role, joined_at)
+    VALUES (NEW.id, NEW.group_owner, 'owner', CURRENT_TIMESTAMP)
+    ON CONFLICT DO NOTHING;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_add_group_owner_as_member
+AFTER INSERT ON groups
+FOR EACH ROW
+EXECUTE FUNCTION add_group_owner_as_member();

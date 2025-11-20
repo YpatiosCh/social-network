@@ -141,21 +141,21 @@ type HandleJoinRequest struct {
 	Accepted    bool
 }
 
-type LeaveGroupRequest struct {
+type GeneralGroupReq struct {
+	GroupId int64
+	UserId  int64
+}
+
+type RemoveFromGroupRequest struct {
 	GroupId  int64
 	MemberId int64
-	OwnerId  int64 //nil if initiated by member
+	OwnerId  int64
 }
 
 type CreateGroupRequest struct {
 	OwnerId          int64
 	GroupTitle       string
 	GroupDescription string
-}
-
-type GroupRoleReq struct {
-	GroupId int64
-	UserId  int64
 }
 
 // -------------------------------------------

@@ -25,34 +25,40 @@ func (s *UserService) GetBasicUserInfo(ctx context.Context, userId int64) (resp 
 
 func (s *UserService) GetUserProfile(ctx context.Context, req UserProfileRequest) (UserProfileResponse, error) {
 	var profile UserProfileResponse
-	err := s.runTx(ctx, func(q *sqlc.Queries) error { //TODO consider not using a transaction here?
-		// TODO helper: check if user has permission to see (public profile or isFollower)
-		row, err := q.GetUserProfile(ctx, req.UserId)
-		if err != nil {
-			return err
-		}
 
-		dob := time.Time{}
-		if row.DateOfBirth.Valid {
-			dob = row.DateOfBirth.Time
-		}
-
-		profile = UserProfileResponse{
-			UserId:      row.ID,
-			Username:    row.Username,
-			FirstName:   row.FirstName,
-			LastName:    row.LastName,
-			DateOfBirth: dob,
-			Avatar:      row.Avatar,
-			About:       row.AboutMe,
-			Public:      row.ProfilePublic,
-		}
-
-		return nil
-	})
-
+	row, err := s.db.GetUserProfile(ctx, req.UserId)
 	if err != nil {
 		return UserProfileResponse{}, err
+	}
+
+	dob := time.Time{}
+	if row.DateOfBirth.Valid {
+		dob = row.DateOfBirth.Time
+	}
+
+	profile = UserProfileResponse{
+		UserId:      row.ID,
+		Username:    row.Username,
+		FirstName:   row.FirstName,
+		LastName:    row.LastName,
+		DateOfBirth: dob,
+		Avatar:      row.Avatar,
+		About:       row.AboutMe,
+		Public:      row.ProfilePublic,
+	}
+
+	if !profile.Public {
+		//check user is a follower
+		isFollower, err := s.IsFollowing(ctx, FollowUserReq{
+			FollowerId:   req.RequesterId,
+			TargetUserId: req.UserId,
+		})
+		if err != nil {
+			return UserProfileResponse{}, err
+		}
+		if !isFollower {
+			return UserProfileResponse{}, ErrProfilePrivate
+		}
 	}
 
 	profile.FollowersCount, err = s.db.GetFollowerCount(ctx, profile.UserId)

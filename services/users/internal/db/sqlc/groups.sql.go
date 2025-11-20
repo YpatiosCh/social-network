@@ -345,6 +345,47 @@ func (q *Queries) GetUserGroups(ctx context.Context, groupOwner int64) ([]GetUse
 	return items, nil
 }
 
+const isUserGroupMember = `-- name: IsUserGroupMember :one
+SELECT EXISTS (
+    SELECT 1
+    FROM group_members
+    WHERE group_id = $1
+      AND user_id = $2
+      AND deleted_at IS NULL
+) AS is_member
+`
+
+type IsUserGroupMemberParams struct {
+	GroupID int64
+	UserID  int64
+}
+
+func (q *Queries) IsUserGroupMember(ctx context.Context, arg IsUserGroupMemberParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isUserGroupMember, arg.GroupID, arg.UserID)
+	var is_member bool
+	err := row.Scan(&is_member)
+	return is_member, err
+}
+
+const isUserGroupOwner = `-- name: IsUserGroupOwner :one
+SELECT (group_owner = $2) AS is_owner
+FROM groups
+WHERE id = $1
+  AND deleted_at IS NULL
+`
+
+type IsUserGroupOwnerParams struct {
+	ID         int64
+	GroupOwner int64
+}
+
+func (q *Queries) IsUserGroupOwner(ctx context.Context, arg IsUserGroupOwnerParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isUserGroupOwner, arg.ID, arg.GroupOwner)
+	var is_owner bool
+	err := row.Scan(&is_owner)
+	return is_owner, err
+}
+
 const leaveGroup = `-- name: LeaveGroup :exec
 UPDATE group_members
 SET deleted_at = CURRENT_TIMESTAMP

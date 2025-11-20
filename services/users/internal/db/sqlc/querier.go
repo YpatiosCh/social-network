@@ -39,6 +39,8 @@ type Querier interface {
 	InsertNewUserAuth(ctx context.Context, arg InsertNewUserAuthParams) error
 	IsFollowing(ctx context.Context, arg IsFollowingParams) (bool, error)
 	IsFollowingEither(ctx context.Context, arg IsFollowingEitherParams) (bool, error)
+	IsUserGroupMember(ctx context.Context, arg IsUserGroupMemberParams) (bool, error)
+	IsUserGroupOwner(ctx context.Context, arg IsUserGroupOwnerParams) (bool, error)
 	LeaveGroup(ctx context.Context, arg LeaveGroupParams) error
 	RejectFollowRequest(ctx context.Context, arg RejectFollowRequestParams) error
 	RejectGroupJoinRequest(ctx context.Context, arg RejectGroupJoinRequestParams) error

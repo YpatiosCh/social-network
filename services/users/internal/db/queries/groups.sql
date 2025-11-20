@@ -164,3 +164,18 @@ FROM group_members
 WHERE group_id = $1
   AND user_id = $2
   AND deleted_at IS NULL;
+
+-- name: IsUserGroupMember :one
+SELECT EXISTS (
+    SELECT 1
+    FROM group_members
+    WHERE group_id = $1
+      AND user_id = $2
+      AND deleted_at IS NULL
+) AS is_member;
+
+-- name: IsUserGroupOwner :one
+SELECT (group_owner = $2) AS is_owner
+FROM groups
+WHERE id = $1
+  AND deleted_at IS NULL;
