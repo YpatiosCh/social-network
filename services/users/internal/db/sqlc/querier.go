@@ -6,8 +6,6 @@ package sqlc
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -23,20 +21,20 @@ type Querier interface {
 	DeclineGroupInvite(ctx context.Context, arg DeclineGroupInviteParams) error
 	FollowUser(ctx context.Context, arg FollowUserParams) (string, error)
 	GetAllGroups(ctx context.Context) ([]GetAllGroupsRow, error)
-	GetFollowerCount(ctx context.Context, pub pgtype.UUID) (int64, error)
+	GetFollowerCount(ctx context.Context, followingID int64) (int64, error)
 	GetFollowers(ctx context.Context, arg GetFollowersParams) ([]GetFollowersRow, error)
 	GetFollowing(ctx context.Context, arg GetFollowingParams) ([]GetFollowingRow, error)
-	GetFollowingCount(ctx context.Context, pub pgtype.UUID) (int64, error)
+	GetFollowingCount(ctx context.Context, followerID int64) (int64, error)
 	GetGroupInfo(ctx context.Context, id int64) (GetGroupInfoRow, error)
 	GetGroupMembers(ctx context.Context, groupID int64) ([]GetGroupMembersRow, error)
 	GetMutualFollowers(ctx context.Context, arg GetMutualFollowersParams) ([]GetMutualFollowersRow, error)
-	GetUserBasic(ctx context.Context, pub pgtype.UUID) (GetUserBasicRow, error)
+	GetUserBasic(ctx context.Context, id int64) (GetUserBasicRow, error)
 	GetUserForLogin(ctx context.Context, username string) (GetUserForLoginRow, error)
 	GetUserGroupRole(ctx context.Context, arg GetUserGroupRoleParams) (NullGroupRole, error)
-	GetUserGroups(ctx context.Context, pub pgtype.UUID) ([]GetUserGroupsRow, error)
-	GetUserPassword(ctx context.Context, pub pgtype.UUID) (string, error)
-	GetUserProfile(ctx context.Context, pub pgtype.UUID) (GetUserProfileRow, error)
-	InsertNewUser(ctx context.Context, arg InsertNewUserParams) (InsertNewUserRow, error)
+	GetUserGroups(ctx context.Context, groupOwner int64) ([]GetUserGroupsRow, error)
+	GetUserPassword(ctx context.Context, userID int64) (string, error)
+	GetUserProfile(ctx context.Context, id int64) (GetUserProfileRow, error)
+	InsertNewUser(ctx context.Context, arg InsertNewUserParams) (int64, error)
 	InsertNewUserAuth(ctx context.Context, arg InsertNewUserAuthParams) error
 	IsFollowing(ctx context.Context, arg IsFollowingParams) (bool, error)
 	IsFollowingEither(ctx context.Context, arg IsFollowingEitherParams) (bool, error)
@@ -50,10 +48,10 @@ type Querier interface {
 	SendGroupInvite(ctx context.Context, arg SendGroupInviteParams) error
 	SendGroupJoinRequest(ctx context.Context, arg SendGroupJoinRequestParams) error
 	SoftDeleteGroup(ctx context.Context, id int64) error
-	SoftDeleteUser(ctx context.Context, pub pgtype.UUID) error
+	SoftDeleteUser(ctx context.Context, id int64) error
 	// owners cannot leave the group (transfer ownership logic? TODO)
 	TransferOwnership(ctx context.Context, arg TransferOwnershipParams) error
-	UnbanUser(ctx context.Context, pub pgtype.UUID) error
+	UnbanUser(ctx context.Context, id int64) error
 	//1: follower_id
 	//2: following_id
 	// returns followed or requested depending on target's privacy settings
@@ -62,7 +60,7 @@ type Querier interface {
 	UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error)
-	UserGroupCountsPerRole(ctx context.Context, pub pgtype.UUID) (UserGroupCountsPerRoleRow, error)
+	UserGroupCountsPerRole(ctx context.Context, groupOwner int64) (UserGroupCountsPerRoleRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -15,27 +15,21 @@ func TestGetFollowersPaginated_Success(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440000"
-	userUUID, _ := stringToUUID(userID)
-
-	uuid1, _ := stringToUUID("550e8400-e29b-41d4-a716-446655440001")
-	uuid2, _ := stringToUUID("550e8400-e29b-41d4-a716-446655440002")
-
 	req := GetFollowersReq{
-		FollowingID: userID,
+		FollowingID: 1,
 		Limit:       10,
 		Offset:      0,
 	}
 
 	expectedRows := []sqlc.GetFollowersRow{
 		{
-			PublicID:      uuid1,
+			ID:            2,
 			Username:      "follower1",
 			Avatar:        "avatar1.jpg",
 			ProfilePublic: true,
 		},
 		{
-			PublicID:      uuid2,
+			ID:            3,
 			Username:      "follower2",
 			Avatar:        "avatar2.jpg",
 			ProfilePublic: true,
@@ -43,9 +37,9 @@ func TestGetFollowersPaginated_Success(t *testing.T) {
 	}
 
 	mockDB.On("GetFollowers", ctx, sqlc.GetFollowersParams{
-		Pub:    userUUID,
-		Limit:  10,
-		Offset: 0,
+		FollowingID: 1,
+		Limit:       10,
+		Offset:      0,
 	}).Return(expectedRows, nil)
 
 	users, err := service.GetFollowersPaginated(ctx, req)
@@ -62,19 +56,16 @@ func TestGetFollowersPaginated_Empty(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440999"
-	userUUID, _ := stringToUUID(userID)
-
 	req := GetFollowersReq{
-		FollowingID: userID,
+		FollowingID: 999,
 		Limit:       10,
 		Offset:      0,
 	}
 
 	mockDB.On("GetFollowers", ctx, sqlc.GetFollowersParams{
-		Pub:    userUUID,
-		Limit:  10,
-		Offset: 0,
+		FollowingID: 999,
+		Limit:       10,
+		Offset:      0,
 	}).Return([]sqlc.GetFollowersRow{}, nil)
 
 	users, err := service.GetFollowersPaginated(ctx, req)
@@ -89,27 +80,21 @@ func TestGetFollowingPaginated_Success(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440000"
-	userUUID, _ := stringToUUID(userID)
-
-	uuid1, _ := stringToUUID("550e8400-e29b-41d4-a716-446655440001")
-	uuid2, _ := stringToUUID("550e8400-e29b-41d4-a716-446655440002")
-
 	req := GetFollowingReq{
-		FollowerID: userID,
+		FollowerID: 1,
 		Limit:      10,
 		Offset:     0,
 	}
 
 	expectedRows := []sqlc.GetFollowingRow{
 		{
-			PublicID:      uuid1,
+			ID:            2,
 			Username:      "following1",
 			Avatar:        "avatar1.jpg",
 			ProfilePublic: true,
 		},
 		{
-			PublicID:      uuid2,
+			ID:            3,
 			Username:      "following2",
 			Avatar:        "avatar2.jpg",
 			ProfilePublic: false,
@@ -117,9 +102,9 @@ func TestGetFollowingPaginated_Success(t *testing.T) {
 	}
 
 	mockDB.On("GetFollowing", ctx, sqlc.GetFollowingParams{
-		Pub:    userUUID,
-		Limit:  10,
-		Offset: 0,
+		FollowerID: 1,
+		Limit:      10,
+		Offset:     0,
 	}).Return(expectedRows, nil)
 
 	users, err := service.GetFollowingPaginated(ctx, req)
@@ -136,19 +121,16 @@ func TestGetFollowingPaginated_Empty(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440999"
-	userUUID, _ := stringToUUID(userID)
-
 	req := GetFollowingReq{
-		FollowerID: userID,
+		FollowerID: 999,
 		Limit:      10,
 		Offset:     0,
 	}
 
 	mockDB.On("GetFollowing", ctx, sqlc.GetFollowingParams{
-		Pub:    userUUID,
-		Limit:  10,
-		Offset: 0,
+		FollowerID: 999,
+		Limit:      10,
+		Offset:     0,
 	}).Return([]sqlc.GetFollowingRow{}, nil)
 
 	users, err := service.GetFollowingPaginated(ctx, req)
@@ -163,19 +145,14 @@ func TestFollowUser_Immediate(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	followerID := "550e8400-e29b-41d4-a716-446655440001"
-	targetID := "550e8400-e29b-41d4-a716-446655440002"
-	followerUUID, _ := stringToUUID(followerID)
-	targetUUID, _ := stringToUUID(targetID)
-
 	req := FollowUserReq{
-		FollowerId:   followerID,
-		TargetUserId: targetID,
+		FollowerId:   1,
+		TargetUserId: 2,
 	}
 
 	mockDB.On("FollowUser", ctx, sqlc.FollowUserParams{
-		Pub:   followerUUID,
-		Pub_2: targetUUID,
+		PFollower: 1,
+		PTarget:   2,
 	}).Return("accepted", nil)
 
 	pending, err := service.FollowUser(ctx, req)
@@ -190,19 +167,14 @@ func TestFollowUser_Pending(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	followerID := "550e8400-e29b-41d4-a716-446655440001"
-	targetID := "550e8400-e29b-41d4-a716-446655440002"
-	followerUUID, _ := stringToUUID(followerID)
-	targetUUID, _ := stringToUUID(targetID)
-
 	req := FollowUserReq{
-		FollowerId:   followerID,
-		TargetUserId: targetID,
+		FollowerId:   1,
+		TargetUserId: 2,
 	}
 
 	mockDB.On("FollowUser", ctx, sqlc.FollowUserParams{
-		Pub:   followerUUID,
-		Pub_2: targetUUID,
+		PFollower: 1,
+		PTarget:   2,
 	}).Return("requested", nil)
 
 	pending, err := service.FollowUser(ctx, req)
@@ -217,19 +189,14 @@ func TestFollowUser_Error(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	followerID := "550e8400-e29b-41d4-a716-446655440001"
-	targetID := "550e8400-e29b-41d4-a716-446655440002"
-	followerUUID, _ := stringToUUID(followerID)
-	targetUUID, _ := stringToUUID(targetID)
-
 	req := FollowUserReq{
-		FollowerId:   followerID,
-		TargetUserId: targetID,
+		FollowerId:   1,
+		TargetUserId: 2,
 	}
 
 	mockDB.On("FollowUser", ctx, sqlc.FollowUserParams{
-		Pub:   followerUUID,
-		Pub_2: targetUUID,
+		PFollower: 1,
+		PTarget:   2,
 	}).Return("", errors.New("database error"))
 
 	_, err := service.FollowUser(ctx, req)
@@ -243,19 +210,14 @@ func TestUnFollowUser_Success(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	followerID := "550e8400-e29b-41d4-a716-446655440001"
-	targetID := "550e8400-e29b-41d4-a716-446655440002"
-	followerUUID, _ := stringToUUID(followerID)
-	targetUUID, _ := stringToUUID(targetID)
-
 	req := FollowUserReq{
-		FollowerId:   followerID,
-		TargetUserId: targetID,
+		FollowerId:   1,
+		TargetUserId: 2,
 	}
 
 	mockDB.On("UnfollowUser", ctx, sqlc.UnfollowUserParams{
-		Pub:   followerUUID,
-		Pub_2: targetUUID,
+		FollowerID:  1,
+		FollowingID: 2,
 	}).Return(nil)
 
 	err := service.UnFollowUser(ctx, req)
@@ -269,19 +231,14 @@ func TestUnFollowUser_Error(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	followerID := "550e8400-e29b-41d4-a716-446655440001"
-	targetID := "550e8400-e29b-41d4-a716-446655440999"
-	followerUUID, _ := stringToUUID(followerID)
-	targetUUID, _ := stringToUUID(targetID)
-
 	req := FollowUserReq{
-		FollowerId:   followerID,
-		TargetUserId: targetID,
+		FollowerId:   1,
+		TargetUserId: 999,
 	}
 
 	mockDB.On("UnfollowUser", ctx, sqlc.UnfollowUserParams{
-		Pub:   followerUUID,
-		Pub_2: targetUUID,
+		FollowerID:  1,
+		FollowingID: 999,
 	}).Return(errors.New("not following"))
 
 	err := service.UnFollowUser(ctx, req)
@@ -295,20 +252,15 @@ func TestHandleFollowRequest_Accept(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440001"
-	requesterID := "550e8400-e29b-41d4-a716-446655440002"
-	userUUID, _ := stringToUUID(userID)
-	requesterUUID, _ := stringToUUID(requesterID)
-
 	req := HandleFollowRequestReq{
-		UserId:      userID,
-		RequesterId: requesterID,
+		UserId:      1,
+		RequesterId: 2,
 		Accept:      true,
 	}
 
 	mockDB.On("AcceptFollowRequest", ctx, sqlc.AcceptFollowRequestParams{
-		Pub:   requesterUUID,
-		Pub_2: userUUID,
+		RequesterID: 2,
+		TargetID:    1,
 	}).Return(nil)
 
 	err := service.HandleFollowRequest(ctx, req)
@@ -322,20 +274,15 @@ func TestHandleFollowRequest_Reject(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440001"
-	requesterID := "550e8400-e29b-41d4-a716-446655440002"
-	userUUID, _ := stringToUUID(userID)
-	requesterUUID, _ := stringToUUID(requesterID)
-
 	req := HandleFollowRequestReq{
-		UserId:      userID,
-		RequesterId: requesterID,
+		UserId:      1,
+		RequesterId: 2,
 		Accept:      false,
 	}
 
 	mockDB.On("RejectFollowRequest", ctx, sqlc.RejectFollowRequestParams{
-		Pub:   requesterUUID,
-		Pub_2: userUUID,
+		RequesterID: 2,
+		TargetID:    1,
 	}).Return(nil)
 
 	err := service.HandleFollowRequest(ctx, req)
@@ -349,20 +296,15 @@ func TestHandleFollowRequest_AcceptError(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440001"
-	requesterID := "550e8400-e29b-41d4-a716-446655440002"
-	userUUID, _ := stringToUUID(userID)
-	requesterUUID, _ := stringToUUID(requesterID)
-
 	req := HandleFollowRequestReq{
-		UserId:      userID,
-		RequesterId: requesterID,
+		UserId:      1,
+		RequesterId: 2,
 		Accept:      true,
 	}
 
 	mockDB.On("AcceptFollowRequest", ctx, sqlc.AcceptFollowRequestParams{
-		Pub:   requesterUUID,
-		Pub_2: userUUID,
+		RequesterID: 2,
+		TargetID:    1,
 	}).Return(errors.New("request not found"))
 
 	err := service.HandleFollowRequest(ctx, req)

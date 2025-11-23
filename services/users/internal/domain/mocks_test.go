@@ -5,7 +5,6 @@ import (
 
 	"social-network/services/users/internal/db/sqlc"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -15,9 +14,9 @@ type MockQuerier struct {
 }
 
 // Auth-related methods
-func (m *MockQuerier) InsertNewUser(ctx context.Context, arg sqlc.InsertNewUserParams) (sqlc.InsertNewUserRow, error) {
+func (m *MockQuerier) InsertNewUser(ctx context.Context, arg sqlc.InsertNewUserParams) (int64, error) {
 	args := m.Called(ctx, arg)
-	return args.Get(0).(sqlc.InsertNewUserRow), args.Error(1)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 func (m *MockQuerier) InsertNewUserAuth(ctx context.Context, arg sqlc.InsertNewUserAuthParams) error {
@@ -43,7 +42,7 @@ func (m *MockQuerier) ResetFailedLoginAttempts(ctx context.Context, userID int64
 	return args.Error(0)
 }
 
-func (m *MockQuerier) GetUserPassword(ctx context.Context, userID pgtype.UUID) (string, error) {
+func (m *MockQuerier) GetUserPassword(ctx context.Context, userID int64) (string, error) {
 	args := m.Called(ctx, userID)
 	return args.String(0), args.Error(1)
 }
@@ -59,34 +58,34 @@ func (m *MockQuerier) UpdateUserEmail(ctx context.Context, arg sqlc.UpdateUserEm
 }
 
 // Profile-related methods
-func (m *MockQuerier) GetUserBasic(ctx context.Context, pub pgtype.UUID) (sqlc.GetUserBasicRow, error) {
-	args := m.Called(ctx, pub)
+func (m *MockQuerier) GetUserBasic(ctx context.Context, id int64) (sqlc.GetUserBasicRow, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return sqlc.GetUserBasicRow{}, args.Error(1)
 	}
 	return args.Get(0).(sqlc.GetUserBasicRow), args.Error(1)
 }
 
-func (m *MockQuerier) GetUserProfile(ctx context.Context, pub pgtype.UUID) (sqlc.GetUserProfileRow, error) {
-	args := m.Called(ctx, pub)
+func (m *MockQuerier) GetUserProfile(ctx context.Context, id int64) (sqlc.GetUserProfileRow, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return sqlc.GetUserProfileRow{}, args.Error(1)
 	}
 	return args.Get(0).(sqlc.GetUserProfileRow), args.Error(1)
 }
 
-func (m *MockQuerier) GetFollowerCount(ctx context.Context, pub pgtype.UUID) (int64, error) {
-	args := m.Called(ctx, pub)
+func (m *MockQuerier) GetFollowerCount(ctx context.Context, id int64) (int64, error) {
+	args := m.Called(ctx, id)
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockQuerier) GetFollowingCount(ctx context.Context, pub pgtype.UUID) (int64, error) {
-	args := m.Called(ctx, pub)
+func (m *MockQuerier) GetFollowingCount(ctx context.Context, id int64) (int64, error) {
+	args := m.Called(ctx, id)
 	return args.Get(0).(int64), args.Error(1)
 }
 
-func (m *MockQuerier) GetUserGroups(ctx context.Context, pub pgtype.UUID) ([]sqlc.GetUserGroupsRow, error) {
-	args := m.Called(ctx, pub)
+func (m *MockQuerier) GetUserGroups(ctx context.Context, id int64) ([]sqlc.GetUserGroupsRow, error) {
+	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -283,8 +282,8 @@ func (m *MockQuerier) SoftDeleteGroup(ctx context.Context, id int64) error {
 	return args.Error(0)
 }
 
-func (m *MockQuerier) SoftDeleteUser(ctx context.Context, pub pgtype.UUID) error {
-	args := m.Called(ctx, pub)
+func (m *MockQuerier) SoftDeleteUser(ctx context.Context, id int64) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
@@ -293,8 +292,8 @@ func (m *MockQuerier) TransferOwnership(ctx context.Context, arg sqlc.TransferOw
 	return args.Error(0)
 }
 
-func (m *MockQuerier) UnbanUser(ctx context.Context, pub pgtype.UUID) error {
-	args := m.Called(ctx, pub)
+func (m *MockQuerier) UnbanUser(ctx context.Context, id int64) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
@@ -306,7 +305,11 @@ func (m *MockQuerier) GetUserGroupRole(ctx context.Context, arg sqlc.GetUserGrou
 	return args.Get(0).(sqlc.NullGroupRole), args.Error(1)
 }
 
-func (m *MockQuerier) UserGroupCountsPerRole(ctx context.Context, pub pgtype.UUID) (sqlc.UserGroupCountsPerRoleRow, error) {
-	args := m.Called(ctx, pub)
+// Newer sqlc Querier includes UserGroupCountsPerRole — add to mock
+func (m *MockQuerier) UserGroupCountsPerRole(ctx context.Context, groupOwner int64) (sqlc.UserGroupCountsPerRoleRow, error) {
+	args := m.Called(ctx, groupOwner)
+	if args.Get(0) == nil {
+		return sqlc.UserGroupCountsPerRoleRow{}, args.Error(1)
+	}
 	return args.Get(0).(sqlc.UserGroupCountsPerRoleRow), args.Error(1)
 }

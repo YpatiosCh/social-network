@@ -340,7 +340,6 @@ type GroupMember struct {
 
 type User struct {
 	ID            int64
-	PublicID      pgtype.UUID
 	Username      string
 	FirstName     string
 	LastName      string

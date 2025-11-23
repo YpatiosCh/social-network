@@ -6,16 +6,12 @@ import (
 )
 
 func (s *UserService) GetFollowersPaginated(ctx context.Context, req GetFollowersReq) ([]User, error) {
-	userId, err := stringToUUID(req.FollowingID)
-	if err != nil {
-		return nil, err
-	}
 
 	//paginated, sorted by newest first
 	rows, err := s.db.GetFollowers(ctx, sqlc.GetFollowersParams{
-		Pub:    userId,
-		Limit:  req.Limit,
-		Offset: req.Offset,
+		FollowingID: req.FollowingID,
+		Limit:       req.Limit,
+		Offset:      req.Offset,
 	})
 	if err != nil {
 		return []User{}, err
@@ -23,7 +19,7 @@ func (s *UserService) GetFollowersPaginated(ctx context.Context, req GetFollower
 	users := make([]User, 0, len(rows))
 	for _, r := range rows {
 		users = append(users, User{
-			UserId:   r.PublicID.String(),
+			UserId:   r.ID,
 			Username: r.Username,
 			Avatar:   r.Avatar,
 		})
@@ -34,16 +30,12 @@ func (s *UserService) GetFollowersPaginated(ctx context.Context, req GetFollower
 }
 
 func (s *UserService) GetFollowingPaginated(ctx context.Context, req GetFollowingReq) ([]User, error) {
-	userId, err := stringToUUID(req.FollowerID)
-	if err != nil {
-		return nil, err
-	}
 
 	//paginated, sorted by newest first
 	rows, err := s.db.GetFollowing(ctx, sqlc.GetFollowingParams{
-		Pub:    userId,
-		Limit:  req.Limit,
-		Offset: req.Offset,
+		FollowerID: req.FollowerID,
+		Limit:      req.Limit,
+		Offset:     req.Offset,
 	})
 	if err != nil {
 		return []User{}, err
@@ -51,7 +43,7 @@ func (s *UserService) GetFollowingPaginated(ctx context.Context, req GetFollowin
 	users := make([]User, 0, len(rows))
 	for _, r := range rows {
 		users = append(users, User{
-			UserId:   r.PublicID.String(),
+			UserId:   r.ID,
 			Username: r.Username,
 			Avatar:   r.Avatar,
 		})
@@ -62,18 +54,9 @@ func (s *UserService) GetFollowingPaginated(ctx context.Context, req GetFollowin
 }
 
 func (s *UserService) FollowUser(ctx context.Context, req FollowUserReq) (pending bool, err error) {
-	followerId, err := stringToUUID(req.FollowerId)
-	if err != nil {
-		return false, err
-	}
-	followingId, err := stringToUUID(req.TargetUserId)
-	if err != nil {
-		return false, err
-	}
-
 	status, err := s.db.FollowUser(ctx, sqlc.FollowUserParams{
-		Pub:   followerId,
-		Pub_2: followingId,
+		PFollower: req.FollowerId,
+		PTarget:   req.TargetUserId,
 	})
 	if err != nil {
 		return false, err
@@ -87,18 +70,9 @@ func (s *UserService) FollowUser(ctx context.Context, req FollowUserReq) (pendin
 }
 
 func (s *UserService) UnFollowUser(ctx context.Context, req FollowUserReq) error {
-	followerId, err := stringToUUID(req.FollowerId)
-	if err != nil {
-		return err
-	}
-	followingId, err := stringToUUID(req.TargetUserId)
-	if err != nil {
-		return err
-	}
-
-	err = s.db.UnfollowUser(ctx, sqlc.UnfollowUserParams{
-		Pub:   followerId,
-		Pub_2: followingId,
+	err := s.db.UnfollowUser(ctx, sqlc.UnfollowUserParams{
+		FollowerID:  req.FollowerId,
+		FollowingID: req.TargetUserId,
 	})
 	if err != nil {
 		return err
@@ -107,25 +81,17 @@ func (s *UserService) UnFollowUser(ctx context.Context, req FollowUserReq) error
 }
 
 func (s *UserService) HandleFollowRequest(ctx context.Context, req HandleFollowRequestReq) error {
-	requesterId, err := stringToUUID(req.RequesterId)
-	if err != nil {
-		return err
-	}
-	targetId, err := stringToUUID(req.UserId)
-	if err != nil {
-		return err
-	}
-
+	var err error
 	if req.Accept {
 		err = s.db.AcceptFollowRequest(ctx, sqlc.AcceptFollowRequestParams{
-			Pub:   requesterId,
-			Pub_2: targetId,
+			RequesterID: req.RequesterId,
+			TargetID:    req.UserId,
 		})
 
 	} else {
 		err = s.db.RejectFollowRequest(ctx, sqlc.RejectFollowRequestParams{
-			Pub:   requesterId,
-			Pub_2: targetId,
+			RequesterID: req.RequesterId,
+			TargetID:    req.UserId,
 		})
 
 	}
@@ -136,18 +102,9 @@ func (s *UserService) HandleFollowRequest(ctx context.Context, req HandleFollowR
 }
 
 func (s *UserService) IsFollowing(ctx context.Context, req FollowUserReq) (bool, error) {
-	followerId, err := stringToUUID(req.FollowerId)
-	if err != nil {
-		return false, err
-	}
-	followingId, err := stringToUUID(req.TargetUserId)
-	if err != nil {
-		return false, err
-	}
-
 	isfollowing, err := s.db.IsFollowing(ctx, sqlc.IsFollowingParams{
-		Pub:   followerId,
-		Pub_2: followingId,
+		FollowerID:  req.FollowerId,
+		FollowingID: req.TargetUserId,
 	})
 	if err != nil {
 		return false, err
@@ -156,17 +113,10 @@ func (s *UserService) IsFollowing(ctx context.Context, req FollowUserReq) (bool,
 }
 
 func (s *UserService) IsFollowingEither(ctx context.Context, req FollowUserReq) (bool, error) {
-	followerId, err := stringToUUID(req.FollowerId)
-	if err != nil {
-		return false, err
-	}
-	followingId, err := stringToUUID(req.TargetUserId)
-	if err != nil {
-		return false, err
-	}
+
 	atLeastOneIsFollowing, err := s.db.IsFollowingEither(ctx, sqlc.IsFollowingEitherParams{
-		Pub:   followerId,
-		Pub_2: followingId,
+		FollowerID:  req.FollowerId,
+		FollowingID: req.TargetUserId,
 	})
 	if err != nil {
 		return false, err

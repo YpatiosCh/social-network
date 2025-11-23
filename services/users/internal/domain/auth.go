@@ -30,7 +30,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 		return User{}, err
 	}
 
-	var newPublicId string
+	var newId int64
 
 	err = s.runTx(ctx, func(q *sqlc.Queries) error {
 
@@ -47,12 +47,11 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 		if err != nil {
 			return err //TODO check how to return correct error
 		}
-		newInternalId := userId.ID
-		newPublicId = userId.PublicID.String()
+		newId = userId
 
 		// Insert auth
 		return q.InsertNewUserAuth(ctx, sqlc.InsertNewUserAuthParams{
-			UserID:       newInternalId,
+			UserID:       newId,
 			Email:        req.Email,
 			PasswordHash: passwordHash,
 		})
@@ -63,7 +62,7 @@ func (s *UserService) RegisterUser(ctx context.Context, req RegisterUserRequest)
 	}
 
 	return User{
-		UserId:   newPublicId,
+		UserId:   newId,
 		Username: req.Username,
 		Avatar:   req.Avatar,
 	}, nil
@@ -80,7 +79,7 @@ func (s *UserService) LoginUser(ctx context.Context, req LoginRequest) (User, er
 		}
 
 		u = User{
-			UserId:   row.PublicID.String(),
+			UserId:   row.ID,
 			Username: row.Username,
 			Avatar:   row.Avatar,
 		}
@@ -100,12 +99,8 @@ func (s *UserService) LoginUser(ctx context.Context, req LoginRequest) (User, er
 
 func (s *UserService) UpdateUserPassword(ctx context.Context, req UpdatePasswordRequest) error {
 	//TODO think whether transaction is needed here
-	userId, err := stringToUUID(req.UserId)
-	if err != nil {
-		return err
-	}
 
-	hashedPassword, err := s.db.GetUserPassword(ctx, userId)
+	hashedPassword, err := s.db.GetUserPassword(ctx, req.UserId)
 	if err != nil {
 		return err
 	}
@@ -120,7 +115,7 @@ func (s *UserService) UpdateUserPassword(ctx context.Context, req UpdatePassword
 	}
 
 	err = s.db.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{
-		Pub:          userId,
+		UserID:       req.UserId,
 		PasswordHash: newPasswordHash,
 	})
 	if err != nil {
@@ -131,13 +126,10 @@ func (s *UserService) UpdateUserPassword(ctx context.Context, req UpdatePassword
 }
 
 func (s *UserService) UpdateUserEmail(ctx context.Context, req UpdateEmailRequest) error {
-	userId, err := stringToUUID(req.UserId)
-	if err != nil {
-		return err
-	}
-	err = s.db.UpdateUserEmail(ctx, sqlc.UpdateUserEmailParams{
-		Pub:   userId,
-		Email: req.Email,
+
+	err := s.db.UpdateUserEmail(ctx, sqlc.UpdateUserEmailParams{
+		UserID: req.UserId,
+		Email:  req.Email,
 	})
 	if err != nil {
 		return err

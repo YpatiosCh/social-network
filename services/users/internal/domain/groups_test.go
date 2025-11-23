@@ -62,8 +62,7 @@ func TestGetUserGroupsPaginated_Success(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440000"
-	userUUID, _ := stringToUUID(userID)
+	userID := int64(1)
 
 	expectedRows := []sqlc.GetUserGroupsRow{
 		{
@@ -82,7 +81,7 @@ func TestGetUserGroupsPaginated_Success(t *testing.T) {
 		},
 	}
 
-	mockDB.On("GetUserGroups", ctx, userUUID).Return(expectedRows, nil)
+	mockDB.On("GetUserGroups", ctx, userID).Return(expectedRows, nil)
 
 	groups, err := service.GetUserGroupsPaginated(ctx, userID)
 
@@ -140,12 +139,9 @@ func TestGetGroupMembers_Success(t *testing.T) {
 	ctx := context.Background()
 	groupID := int64(1)
 
-	uuid1, _ := stringToUUID("550e8400-e29b-41d4-a716-446655440001")
-	uuid2, _ := stringToUUID("550e8400-e29b-41d4-a716-446655440002")
-
 	expectedRows := []sqlc.GetGroupMembersRow{
 		{
-			PublicID:      uuid1,
+			ID:            1,
 			Username:      "user1",
 			Avatar:        "avatar1.jpg",
 			ProfilePublic: true,
@@ -155,7 +151,7 @@ func TestGetGroupMembers_Success(t *testing.T) {
 			},
 		},
 		{
-			PublicID:      uuid2,
+			ID:            2,
 			Username:      "user2",
 			Avatar:        "avatar2.jpg",
 			ProfilePublic: true,
@@ -208,17 +204,14 @@ func TestCreateGroup_Success(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	ownerID := "550e8400-e29b-41d4-a716-446655440000"
-	ownerUUID, _ := stringToUUID(ownerID)
-
 	req := CreateGroupRequest{
-		OwnerId:          ownerID,
+		OwnerId:          1,
 		GroupTitle:       "New Group",
 		GroupDescription: "New Description",
 	}
 
 	mockDB.On("CreateGroup", ctx, sqlc.CreateGroupParams{
-		Pub:              ownerUUID,
+		GroupOwner:       1,
 		GroupTitle:       "New Group",
 		GroupDescription: "New Description",
 	}).Return(int64(5), nil)
@@ -226,7 +219,7 @@ func TestCreateGroup_Success(t *testing.T) {
 	groupID, err := service.CreateGroup(ctx, req)
 
 	assert.NoError(t, err)
-	assert.Equal(t, int64(5), int64(groupID))
+	assert.Equal(t, GroupId(5), groupID)
 	mockDB.AssertExpectations(t)
 }
 
@@ -235,17 +228,14 @@ func TestCreateGroup_Error(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	ownerID := "550e8400-e29b-41d4-a716-446655440000"
-	ownerUUID, _ := stringToUUID(ownerID)
-
 	req := CreateGroupRequest{
-		OwnerId:          ownerID,
+		OwnerId:          1,
 		GroupTitle:       "New Group",
 		GroupDescription: "New Description",
 	}
 
 	mockDB.On("CreateGroup", ctx, sqlc.CreateGroupParams{
-		Pub:              ownerUUID,
+		GroupOwner:       1,
 		GroupTitle:       "New Group",
 		GroupDescription: "New Description",
 	}).Return(int64(0), errors.New("database error"))
@@ -261,17 +251,14 @@ func TestLeaveGroup_Success(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	userID := "550e8400-e29b-41d4-a716-446655440000"
-	userUUID, _ := stringToUUID(userID)
-
 	req := GeneralGroupReq{
 		GroupId: 1,
-		UserId:  userID,
+		UserId:  2,
 	}
 
 	mockDB.On("LeaveGroup", ctx, sqlc.LeaveGroupParams{
 		GroupID: 1,
-		Pub:     userUUID,
+		UserID:  2,
 	}).Return(nil)
 
 	err := service.LeaveGroup(ctx, req)
@@ -285,18 +272,15 @@ func TestRequestJoinGroupOrCancel_Request(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	requesterID := "550e8400-e29b-41d4-a716-446655440000"
-	requesterUUID, _ := stringToUUID(requesterID)
-
 	req := GroupJoinOrCancelRequest{
 		GroupId:     1,
-		RequesterId: requesterID,
+		RequesterId: 2,
 		Cancel:      false,
 	}
 
 	mockDB.On("SendGroupJoinRequest", ctx, sqlc.SendGroupJoinRequestParams{
 		GroupID: 1,
-		Pub:     requesterUUID,
+		UserID:  2,
 	}).Return(nil)
 
 	err := service.RequestJoinGroupOrCancel(ctx, req)
@@ -310,18 +294,15 @@ func TestRequestJoinGroupOrCancel_Cancel(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	requesterID := "550e8400-e29b-41d4-a716-446655440000"
-	requesterUUID, _ := stringToUUID(requesterID)
-
 	req := GroupJoinOrCancelRequest{
 		GroupId:     1,
-		RequesterId: requesterID,
+		RequesterId: 2,
 		Cancel:      true,
 	}
 
 	mockDB.On("CancelGroupJoinRequest", ctx, sqlc.CancelGroupJoinRequestParams{
 		GroupID: 1,
-		Pub:     requesterUUID,
+		UserID:  2,
 	}).Return(nil)
 
 	err := service.RequestJoinGroupOrCancel(ctx, req)
@@ -335,18 +316,15 @@ func TestRespondToGroupInvite_Accept(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	invitedID := "550e8400-e29b-41d4-a716-446655440000"
-	invitedUUID, _ := stringToUUID(invitedID)
-
 	req := HandleGroupInviteRequest{
 		GroupId:   1,
-		InvitedId: invitedID,
+		InvitedId: 2,
 		Accepted:  true,
 	}
 
 	mockDB.On("AcceptGroupInvite", ctx, sqlc.AcceptGroupInviteParams{
-		GroupID: 1,
-		Pub:     invitedUUID,
+		GroupID:    1,
+		ReceiverID: 2,
 	}).Return(nil)
 
 	err := service.RespondToGroupInvite(ctx, req)
@@ -360,18 +338,15 @@ func TestRespondToGroupInvite_Decline(t *testing.T) {
 	service := NewUserService(mockDB, nil)
 
 	ctx := context.Background()
-	invitedID := "550e8400-e29b-41d4-a716-446655440000"
-	invitedUUID, _ := stringToUUID(invitedID)
-
 	req := HandleGroupInviteRequest{
 		GroupId:   1,
-		InvitedId: invitedID,
+		InvitedId: 2,
 		Accepted:  false,
 	}
 
 	mockDB.On("DeclineGroupInvite", ctx, sqlc.DeclineGroupInviteParams{
-		GroupID: 1,
-		Pub:     invitedUUID,
+		GroupID:    1,
+		ReceiverID: 2,
 	}).Return(nil)
 
 	err := service.RespondToGroupInvite(ctx, req)

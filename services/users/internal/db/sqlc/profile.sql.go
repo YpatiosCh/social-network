@@ -13,29 +13,29 @@ import (
 
 const getUserBasic = `-- name: GetUserBasic :one
 SELECT
-    public_id,
+    id,
     username,
     avatar
 FROM users
-WHERE id = get_internal_user_id($1)
+WHERE id = $1
 `
 
 type GetUserBasicRow struct {
-	PublicID pgtype.UUID
+	ID       int64
 	Username string
 	Avatar   string
 }
 
-func (q *Queries) GetUserBasic(ctx context.Context, pub pgtype.UUID) (GetUserBasicRow, error) {
-	row := q.db.QueryRow(ctx, getUserBasic, pub)
+func (q *Queries) GetUserBasic(ctx context.Context, id int64) (GetUserBasicRow, error) {
+	row := q.db.QueryRow(ctx, getUserBasic, id)
 	var i GetUserBasicRow
-	err := row.Scan(&i.PublicID, &i.Username, &i.Avatar)
+	err := row.Scan(&i.ID, &i.Username, &i.Avatar)
 	return i, err
 }
 
 const getUserProfile = `-- name: GetUserProfile :one
 SELECT
-    public_id,
+    id,
     username,
     first_name,
     last_name,
@@ -45,12 +45,12 @@ SELECT
     profile_public,
     created_at
 FROM users
-WHERE id = get_internal_user_id($1)
+WHERE id = $1
   AND deleted_at IS NULL
 `
 
 type GetUserProfileRow struct {
-	PublicID      pgtype.UUID
+	ID            int64
 	Username      string
 	FirstName     string
 	LastName      string
@@ -61,11 +61,11 @@ type GetUserProfileRow struct {
 	CreatedAt     pgtype.Timestamptz
 }
 
-func (q *Queries) GetUserProfile(ctx context.Context, pub pgtype.UUID) (GetUserProfileRow, error) {
-	row := q.db.QueryRow(ctx, getUserProfile, pub)
+func (q *Queries) GetUserProfile(ctx context.Context, id int64) (GetUserProfileRow, error) {
+	row := q.db.QueryRow(ctx, getUserProfile, id)
 	var i GetUserProfileRow
 	err := row.Scan(
-		&i.PublicID,
+		&i.ID,
 		&i.Username,
 		&i.FirstName,
 		&i.LastName,
@@ -80,7 +80,7 @@ func (q *Queries) GetUserProfile(ctx context.Context, pub pgtype.UUID) (GetUserP
 
 const searchUsers = `-- name: SearchUsers :many
 SELECT
-    public_id,
+    id,
     username,
     avatar,
     profile_public
@@ -103,7 +103,7 @@ type SearchUsersParams struct {
 }
 
 type SearchUsersRow struct {
-	PublicID      pgtype.UUID
+	ID            int64
 	Username      string
 	Avatar        string
 	ProfilePublic bool
@@ -119,7 +119,7 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 	for rows.Next() {
 		var i SearchUsersRow
 		if err := rows.Scan(
-			&i.PublicID,
+			&i.ID,
 			&i.Username,
 			&i.Avatar,
 			&i.ProfilePublic,
@@ -137,16 +137,16 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 const updateProfilePrivacy = `-- name: UpdateProfilePrivacy :exec
 UPDATE users
 SET profile_public=$2
-WHERE id=get_internal_user_id($1)
+WHERE id=$1
 `
 
 type UpdateProfilePrivacyParams struct {
-	Pub           pgtype.UUID
+	ID            int64
 	ProfilePublic bool
 }
 
 func (q *Queries) UpdateProfilePrivacy(ctx context.Context, arg UpdateProfilePrivacyParams) error {
-	_, err := q.db.Exec(ctx, updateProfilePrivacy, arg.Pub, arg.ProfilePublic)
+	_, err := q.db.Exec(ctx, updateProfilePrivacy, arg.ID, arg.ProfilePublic)
 	return err
 }
 
@@ -155,16 +155,16 @@ UPDATE auth_user
 SET
     email = $2,
     updated_at = CURRENT_TIMESTAMP
-WHERE user_id = get_internal_user_id($1)
+WHERE user_id = $1
 `
 
 type UpdateUserEmailParams struct {
-	Pub   pgtype.UUID
-	Email string
+	UserID int64
+	Email  string
 }
 
 func (q *Queries) UpdateUserEmail(ctx context.Context, arg UpdateUserEmailParams) error {
-	_, err := q.db.Exec(ctx, updateUserEmail, arg.Pub, arg.Email)
+	_, err := q.db.Exec(ctx, updateUserEmail, arg.UserID, arg.Email)
 	return err
 }
 
@@ -173,16 +173,16 @@ UPDATE auth_user
 SET
     password_hash = $2,
     updated_at = CURRENT_TIMESTAMP
-WHERE user_id = get_internal_user_id($1)
+WHERE user_id = $1
 `
 
 type UpdateUserPasswordParams struct {
-	Pub          pgtype.UUID
+	UserID       int64
 	PasswordHash string
 }
 
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
-	_, err := q.db.Exec(ctx, updateUserPassword, arg.Pub, arg.PasswordHash)
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.UserID, arg.PasswordHash)
 	return err
 }
 
@@ -196,12 +196,12 @@ SET
     avatar        = $6,
     about_me      = $7,
     updated_at    = CURRENT_TIMESTAMP
-WHERE id = get_internal_user_id($1) AND deleted_at IS NULL
-RETURNING id, public_id, username, first_name, last_name, date_of_birth, avatar, about_me, profile_public, current_status, ban_ends_at, created_at, updated_at, deleted_at
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, username, first_name, last_name, date_of_birth, avatar, about_me, profile_public, current_status, ban_ends_at, created_at, updated_at, deleted_at
 `
 
 type UpdateUserProfileParams struct {
-	Pub         pgtype.UUID
+	ID          int64
 	Username    string
 	FirstName   string
 	LastName    string
@@ -212,7 +212,7 @@ type UpdateUserProfileParams struct {
 
 func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUserProfile,
-		arg.Pub,
+		arg.ID,
 		arg.Username,
 		arg.FirstName,
 		arg.LastName,
@@ -223,7 +223,6 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.PublicID,
 		&i.Username,
 		&i.FirstName,
 		&i.LastName,

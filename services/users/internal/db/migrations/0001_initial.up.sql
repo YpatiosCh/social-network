@@ -17,7 +17,6 @@ CREATE TYPE user_status AS ENUM ('active', 'banned', 'deleted');
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    public_id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
     username CITEXT COLLATE case_insensitive_ai UNIQUE NOT NULL,
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
@@ -449,11 +448,3 @@ AFTER INSERT ON groups
 FOR EACH ROW
 EXECUTE FUNCTION add_group_owner_as_member();
 
-
------------------------------------------
--- Function to get internal user id from public id
------------------------------------------
-CREATE OR REPLACE FUNCTION get_internal_user_id(pub UUID)
-RETURNS BIGINT AS $$
-    SELECT id FROM users WHERE public_id = pub AND deleted_at IS NULL;
-$$ LANGUAGE SQL STABLE;
