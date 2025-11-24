@@ -1,48 +1,45 @@
-export default function PublicFeedPage() {
+export default function FriendsFeedPage() {
     // Mock data based on the requested struct: Username, Content, CreatedAt, NumOfComments
     const posts = [
         {
-            username: "alex_rivera",
-            content: "Just finished reading 'The Midnight Library'. What a journey! Has anyone else read it? The concept of parallel lives is so fascinating to me.",
-            createdAt: "2h ago",
-            numOfComments: 12,
-            numOfHearts: 124,
+            username: "watermelon_musk",
+            content: "Sunday mornings are for slow breakfasts and even slower jazz. 🎷🥐 There's something magical about the quiet before the city wakes up.",
+            createdAt: "10m ago",
+            numOfComments: 3,
+            numOfHearts: 1345,
+            avatar: "/elon.jpeg"
         },
         {
-            username: "sarah_j",
-            content: "Coffee shop vibes today. getting so much work done! ☕️💻 sometimes a change of scenery is all you need to break through a creative block.",
-            createdAt: "4h ago",
-            numOfComments: 5,
-            numOfHearts: 54,
+            username: "trumpet",
+            content: "Finally hiked the trail I've been looking at for months. The view from the top was absolutely worth the struggle. Nature has a way of resetting your perspective.",
+            createdAt: "3h ago",
+            numOfComments: 15,
+            numOfHearts: 6,
+            avatar: "/trump.jpeg"
         },
         {
-            username: "tech_guru",
-            content: "The new Next.js features are mind-blowing. Server Actions are going to change everything about how we build web apps. Can't wait to dive deeper.",
-            createdAt: "6h ago",
-            numOfComments: 28,
-            numOfHearts: 2,
+            username: "kimpossible",
+            content: "Does anyone else feel like time is moving exceptionally fast lately? I swear it was January just yesterday.",
+            createdAt: "5h ago",
+            numOfComments: 42,
+            numOfHearts: 145,
+            avatar: "/kim.jpeg"
         },
         {
-            username: "travel_mike",
-            content: "Just booked my tickets to Japan! 🇯🇵 Dream come true. Any recommendations for Kyoto? I want to see all the temples and eat all the food.",
+            username: "Xi_aomi",
+            content: "Small wins matter. Fixed a bug that's been bugging me (pun intended) for a week. Celebrating with a donut.",
             createdAt: "1d ago",
-            numOfComments: 45,
-            numOfHearts: 454,
-        },
-        {
-            username: "creative_mind",
-            content: "Working on a new painting. It's messy but I love the process. Art is about expression, not perfection.",
-            createdAt: "2d ago",
-            numOfComments: 8,
-            numOfHearts: 84,
+            numOfComments: 7,
+            numOfHearts: 12,
+            avatar: "/xi.jpeg"
         }
     ];
 
     return (
         <div className="feed-container">
             <div className="feed-header">
-                <h1 className="feed-title">Public Feed</h1>
-                <p className="feed-subtitle">What's happening around the world</p>
+                <h1 className="feed-title">Friends Feed</h1>
+                <p className="feed-subtitle">Updates from your friends</p>
             </div>
 
             <div className="flex flex-col">
@@ -50,7 +47,7 @@ export default function PublicFeedPage() {
                     <div key={i} className="post-card">
                         {/* Avatar Column */}
                         <div className="post-avatar-container">
-                            <div className="post-avatar" />
+                            <img src={post.avatar} alt="Post Avatar" className="post-avatar" />
                         </div>
 
                         {/* Content Column */}

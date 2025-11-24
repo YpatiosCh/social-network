@@ -38,6 +38,31 @@ export default function ProfilePage({ params }) {
     const isOwnProfile = username === "ychaniot"; // Mock check
     const isPrivateView = !user.publicProf && !user.isFollower && !isOwnProfile;
 
+    // Mock Posts Data
+    const userPosts = [
+        {
+            username: username, // Use the profile user's username
+            content: "Sunday mornings are for slow breakfasts and even slower jazz. 🎷🥐 There's something magical about the quiet before the city wakes up.",
+            createdAt: "10m ago",
+            numOfComments: 3,
+            numOfHearts: 12,
+        },
+        {
+            username: username,
+            content: "Just finished a marathon coding session. 💻 #developer #life",
+            createdAt: "1d ago",
+            numOfComments: 12,
+            numOfHearts: 12,
+        },
+        {
+            username: username,
+            content: "Coffee is my love language. ☕",
+            createdAt: "3d ago",
+            numOfComments: 8,
+            numOfHearts: 8,
+        }
+    ];
+
     return (
         <div className="animate-in fade-in duration-500">
             <ProfileHeader user={user} isOwnProfile={isOwnProfile} />
@@ -53,24 +78,53 @@ export default function ProfilePage({ params }) {
                     </p>
                 </div>
             ) : (
-                <>
-                    <div className="space-y-6">
-                        <h3 className="text-lg font-bold">Posts</h3>
-                        {/* Placeholder for Posts Feed */}
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="p-6 rounded-2xl bg-(--muted)/5 border border-(--muted)/10 space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-(--muted)/20" />
-                                    <div>
-                                        <div className="font-medium">{user.firstName} {user.lastName}</div>
-                                        <div className="text-sm text-(--muted)">2 hours ago</div>
+                <div className="mt-8">
+                    <div className="flex flex-col">
+                        {userPosts.map((post, i) => (
+                            <div key={i} className="post-card">
+                                {/* Avatar Column */}
+                                <div className="post-avatar-container">
+                                    <div className="post-avatar" />
+                                </div>
+
+                                {/* Content Column */}
+                                <div className="post-content-container">
+                                    {/* Header */}
+                                    <div className="post-header">
+                                        <h3 className="post-username">
+                                            @{post.username}
+                                        </h3>
+                                        <span className="post-timestamp">{post.createdAt}</span>
+                                    </div>
+
+                                    {/* Content */}
+                                    <p className="post-text">
+                                        {post.content}
+                                    </p>
+
+                                    {/* Footer / Actions */}
+                                    <div className="post-actions">
+                                        {/* Reaction Button */}
+                                        <button className="action-btn action-btn-heart group/heart">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="icon-heart">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                                            </svg>
+                                            <span className="text-sm font-medium">{post.numOfHearts}</span>
+                                        </button>
+
+                                        {/* Comments */}
+                                        <button className="action-btn action-btn-comment group/comment">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="icon-comment">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
+                                            </svg>
+                                            <span className="text-sm font-medium">{post.numOfComments}</span>
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="h-32 rounded-xl bg-(--muted)/10" />
                             </div>
                         ))}
                     </div>
-                </>
+                </div>
             )}
         </div>
     );
