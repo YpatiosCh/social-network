@@ -14,7 +14,7 @@ kubectl get nodes
 make build-base
 
 # 1. Build local users image
-make build-users
+make build-services
 
 # 2. Create namespace + Postgres DB + users service
 make all

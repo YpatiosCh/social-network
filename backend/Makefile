@@ -1,22 +1,29 @@
 NAMESPACE=social-network
 
+.PHONY: build-base apply-namespace apply-db build-services deploy-users run-migrations logs-users logs-db all reset
+
 build-base:
 	docker build -t social-network/go-base -f docker/go/base.Dockerfile .
 
 apply-namespace:
 	kubectl apply -f k8s/namespace.yaml
 
+deploy-nginx:
+	helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+	helm repo update
+	helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx \
+		-n $(NAMESPACE) --create-namespace
+
+apply-ingress:
+	kubectl apply -f k8s/nginx/api-gateway-ingress.yaml
+
 apply-db:
 	kubectl apply -f k8s/users-db/pvc.yaml
 	kubectl apply -f k8s/users-db/deployment.yaml
 	kubectl apply -f k8s/users-db/service.yaml
 
-build-users:
+build-services:
 	docker build -t social-network/users:dev -f services/users/Dockerfile .
-
-push-users:
-	# colima uses local docker -- no push needed
-	echo "Local image loaded."
 
 deploy-users:
 	kubectl apply -f k8s/users/deployment.yaml
@@ -32,8 +39,9 @@ logs-users:
 logs-db:
 	kubectl logs -l app=users-db -n $(NAMESPACE) -f
 
-all: apply-namespace apply-db build-users deploy-users run-migrations
-
 reset:
 	kubectl delete namespace $(NAMESPACE) --ignore-not-found=true
 	kubectl create namespace $(NAMESPACE)
+
+all: apply-namespace deploy-nginx apply-db build-services deploy-users run-migrations apply-ingress
+
