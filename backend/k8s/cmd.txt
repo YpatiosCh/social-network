@@ -1,0 +1,22 @@
+# start kube
+colima start --kubernetes --memory 4 --cpu 4
+
+# confirm cluster
+kubectl get nodes
+
+
+# first build users
+make build-base
+
+# 1. Build local users image
+make build-users
+
+# 2. Create namespace + Postgres DB + users service
+make all
+
+# 3. Watch pods
+kubectl get pods -n social-network
+
+# 4. Logs
+make logs-users
+make logs-db

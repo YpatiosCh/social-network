@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserServiceClient interface {
-	GetBasicUserInfo(ctx context.Context, in *common.UserId, opts ...grpc.CallOption) (*BasicUserInfo, error)
+	GetBasicUserInfo(ctx context.Context, in *common.UserId, opts ...grpc.CallOption) (*User, error)
 }
 
 type userServiceClient struct {
@@ -38,9 +38,9 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) GetBasicUserInfo(ctx context.Context, in *common.UserId, opts ...grpc.CallOption) (*BasicUserInfo, error) {
+func (c *userServiceClient) GetBasicUserInfo(ctx context.Context, in *common.UserId, opts ...grpc.CallOption) (*User, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(BasicUserInfo)
+	out := new(User)
 	err := c.cc.Invoke(ctx, UserService_GetBasicUserInfo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (c *userServiceClient) GetBasicUserInfo(ctx context.Context, in *common.Use
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
 type UserServiceServer interface {
-	GetBasicUserInfo(context.Context, *common.UserId) (*BasicUserInfo, error)
+	GetBasicUserInfo(context.Context, *common.UserId) (*User, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -63,7 +63,7 @@ type UserServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserServiceServer struct{}
 
-func (UnimplementedUserServiceServer) GetBasicUserInfo(context.Context, *common.UserId) (*BasicUserInfo, error) {
+func (UnimplementedUserServiceServer) GetBasicUserInfo(context.Context, *common.UserId) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBasicUserInfo not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}

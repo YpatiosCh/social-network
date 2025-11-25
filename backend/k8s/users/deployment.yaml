@@ -13,6 +13,10 @@ spec:
       labels:
         app: users
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox
+          command: ['sh', '-c', 'until nc -z users-db 5432; do echo waiting for db; sleep 2; done']
       containers:
         - name: users
           image: social-network/users:dev   # local image for Colima
