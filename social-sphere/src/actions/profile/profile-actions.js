@@ -1,15 +1,15 @@
 "use server";
 
-import { getMockUser } from "@/data/mock-users";
+import { getUserByID } from "@/mock-data/users";
 
-export async function fetchUserProfile(username) {
+export async function fetchUserProfile(id) {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    return getMockUser(username);
+    return getUserByID(id);
 }
 
-export async function toggleFollowUser(username) {
+export async function toggleFollowUser(id) {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -18,7 +18,7 @@ export async function toggleFollowUser(username) {
     return { success: true };
 }
 
-export async function togglePrivacy(username) {
+export async function togglePrivacy(id) {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
