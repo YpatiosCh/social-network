@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"social-network/services/users/internal/db/sqlc"
+	userservice "social-network/services/users/internal/domain"
 	"social-network/services/users/internal/server"
-	userservice "social-network/services/users/internal/service"
 	"social-network/shared/db"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
