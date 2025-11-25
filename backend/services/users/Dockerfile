@@ -1,35 +1,31 @@
 # ---- Build stage ----
-FROM golang:1.25-alpine AS build
+FROM social-network/go-base AS build
 
 WORKDIR /app
 
-# Copy root module files
-COPY ../../go.mod ../../go.sum ./
-RUN go mod download
+# Copy entire repository so all shared/internal code is included
+COPY . .
 
-# Copy entire repo so shared/ and service code are available
-COPY ../../ .
-
-# Build users service binary
+# Build the users service binary
 RUN go build -o users_service ./services/users/cmd/server
 
+RUN go build -o migrate ./services/users/cmd/migrate
+
 # ---- Runtime stage ----
-FROM alpine:latest
+FROM alpine:3.20
 
 WORKDIR /app
 
-# Copy built binary and migrations
+# Only copy the compiled binary (tiny image!)
 COPY --from=build /app/users_service .
+COPY --from=build /app/migrate .
 COPY --from=build /app/services/users/internal/db/migrations ./migrations
 COPY --from=build /app/services/users/internal/db/seeds ./seeds
 
-# Install PostgreSQL client so `psql` is available for the seed script
-RUN apk add --no-cache postgresql-client
-
-# Ensure the seed script is executable inside the image
+# Ensure seed script is executable
 RUN chmod +x /app/seeds/seed.sh
 
-# Env vars (can also be set in docker-compose)
+# Environment variables
 ENV DATABASE_URL=postgres://postgres:secret@users-db:5432/social_users?sslmode=disable
 
 CMD ["./users_service"]

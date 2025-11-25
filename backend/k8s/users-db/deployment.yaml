@@ -14,20 +14,21 @@ spec:
         app: users-db
     spec:
       containers:
-        - name: users-db
-          image: postgres:15
+        - name: postgres
+          image: postgres:16
           ports:
             - containerPort: 5432
           env:
+            - name: POSTGRES_DB
+              value: social_users
             - name: POSTGRES_USER
               value: postgres
             - name: POSTGRES_PASSWORD
               value: secret
-            - name: POSTGRES_DB
-              value: social_users
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
       volumes:
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: users-db-pvc

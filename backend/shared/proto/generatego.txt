@@ -5,6 +5,6 @@ protoc \
 
 protoc \
   --proto_path=shared/proto \
-  --go_out=paths=source_relative:shared/gen/users \ // create structs
-  --go-grpc_out=paths=source_relative:shared/gen/users \ // create services
+  --go_out=paths=source_relative:shared/gen/users \
+  --go-grpc_out=paths=source_relative:shared/gen/users \
   shared/proto/users.proto

@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: users-migrate
+  namespace: social-network
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: social-network/users:dev
+          imagePullPolicy: Never
+          env:
+            - name: DATABASE_URL
+              value: "postgres://postgres:secret@users-db:5432/social_users?sslmode=disable"
+          command: ["sh", "-c"]
+          args:
+            - |
+              ./migrate && \
+              echo "Running seeds..." && \
+              ./seeds/seed.sh

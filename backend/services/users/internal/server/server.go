@@ -6,7 +6,6 @@ import (
 
 	us "social-network/services/users/internal/domain"
 	pb "social-network/shared/gen/users"
-	"social-network/shared/ports"
 
 	"google.golang.org/grpc"
 )
@@ -43,7 +42,7 @@ func (s *Server) RunGRPCServer() {
 
 func NewUsersServer(service *us.UserService) *Server {
 	return &Server{
-		Port:    ports.Users,
+		Port:    ":50051",
 		Clients: Clients{},
 		Service: service,
 	}

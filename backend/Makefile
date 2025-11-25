@@ -1,99 +1,39 @@
-# Makefile for dev workflow: start/stop containers, seed DBs, clear DBs with migrations
-# Works on Windows (with Git Bash/WSL), Linux, Mac
+NAMESPACE=social-network
 
-DOCKER_COMPOSE=docker-compose
-SEED_SCRIPT=/app/seeds/seed.sh
-USERS_CONTAINER=users
-USERS_DB_CONTAINER=users-db
-SHELL=/bin/sh
+build-base:
+	docker build -t social-network/go-base -f docker/go/base.Dockerfile .
 
-.PHONY: up down build rebuild seed clear clear-users clear-forum clear-chat clear-notifications reset-users
+apply-namespace:
+	kubectl apply -f k8s/namespace.yaml
 
-# ---------------------------
-# Start all containers
-# ---------------------------
-up:
-	@echo "Starting all containers..."
-	$(DOCKER_COMPOSE) up -d
-	@echo "All containers started."
+apply-db:
+	kubectl apply -f k8s/users-db/pvc.yaml
+	kubectl apply -f k8s/users-db/deployment.yaml
+	kubectl apply -f k8s/users-db/service.yaml
 
-# ---------------------------
-# Stop all containers
-# ---------------------------
-down:
-	@echo "Stopping all containers..."
-	$(DOCKER_COMPOSE) down
-	@echo "All containers stopped."
+build-users:
+	docker build -t social-network/users:dev -f services/users/Dockerfile .
 
-# ---------------------------
-# Build all images
-# ---------------------------
-build:
-	@echo "Building all service images..."
-	$(DOCKER_COMPOSE) build
-	@echo "Build complete."
+push-users:
+	# colima uses local docker -- no push needed
+	echo "Local image loaded."
 
-# ---------------------------
-# Rebuild (down + build + up)
-# ---------------------------
-rebuild: down build up
-	@echo "Rebuild complete."
+deploy-users:
+	kubectl apply -f k8s/users/deployment.yaml
+	kubectl apply -f k8s/users/service.yaml
 
-# ---------------------------
-# Seed dev database (users only)
-# ---------------------------
-seed:
-	@echo "Waiting for users DB to be ready..."
-	@until $(DOCKER_COMPOSE) exec -T users-db pg_isready -U postgres -d social_users >/dev/null 2>&1; do \
-		echo "Waiting for users-db..."; sleep 1; \
-	done
-	@echo "Users DB is ready. Seeding users database..."
-	$(DOCKER_COMPOSE) exec -T users sh -c "$(SEED_SCRIPT)"
-	@echo "Seeding complete."
+run-migrations:
+	kubectl delete job users-migrate -n $(NAMESPACE) --ignore-not-found=true
+	kubectl apply -f k8s/users-db/migration-job.yaml
 
-# ---------------------------
-# Clear all databases and restart containers
-# ---------------------------
-clear: clear-users clear-forum clear-chat clear-notifications
-	@echo "All databases cleared."
-	@echo "Waiting a few seconds for services to restart and migrations to run..."
-	@sleep 5
-	@echo "Done. You can now run 'make seed' to seed the dev database."
+logs-users:
+	kubectl logs -l app=users -n $(NAMESPACE) -f
 
-# ---------------------------
-# Clear individual databases
-# ---------------------------
-clear-users:
-	@echo "Clearing users database..."
-	$(DOCKER_COMPOSE) exec -T $(USERS_DB_CONTAINER) psql -U postgres -d social_users -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-	@echo "Users database cleared. Restarting users container to apply migrations..."
-	$(DOCKER_COMPOSE) restart $(USERS_CONTAINER)
-	@sleep 5
-	@echo "Users container restarted. Migrations should have run."
+logs-db:
+	kubectl logs -l app=users-db -n $(NAMESPACE) -f
 
-clear-forum:
-	@echo "Clearing forum database..."
-	$(DOCKER_COMPOSE) exec -T forum-db psql -U postgres -d social_forum -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-	$(DOCKER_COMPOSE) restart forum
-	@sleep 5
-	@echo "Forum container restarted. Migrations should have run."
+all: apply-namespace apply-db build-users deploy-users run-migrations
 
-clear-chat:
-	@echo "Clearing chat database..."
-	$(DOCKER_COMPOSE) exec -T chat-db psql -U postgres -d social_chat -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-	$(DOCKER_COMPOSE) restart chat
-	@sleep 5
-	@echo "Chat container restarted. Migrations should have run."
-
-clear-notifications:
-	@echo "Clearing notifications database..."
-	$(DOCKER_COMPOSE) exec -T notifications-db psql -U postgres -d social_notifications -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-	$(DOCKER_COMPOSE) restart notifications
-	@sleep 5
-	@echo "Notifications container restarted. Migrations should have run."
-
-# ---------------------------
-# Reset users DB: clear + seed in one command
-# ---------------------------
-reset-users: clear-users seed
-	@echo "Users database reset and seeded successfully."
+reset:
+	kubectl delete namespace $(NAMESPACE) --ignore-not-found=true
+	kubectl create namespace $(NAMESPACE)

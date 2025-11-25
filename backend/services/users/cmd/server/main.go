@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"social-network/services/users/internal/db/sqlc"
 	userservice "social-network/services/users/internal/domain"
@@ -10,6 +11,7 @@ import (
 	"social-network/shared/db"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 )
 
@@ -17,17 +19,24 @@ func main() {
 	ctx := context.Background()
 	cfg := db.LoadConfigFromEnv()
 
-	pool, err := db.ConnectOrCreateDB(ctx, cfg)
+	var pool *pgxpool.Pool
+	var err error
+
+	for i := range 10 {
+		pool, err = db.ConnectOrCreateDB(ctx, cfg)
+		if err == nil {
+			break
+		}
+		log.Printf("DB not ready yet (attempt %d): %v", i+1, err)
+		time.Sleep(2 * time.Second)
+	}
+
 	if err != nil {
 		log.Fatalf("Failed to connect DB: %v", err)
 	}
 	defer pool.Close()
 
 	log.Println("Connected to users database")
-
-	if err := db.RunMigrations(cfg, "./migrations"); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
-	}
 
 	log.Println("Service ready!")
 

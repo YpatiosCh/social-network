@@ -22,29 +22,30 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type BasicUserInfo struct {
+type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserName      string                 `protobuf:"bytes,1,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
-	Avatar        string                 `protobuf:"bytes,2,opt,name=avatar,proto3" json:"avatar,omitempty"`
-	PublicProfile bool                   `protobuf:"varint,3,opt,name=public_profile,json=publicProfile,proto3" json:"public_profile,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	UserName      string                 `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	Avatar        string                 `protobuf:"bytes,3,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	PublicProfile bool                   `protobuf:"varint,4,opt,name=public_profile,json=publicProfile,proto3" json:"public_profile,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *BasicUserInfo) Reset() {
-	*x = BasicUserInfo{}
+func (x *User) Reset() {
+	*x = User{}
 	mi := &file_users_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *BasicUserInfo) String() string {
+func (x *User) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*BasicUserInfo) ProtoMessage() {}
+func (*User) ProtoMessage() {}
 
-func (x *BasicUserInfo) ProtoReflect() protoreflect.Message {
+func (x *User) ProtoReflect() protoreflect.Message {
 	mi := &file_users_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,26 +57,33 @@ func (x *BasicUserInfo) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use BasicUserInfo.ProtoReflect.Descriptor instead.
-func (*BasicUserInfo) Descriptor() ([]byte, []int) {
+// Deprecated: Use User.ProtoReflect.Descriptor instead.
+func (*User) Descriptor() ([]byte, []int) {
 	return file_users_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *BasicUserInfo) GetUserName() string {
+func (x *User) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *User) GetUserName() string {
 	if x != nil {
 		return x.UserName
 	}
 	return ""
 }
 
-func (x *BasicUserInfo) GetAvatar() string {
+func (x *User) GetAvatar() string {
 	if x != nil {
 		return x.Avatar
 	}
 	return ""
 }
 
-func (x *BasicUserInfo) GetPublicProfile() bool {
+func (x *User) GetPublicProfile() bool {
 	if x != nil {
 		return x.PublicProfile
 	}
@@ -86,13 +94,14 @@ var File_users_proto protoreflect.FileDescriptor
 
 const file_users_proto_rawDesc = "" +
 	"\n" +
-	"\vusers.proto\x12\x05users\x1a\fcommon.proto\"k\n" +
-	"\rBasicUserInfo\x12\x1b\n" +
-	"\tuser_name\x18\x01 \x01(\tR\buserName\x12\x16\n" +
-	"\x06avatar\x18\x02 \x01(\tR\x06avatar\x12%\n" +
-	"\x0epublic_profile\x18\x03 \x01(\bR\rpublicProfile2G\n" +
-	"\vUserService\x128\n" +
-	"\x10GetBasicUserInfo\x12\x0e.common.UserId\x1a\x14.users.BasicUserInfoB'Z%social-network/shared/gen/users;usersb\x06proto3"
+	"\vusers.proto\x12\x05users\x1a\fcommon.proto\"z\n" +
+	"\x04User\x12\x16\n" +
+	"\x06userId\x18\x01 \x01(\x03R\x06userId\x12\x1b\n" +
+	"\tuser_name\x18\x02 \x01(\tR\buserName\x12\x16\n" +
+	"\x06avatar\x18\x03 \x01(\tR\x06avatar\x12%\n" +
+	"\x0epublic_profile\x18\x04 \x01(\bR\rpublicProfile2>\n" +
+	"\vUserService\x12/\n" +
+	"\x10GetBasicUserInfo\x12\x0e.common.UserId\x1a\v.users.UserB'Z%social-network/shared/gen/users;usersb\x06proto3"
 
 var (
 	file_users_proto_rawDescOnce sync.Once
@@ -108,12 +117,12 @@ func file_users_proto_rawDescGZIP() []byte {
 
 var file_users_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_users_proto_goTypes = []any{
-	(*BasicUserInfo)(nil), // 0: users.BasicUserInfo
+	(*User)(nil),          // 0: users.User
 	(*common.UserId)(nil), // 1: common.UserId
 }
 var file_users_proto_depIdxs = []int32{
 	1, // 0: users.UserService.GetBasicUserInfo:input_type -> common.UserId
-	0, // 1: users.UserService.GetBasicUserInfo:output_type -> users.BasicUserInfo
+	0, // 1: users.UserService.GetBasicUserInfo:output_type -> users.User
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
