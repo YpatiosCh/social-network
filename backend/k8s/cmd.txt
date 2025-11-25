@@ -1,5 +1,10 @@
-# start kube
+# start kube Mac Os
 colima start --kubernetes --memory 4 --cpu 4
+
+# start kube windowns 
+ -- first install minikube
+minikube start --driver=docker --cpus=4 --memory=4096
+
 
 # confirm cluster
 kubectl get nodes
