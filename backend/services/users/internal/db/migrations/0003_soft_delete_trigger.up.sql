@@ -4,6 +4,16 @@
 CREATE OR REPLACE FUNCTION soft_delete_user_cascade()
 RETURNS TRIGGER AS $$
 BEGIN
+    -- Block soft-deleting a user who owns active groups
+    IF EXISTS (
+        SELECT 1 FROM groups
+        WHERE group_owner = OLD.id
+          AND deleted_at IS NULL
+    ) THEN
+        RAISE EXCEPTION 'Group owner cannot be deleted. Transfer ownership first.';
+    END IF;
+
+
     -- Hard-delete follows (CASCADE handles this automatically)
     DELETE FROM follows
     WHERE follower_id = OLD.id OR following_id = OLD.id;

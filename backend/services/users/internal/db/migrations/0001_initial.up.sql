@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS follow_requests (
     status follow_request_status NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ,
+    deleted_at TIMESTAMPTZ,
     PRIMARY KEY (requester_id, target_id)
 );
 
@@ -113,6 +114,7 @@ CREATE TABLE IF NOT EXISTS group_members (
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     role group_role DEFAULT 'member',
     joined_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ,
     PRIMARY KEY (group_id, user_id)
 );

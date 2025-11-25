@@ -297,6 +297,7 @@ type FollowRequest struct {
 	Status      FollowRequestStatus
 	CreatedAt   pgtype.Timestamptz
 	UpdatedAt   pgtype.Timestamptz
+	DeletedAt   pgtype.Timestamptz
 }
 
 type Group struct {
@@ -334,6 +335,7 @@ type GroupMember struct {
 	UserID    int64
 	Role      NullGroupRole
 	JoinedAt  pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
 	DeletedAt pgtype.Timestamptz
 }
 

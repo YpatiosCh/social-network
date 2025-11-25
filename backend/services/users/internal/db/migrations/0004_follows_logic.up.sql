@@ -53,8 +53,7 @@ BEGIN
         -- Check for existing request
         SELECT status INTO v_existing_request_status
         FROM follow_requests
-        WHERE requester_id = p_follower AND target_id = p_target
-          AND deleted_at IS NULL;
+        WHERE requester_id = p_follower AND target_id = p_target;
 
         IF v_existing_request_status = 'pending' THEN
             RETURN 'request_already_pending';
@@ -62,8 +61,7 @@ BEGIN
             -- Reset to pending if previously rejected/accepted
             UPDATE follow_requests
             SET status = 'pending',
-                updated_at = CURRENT_TIMESTAMP,
-                deleted_at = NULL
+                updated_at = CURRENT_TIMESTAMP
             WHERE requester_id = p_follower AND target_id = p_target;
             RETURN 'request_resent';
         ELSE
@@ -72,8 +70,7 @@ BEGIN
             VALUES (p_follower, p_target, 'pending')
             ON CONFLICT (requester_id, target_id) DO UPDATE
             SET status = 'pending',
-                updated_at = CURRENT_TIMESTAMP,
-                deleted_at = NULL;
+                updated_at = CURRENT_TIMESTAMP;
             RETURN 'requested';
         END IF;
     END IF;
