@@ -69,7 +69,7 @@ export default function Navbar() {
         </div>
 
         {/* Center: Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-md mx-auto">
+        <div className="hidden lg:flex flex-1 max-w-md mx-4 min-w-0">
           <div className="relative w-full group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-(--muted) group-focus-within:text-(--foreground) transition-colors" />
@@ -77,7 +77,7 @@ export default function Navbar() {
             <input
               type="text"
               className="block w-full pl-10 pr-3 py-2 border border-transparent rounded-full leading-5 bg-(--muted)/10 text-(--foreground) placeholder-(--muted) focus:outline-none focus:bg-(--background) focus:ring-2 focus:ring-(--foreground)/10 focus:border-(--muted)/20 sm:text-sm transition-all duration-200"
-              placeholder="Search users & groups..."
+              placeholder="Search users..."
             />
           </div>
         </div>
@@ -86,28 +86,27 @@ export default function Navbar() {
         <div className="flex items-center justify-end gap-2 w-48 shrink-0">
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-1 mr-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-              return (
-                <Tooltip key={item.href} content={item.label}>
-                  <Link
-                    href={item.href}
-                    className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all duration-200 group ${active
-                      ? "text-(--foreground) bg-(--muted)/10"
-                      : "text-(--muted) hover:text-(--foreground) hover:bg-(--muted)/5"
-                      }`}
-                  >
-                    <Icon className={`w-6 h-6 ${active ? "stroke-[2.5px]" : "stroke-2"}`} />
-                    {active && (
-                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-(--foreground)" />
-                    )}
-                  </Link>
-                </Tooltip>
-              );
-            })}
-          </div>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
+              <Tooltip key={item.href} content={item.label}>
+                <Link
+                  href={item.href}
+                  className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all duration-200 group ${active
+                    ? "text-(--foreground) bg-(--muted)/10"
+                    : "text-(--muted) hover:text-(--foreground) hover:bg-(--muted)/5"
+                    }`}
+                >
+                  <Icon className={`w-6 h-6 ${active ? "stroke-[2.5px]" : "stroke-2"}`} />
+                  {active && (
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-(--foreground)" />
+                  )}
+                </Link>
+              </Tooltip>
+            );
+          })}
+
 
           {/* Messages */}
           <Tooltip content="Messages">
