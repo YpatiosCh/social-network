@@ -12,6 +12,7 @@ export const getMockPosts = () => {
             CreatedAt: "10m ago",
             NumOfComments: 3,
             NumOfHearts: 1345,
+            IsHearted: false,
         },
         {
             ID: "2",
@@ -25,6 +26,7 @@ export const getMockPosts = () => {
             CreatedAt: "10m ago",
             NumOfComments: 3,
             NumOfHearts: 1345,
+            IsHearted: false,
         },
         {
             ID: "3",
@@ -38,6 +40,7 @@ export const getMockPosts = () => {
             CreatedAt: "10m ago",
             NumOfComments: 3,
             NumOfHearts: 1345,
+            IsHearted: false,
         },
         {
             ID: "4",
@@ -51,6 +54,7 @@ export const getMockPosts = () => {
             CreatedAt: "10m ago",
             NumOfComments: 3,
             NumOfHearts: 1345,
+            IsHearted: false,
         },
         {
             ID: "5",
@@ -64,6 +68,7 @@ export const getMockPosts = () => {
             CreatedAt: "3h ago",
             NumOfComments: 15,
             NumOfHearts: 6,
+            IsHearted: false,
         },
         {
             ID: "6",
@@ -77,6 +82,7 @@ export const getMockPosts = () => {
             CreatedAt: "3h ago",
             NumOfComments: 15,
             NumOfHearts: 6,
+            IsHearted: false,
         },
         {
             ID: "7",
@@ -90,6 +96,7 @@ export const getMockPosts = () => {
             CreatedAt: "3h ago",
             NumOfComments: 15,
             NumOfHearts: 6,
+            IsHearted: false,
         },
         {
             ID: "8",
@@ -103,6 +110,7 @@ export const getMockPosts = () => {
             CreatedAt: "3h ago",
             NumOfComments: 15,
             NumOfHearts: 6,
+            IsHearted: false,
         },
         {
             ID: "9",
@@ -116,6 +124,7 @@ export const getMockPosts = () => {
             CreatedAt: "5h ago",
             NumOfComments: 42,
             NumOfHearts: 145,
+            IsHearted: false,
         },
         {
             ID: "10",
@@ -129,6 +138,7 @@ export const getMockPosts = () => {
             CreatedAt: "1d ago",
             NumOfComments: 7,
             NumOfHearts: 12,
+            IsHearted: false,
         },
         {
             ID: "11",
@@ -142,6 +152,7 @@ export const getMockPosts = () => {
             CreatedAt: "1d ago",
             NumOfComments: 7,
             NumOfHearts: 12,
+            IsHearted: false,
         }
     ];
 }
