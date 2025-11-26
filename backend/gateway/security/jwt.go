@@ -1,14 +1,12 @@
 package security
 
 import (
-	"context"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
+	"os"
 	"social-network/gateway/utils"
 	"strings"
 	"time"
@@ -35,27 +33,8 @@ type Claims struct {
 	// You can embed custom fields as needed, e.g. Email, TenantID, etc.
 }
 
-type ctxKey string
-
-// Holds the keys to values on request context.
-// Use
-const (
-	ClaimsKey        ctxKey = "jwtClaims"
-	ReqId            ctxKey = "X-Request-Id"
-	ReqActionDetails ctxKey = "X-Action-Details"
-	ReqTimestamp     ctxKey = "X-Timestamp"
-)
-
 var (
-	// Replace with a strong secret (32+ random bytes) from env in real apps.
-	secret = []byte(func() string {
-		s, err := utils.GetEnv("jwt-key")
-		if err != nil {
-			fmt.Println(err)
-			return ""
-		}
-		return s
-	}())
+	secret = []byte(os.Getenv("JWT_KEY"))
 	// Allow a small clock skew when validating nbf/exp.
 	clockSkew = 30 * time.Second
 )
@@ -72,8 +51,8 @@ func CreateToken(claims Claims) (string, error) {
 		return "", err
 	}
 
-	headerEnc := B64urlEncode(headerJSON)
-	payloadEnc := B64urlEncode(payloadJSON)
+	headerEnc := utils.B64urlEncode(headerJSON)
+	payloadEnc := utils.B64urlEncode(payloadJSON)
 	unsigned := headerEnc + "." + payloadEnc
 
 	sig := signHS256(unsigned, secret)
@@ -83,7 +62,7 @@ func CreateToken(claims Claims) (string, error) {
 func signHS256(unsigned string, secret []byte) string {
 	h := hmac.New(sha256.New, secret)
 	h.Write([]byte(unsigned))
-	return B64urlEncode(h.Sum(nil))
+	return utils.B64urlEncode(h.Sum(nil))
 }
 
 // ParseAndValidate verifies the signature and time-based claims.
@@ -99,7 +78,7 @@ func ParseAndValidate(token string) (Claims, error) {
 		return zero, errors.New("invalid signature")
 	}
 
-	payload, err := B64urlDecode(parts[1])
+	payload, err := utils.B64urlDecode(parts[1])
 	if err != nil {
 		return zero, fmt.Errorf("payload base64: %w", err)
 	}
@@ -120,33 +99,4 @@ func ParseAndValidate(token string) (Claims, error) {
 		}
 	}
 	return claims, nil
-}
-
-func B64urlEncode(data []byte) string {
-	return base64.RawURLEncoding.EncodeToString(data)
-}
-
-func B64urlDecode(s string) ([]byte, error) {
-	return base64.RawURLEncoding.DecodeString(s)
-}
-
-// Adds value val to r context with key 'key'
-func RequestWithValue[T any](r *http.Request, key ctxKey, val T) *http.Request {
-	ctx := context.WithValue(r.Context(), key, val)
-	return r.WithContext(ctx)
-}
-
-// Get value T from request context with key 'key'
-func GetValue[T any](r *http.Request, key ctxKey) (T, bool) {
-	v := r.Context().Value(key)
-	if v == nil {
-		fmt.Println("v is nil")
-		var zero T
-		return zero, false
-	}
-	c, ok := v.(T)
-	if !ok {
-		panic(1) // this should never happen, which is why I'm putting a panic here so that this mistake is obvious
-	}
-	return c, ok
 }

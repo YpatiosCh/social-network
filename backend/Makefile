@@ -8,6 +8,7 @@ build-base:
 apply-namespace:
 	kubectl apply -f k8s/users/namespace-users.yaml
 	kubectl apply -f k8s/nginx/namespace-nginx.yaml
+	kubectl apply -f k8s/gateway/namespace-gateway.yaml
 
 deploy-nginx:
 	helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -25,11 +26,18 @@ apply-db:
 
 build-services:
 	docker build -t social-network/users:dev -f services/users/Dockerfile .
+# 	in progress
+# 	docker build -t social-network/api-gateway:dev -f gateway/Dockerfile .
 
 deploy-users:
 	kubectl apply -f k8s/users/deployment.yaml
 	kubectl apply -f k8s/users/service.yaml
 	kubectl apply -f k8s/users/secret-users.yaml
+
+# deploy the whole k8s folder with namespace files first
+# in progress
+deploy-all:
+	kubectl apply -f k8s --recursive --selector type=namespace
 
 run-migrations:
 	kubectl delete job users-migrate -n users --ignore-not-found=true

@@ -1,10 +1,10 @@
 package utils
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 )
 
 func WriteJSON(w http.ResponseWriter, code int, v any) error {
@@ -24,9 +24,10 @@ func ErrorJSON(w http.ResponseWriter, code int, msg string) {
 	}
 }
 
-func GetEnv(key string) (v string, err error) {
-	if v = os.Getenv(key); v != "" {
-		return v, err
-	}
-	return "", fmt.Errorf("env variable for %s not found", v)
+func B64urlEncode(data []byte) string {
+	return base64.RawURLEncoding.EncodeToString(data)
+}
+
+func B64urlDecode(s string) ([]byte, error) {
+	return base64.RawURLEncoding.DecodeString(s)
 }
