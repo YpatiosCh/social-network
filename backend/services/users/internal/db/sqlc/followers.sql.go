@@ -52,6 +52,89 @@ func (q *Queries) FollowUser(ctx context.Context, arg FollowUserParams) (string,
 	return follow_user, err
 }
 
+const getFollowSuggestions = `-- name: GetFollowSuggestions :many
+WITH
+s1 AS (
+    SELECT 
+        f2.following_id AS user_id,
+        5 AS score         -- weighted higher
+    FROM follows f1 
+    JOIN follows f2 ON f1.following_id = f2.follower_id
+    WHERE f1.follower_id = $1
+      AND f2.following_id <> $1
+      AND NOT EXISTS (
+          SELECT 1 FROM follows x
+          WHERE x.follower_id = $1 AND x.following_id = f2.following_id
+      )
+),
+
+s2 AS (
+    SELECT
+        gm2.user_id,
+        3 AS score        -- lighter weight than follows
+    FROM group_members gm1
+    JOIN group_members gm2 ON gm1.group_id = gm2.group_id
+    WHERE gm1.user_id = $1
+      AND gm2.user_id <> $1
+      AND gm2.deleted_at IS NULL
+),
+
+combined AS (
+    SELECT user_id, SUM(score) AS total_score
+    FROM (
+        SELECT user_id, score FROM s1
+        UNION ALL
+        SELECT user_id, score FROM s2
+    ) scored
+    GROUP BY user_id
+)
+
+SELECT 
+    u.id,
+    u.username,
+    u.avatar,
+    c.total_score
+FROM combined c
+JOIN users u ON u.id = c.user_id
+ORDER BY c.total_score DESC, random()
+LIMIT 10
+`
+
+type GetFollowSuggestionsRow struct {
+	ID         int64
+	Username   string
+	Avatar     string
+	TotalScore int64
+}
+
+// S1: second-degree follows
+// S2: shared groups
+// Combine & score
+func (q *Queries) GetFollowSuggestions(ctx context.Context, followerID int64) ([]GetFollowSuggestionsRow, error) {
+	rows, err := q.db.Query(ctx, getFollowSuggestions, followerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetFollowSuggestionsRow{}
+	for rows.Next() {
+		var i GetFollowSuggestionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Avatar,
+			&i.TotalScore,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getFollowerCount = `-- name: GetFollowerCount :one
 SELECT COUNT(*) AS follower_count
 FROM follows
@@ -174,6 +257,32 @@ func (q *Queries) GetFollowingCount(ctx context.Context, followerID int64) (int6
 	var following_count int64
 	err := row.Scan(&following_count)
 	return following_count, err
+}
+
+const getFollowingIds = `-- name: GetFollowingIds :many
+SELECT following_id
+FROM follows 
+WHERE follower_id = $1
+`
+
+func (q *Queries) GetFollowingIds(ctx context.Context, followerID int64) ([]int64, error) {
+	rows, err := q.db.Query(ctx, getFollowingIds, followerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int64{}
+	for rows.Next() {
+		var following_id int64
+		if err := rows.Scan(&following_id); err != nil {
+			return nil, err
+		}
+		items = append(items, following_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getMutualFollowers = `-- name: GetMutualFollowers :many

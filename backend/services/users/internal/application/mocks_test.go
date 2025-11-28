@@ -174,6 +174,22 @@ func (m *MockQuerier) IsFollowingEither(ctx context.Context, arg sqlc.IsFollowin
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockQuerier) GetFollowSuggestions(ctx context.Context, followerID int64) ([]sqlc.GetFollowSuggestionsRow, error) {
+	args := m.Called(ctx, followerID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]sqlc.GetFollowSuggestionsRow), args.Error(1)
+}
+
+func (m *MockQuerier) GetFollowingIds(ctx context.Context, userID int64) ([]int64, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]int64), args.Error(1)
+}
+
 // Groups-related methods
 func (m *MockQuerier) GetAllGroups(ctx context.Context, arg sqlc.GetAllGroupsParams) ([]sqlc.GetAllGroupsRow, error) {
 	args := m.Called(ctx, arg)

@@ -1,3 +1,5 @@
+
+-- TODO both feeds by date only, don't keep track of seen, just serve paginated by newest
 -------------------------------------------------------
 -- name: GetPublicFeed :many
 ---------------------------------------------------------

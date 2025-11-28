@@ -106,9 +106,32 @@ func (s *UserService) HandleFollowRequest(ctx context.Context, req HandleFollowR
 	return nil
 }
 
-// TODO returns ids of people a user follows so that the feed can be fetched
+// returns ids of people a user follows for posts service so that the feed can be fetched
 func (s *UserService) GetFollowingIds(ctx context.Context, userId int64) ([]int64, error) {
-	return nil, nil
+	ids, err := s.db.GetFollowingIds(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
+// returns ten random users that people you follow follow, or are in your groups
+// TODO for extra suggestions (have liked your public posts,
+// or have commented on your public posts, or have liked posts you liked) need to ask posts service
+func (s *UserService) GetFollowSuggestions(ctx context.Context, userId int64) ([]User, error) {
+	rows, err := s.db.GetFollowSuggestions(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	users := make([]User, 0, len(rows))
+	for _, r := range rows {
+		users = append(users, User{
+			UserId:   r.ID,
+			Username: r.Username,
+			Avatar:   r.Avatar,
+		})
+	}
+	return users, nil
 }
 
 // NOT GRPC

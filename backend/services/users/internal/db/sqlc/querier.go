@@ -23,10 +23,15 @@ type Querier interface {
 	DeclineGroupInvite(ctx context.Context, arg DeclineGroupInviteParams) error
 	FollowUser(ctx context.Context, arg FollowUserParams) (string, error)
 	GetAllGroups(ctx context.Context, arg GetAllGroupsParams) ([]GetAllGroupsRow, error)
+	// S1: second-degree follows
+	// S2: shared groups
+	// Combine & score
+	GetFollowSuggestions(ctx context.Context, followerID int64) ([]GetFollowSuggestionsRow, error)
 	GetFollowerCount(ctx context.Context, followingID int64) (int64, error)
 	GetFollowers(ctx context.Context, arg GetFollowersParams) ([]GetFollowersRow, error)
 	GetFollowing(ctx context.Context, arg GetFollowingParams) ([]GetFollowingRow, error)
 	GetFollowingCount(ctx context.Context, followerID int64) (int64, error)
+	GetFollowingIds(ctx context.Context, followerID int64) ([]int64, error)
 	GetGroupInfo(ctx context.Context, id int64) (GetGroupInfoRow, error)
 	GetGroupMembers(ctx context.Context, arg GetGroupMembersParams) ([]GetGroupMembersRow, error)
 	GetMutualFollowers(ctx context.Context, arg GetMutualFollowersParams) ([]GetMutualFollowersRow, error)

@@ -10,8 +10,6 @@ DELETE FROM follows
 WHERE follower_id = $1 AND following_id = $2;
 
 
-
-
 -- name: GetFollowers :many
 SELECT u.id, u.username, u.avatar,u.profile_public, f.created_at AS followed_at
 FROM follows f
@@ -28,6 +26,11 @@ JOIN users u ON u.id = f.following_id
 WHERE f.follower_id = $1
 ORDER BY f.created_at DESC
 LIMIT $2 OFFSET $3;
+
+-- name: GetFollowingIds :many
+SELECT following_id
+FROM follows 
+WHERE follower_id = $1;
 
 
 -- name: GetFollowerCount :one
@@ -97,3 +100,54 @@ SELECT EXISTS(
       AND target_id = $2
       AND status = 'pending'
 ) AS has_pending_request;
+
+
+-- name: GetFollowSuggestions :many
+WITH
+-- S1: second-degree follows
+s1 AS (
+    SELECT 
+        f2.following_id AS user_id,
+        5 AS score         -- weighted higher
+    FROM follows f1 
+    JOIN follows f2 ON f1.following_id = f2.follower_id
+    WHERE f1.follower_id = $1
+      AND f2.following_id <> $1
+      AND NOT EXISTS (
+          SELECT 1 FROM follows x
+          WHERE x.follower_id = $1 AND x.following_id = f2.following_id
+      )
+),
+
+-- S2: shared groups
+s2 AS (
+    SELECT
+        gm2.user_id,
+        3 AS score        -- lighter weight than follows
+    FROM group_members gm1
+    JOIN group_members gm2 ON gm1.group_id = gm2.group_id
+    WHERE gm1.user_id = $1
+      AND gm2.user_id <> $1
+      AND gm2.deleted_at IS NULL
+),
+
+-- Combine & score
+combined AS (
+    SELECT user_id, SUM(score) AS total_score
+    FROM (
+        SELECT * FROM s1
+        UNION ALL
+        SELECT * FROM s2
+    ) scored
+    GROUP BY user_id
+)
+
+SELECT 
+    u.id,
+    u.username,
+    u.avatar,
+    c.total_score
+FROM combined c
+JOIN users u ON u.id = c.user_id
+ORDER BY c.total_score DESC, random()
+LIMIT 10;
