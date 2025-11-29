@@ -5,37 +5,59 @@ package users;
 option go_package = "social-network/shared/gen/users;users";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
 
 service UserService {
-  rpc GetBasicUserInfo (UserBasicInfoRequest) returns (UserBasicInfoResponse);
+  // Auth
+  rpc RegisterUser (RegisterUserRequest) returns (User);
+  rpc LoginUser (LoginRequest) returns (User);
+  rpc UpdateUserPassword (UpdatePasswordRequest) returns (google.protobuf.Empty);
+  rpc UpdateUserEmail (UpdateEmailRequest) returns (google.protobuf.Empty);
+  // Followers
+  rpc GetFollowersPaginated (Pagination) returns (ListUsers);
+  rpc GetFollowingPaginated (Pagination) returns (ListUsers);
+  rpc FollowUser (FollowUserRequest) returns (FollowUserResponse);
+  rpc UnFollowUser (FollowUserRequest) returns (google.protobuf.BoolValue);
+  rpc HandleFollowRequest (HandleFollowRequestRequest) returns (google.protobuf.Empty);
+  rpc GetFollowingIds (google.protobuf.Int64Value) returns (Int64Arr);
+  rpc GetFollowSuggestions (google.protobuf.Int64Value) returns (ListUsers);
+  // GROUPS
+  rpc GetAllGroupsPaginated (Pagination) returns (GroupArr);
+  rpc GetUserGroupsPaginated (Pagination) returns (GroupArr);
+  rpc GetGroupInfo (GeneralGroupRequest) returns (Group);
+  rpc GetGroupMembers (GroupMembersRequest) returns (GroupUserArr);
+  rpc SearchGroups (GroupSearchRequest) returns (GroupArr);
+  rpc InviteToGroup (InviteToGroupRequest) returns (google.protobuf.Empty);
+  // rpc CancelInviteToGroup (InviteToGroupRequest) returns (google.protobuf.Empty);
+  rpc RequestJoinGroupOrCancel (GroupJoinRequest) returns (google.protobuf.Empty);
+  rpc RespondToGroupInvite (HandleGroupInviteRequest) returns (google.protobuf.Empty);
+  rpc HandleGroupJoinRequest (HandleJoinRequest) returns (google.protobuf.Empty);
+  rpc LeaveGroup (GeneralGroupRequest) returns (google.protobuf.Empty);
+  // rpc RemoveFromGroup (RemoveFromGroupRequest) returns (google.protobuf.Empty);
+  rpc CreateGroup (CreateGroupRequest) returns (google.protobuf.Int64Value);
+  // Profile
+  rpc GetBasicUserInfo (google.protobuf.Int64Value) returns (User);
   rpc GetUserProfile (GetUserProfileRequest) returns (UserProfileResponse);
-  rpc RegisterUser(RegisterUserRequest) returns (User);
-  rpc LoginUser(LoginRequest) returns (User);
+  rpc SearchUsers (UserProfileRequest) returns (ListUsers);
+  rpc UpdateUserProfile (UpdateProfileRequest) returns (UserProfileResponse);
+  rpc UpdateProfilePrivacy (UpdateProfilePrivacyRequest) returns (google.protobuf.Empty);
+
 }
 
-// COMMON
+// COMMON & GENERIC
 message User {
   int64 user_id = 1;
   string username = 2;
   string avatar = 3;
 }
 
-// BASIC USER INFO
-message UserBasicInfoRequest {
-  int64 id = 1;
+message ListUsers {
+  repeated User users = 1;
 }
 
-message UserBasicInfoResponse {
-  int64 userId = 1;
-  string user_name = 2;
-  string avatar = 3;
-  bool public_profile = 4;
-}
-
-// GET USER PROFILE
-message GetUserProfileRequest {
-  int64 user_id = 1;
-  int64 requester_id = 2;
+message Int64Arr {
+  repeated int64 values = 1; 
 }
 
 message UserProfileResponse {
@@ -74,4 +96,160 @@ message RegisterUserRequest {
 message LoginRequest {
   string identifier = 1;
   string password =2;
+}
+
+// UPDATE PASSWORD
+message UpdatePasswordRequest {
+    int64 user_id=1;
+    string old_password = 2;
+    string new_password = 3;
+}
+
+// UPDATE USER EMAIL
+message UpdateEmailRequest {
+    int64 user_id = 1;
+    string email = 2;
+}
+
+// GET FOLLOWERS
+message Pagination {
+    int64 user_id = 1;
+    int32 limit = 2;
+    int32 offset = 3; 
+}
+
+// FOLLOW USER
+message FollowUserRequest {
+    int64 follower_id = 1;
+    int64 target_user_id = 2;
+}
+
+message FollowUserResponse {
+    bool is_pending = 1;
+    bool viewer_is_following = 2;
+}
+
+message HandleFollowRequestRequest {
+    int64 user_id = 1;
+    int64 requester_id = 2;
+    bool accept = 3;
+}
+
+// GROUPS
+message Group {
+  int64 group_id = 1;
+  int64 group_owner_id = 2;
+  string group_title = 3;
+  string group_description = 4;
+  string group_image = 5;
+  int32 members_count = 6;
+  bool is_member = 7;
+  bool is_owner = 8;
+  bool is_pending = 9;
+}
+
+message GroupArr {
+  repeated Group group_arr = 1;
+}
+
+message GeneralGroupRequest {
+  int64 group_id = 1;
+  int64 user_id = 2;
+}
+
+message GroupMembersRequest {
+  int64 user_id = 1;
+  int64 group_id = 2;
+  int32 limit = 3;
+  int32 offset = 4; 
+}
+
+message GroupUser {
+  int64 user_id = 1;
+  string username = 2;
+  string avatar = 3;
+  string group_role = 4;
+}
+
+message GroupUserArr {
+  repeated GroupUser group_user_arr = 1;
+}
+
+message GroupSearchRequest {
+  string SearchTerm = 1;
+  int64 user_id = 2;
+  int32 limit = 3;
+  int32 offset = 4; 
+}
+
+
+message InviteToGroupRequest {
+  int64 inviter_id = 1;
+  int64 invited_id = 2;
+  int64 group_id = 3;
+}
+
+message GroupJoinRequest {
+  int64 group_id = 1;
+  int64 requester_id = 2;
+}
+
+message HandleGroupInviteRequest {
+  int64 group_id = 1;
+  int64 invited_id = 2;
+  bool accepted = 3;
+}
+
+message HandleJoinRequest {
+  int64 group_id = 1;    
+  int64 requester_id = 2;
+  int64 owner_id = 3;
+  bool accepted = 4;
+}
+
+message RemoveFromGroupRequest {
+  int64 group_id = 1;  
+  int64 member_id = 2;
+  int64 owner_id = 3;
+}
+
+message CreateGroupRequest {
+    int64 owner_id = 1; 
+    string group_title = 2;
+    string group_description = 3;
+    string group_image = 4;
+}
+
+// BASIC USER INFO
+message UserBasicInfoResponse {
+  int64 userId = 1;
+  string user_name = 2;
+  string avatar = 3;
+  bool public_profile = 4;
+}
+
+// GET USER PROFILE
+message GetUserProfileRequest {
+  int64 user_id = 1;
+  int64 requester_id = 2;
+}
+
+message UserProfileRequest {
+    int64 user_id = 1;
+    int64 requester_id = 2;
+}
+
+message UpdateProfileRequest {
+  int64 user_id = 1;
+  string username = 2;
+  string first_name = 3;
+  string last_name = 4;
+  google.protobuf.Timestamp date_of_birth = 5;
+  string avatar = 6;
+  string about = 7;
+}
+
+message UpdateProfilePrivacyRequest {
+  int64 user_id = 1;
+  bool public = 2;
 }
