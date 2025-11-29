@@ -73,7 +73,7 @@ func (s *UserService) FollowUser(ctx context.Context, req FollowUserReq) (resp F
 }
 
 // CHAT SERVICE EVENT should it trigger event to delete conversation if none of the two follow each other any more? Or just make it inactive?
-func (s *UserService) UnFollowUser(ctx context.Context, req FollowUserReq) (viewerIsFolling bool, err error) {
+func (s *UserService) UnFollowUser(ctx context.Context, req FollowUserReq) (viewerIsFollowing bool, err error) {
 	err = s.db.UnfollowUser(ctx, sqlc.UnfollowUserParams{
 		FollowerID:  req.FollowerId,
 		FollowingID: req.TargetUserId,
