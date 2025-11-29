@@ -1,5 +1,5 @@
 # ---- Build stage ----
-FROM base AS build
+FROM social-network/go-base AS build
 
 WORKDIR /app
 

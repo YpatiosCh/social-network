@@ -48,11 +48,6 @@ apply-apps:
 apply-ingress:
 	kubectl apply -f k8s/nginx/api-gateway-ingress.yaml
 
-# deploy-users:
-# 	kubectl apply -f k8s/users/deployment.yaml
-# 	kubectl apply -f k8s/users/service.yaml
-# 	kubectl apply -f k8s/users/secret-users.yaml
-
 
 build-proto:
 	$(MAKE) -f shared/proto/protoMakefile generate

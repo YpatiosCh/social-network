@@ -1,28 +1,25 @@
-# ---- Build stage ----
-FROM base AS build
+FROM social-network/go-base AS build
 
 WORKDIR /app
 
-# Copy root module files
-COPY ../../go.mod ../../go.sum ./
-RUN go mod download
+COPY . .
 
-# Copy entire repo so shared/ and service code are available
-COPY ../../ .
+RUN go build -o notifications_service ./services/notifications/cmd/server
 
-# Build notifications service binary
-RUN go build -o notifications_service ./services/notifications
+RUN go build -o migrate ./services/notifications/cmd/migrate
 
-# ---- Runtime stage ----
-FROM alpine:latest
+FROM alpine:3.20
+
+RUN apk add --no-cache postgresql-client
 
 WORKDIR /app
 
-# Copy built binary and migrations
 COPY --from=build /app/notifications_service .
-COPY --from=build /app/services/notifications/migrations ./migrations
+COPY --from=build /app/migrate .
+COPY --from=build /app/services/notifications/internal/db/migrations ./migrations
+# COPY --from=build /app/services/notifications/internal/db/seeds ./seeds
 
-# Env vars (can also be set in docker-compose)
-ENV DATABASE_URL=postgres://postgres:secret@notifications-db:5432/social_notifications?sslmode=disable
+# RUN chmod +x /app/seeds/seed.sh
+
 
 CMD ["./notifications_service"]

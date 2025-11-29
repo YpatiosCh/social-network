@@ -22,8 +22,9 @@ func main() {
 	var pool *pgxpool.Pool
 	var err error
 
+	connStr := os.Getenv("DATABASE_URL")
+
 	for i := range 10 {
-		connStr := os.Getenv("DATABASE_URL")
 		pool, err = pgxpool.New(ctx, connStr)
 		if err == nil {
 			break
