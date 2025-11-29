@@ -15,6 +15,5 @@ func (s *Server) GetBasicUserInfo(ctx context.Context, req *commonpb.UserId) (*p
 	return &pb.User{
 		UserName: u.Username,
 		Avatar:   u.Avatar,
-		// PublicProfile: u.Public,
 	}, err
 }

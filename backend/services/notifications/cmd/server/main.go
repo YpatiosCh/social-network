@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"social-network/services/notifications/internal/server"
 	"time"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -33,5 +34,9 @@ func main() {
 
 	log.Println("Connected to users database")
 
-	log.Println("Service ready!")
+	s := &server.Server{
+		Port: "50052",
+	}
+	s.InitClients()
+	s.RunGRPCServer()
 }

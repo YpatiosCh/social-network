@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 	connStr := os.Getenv("DATABASE_URL")
 
 	for range 10 {
-		if err := RunMigrations(connStr, "./migrations"); err != nil {
+		if err := run(connStr, "./migrations"); err != nil {
 			log.Println("Migration failed, retrying in 2s:", err)
 			time.Sleep(2 * time.Second)
 			continue
@@ -55,17 +56,4 @@ func run(dbUrl string, migrationsPath string) error {
 
 	log.Println("✅ Migrations applied successfully")
 	return nil
-}
-
-// Runs migrations with retries
-func RunMigrations(dbUrl string, migrationsPath string) (err error) {
-	for range 10 {
-		if err = run(os.Getenv("DATABASE_URL"), "./migrations"); err != nil {
-			log.Println("Migration failed, retrying in 2s:", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		return nil
-	}
-	return err
 }

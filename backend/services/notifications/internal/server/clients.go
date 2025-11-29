@@ -1,7 +1,3 @@
-/*
-Establish connections to other services
-*/
-
 package server
 
 import (
@@ -34,8 +30,8 @@ func (s *Server) InitClients() {
 
 	// List of initializer functions
 	initializers := []func(opts []grpc.DialOption) error{
-		s.InitTemplateClient, // template
-		// Add more here as you add more clients
+		// Add all init clients funcs
+		s.InitTemplateClient,
 	}
 
 	for _, initFn := range initializers {
@@ -45,9 +41,8 @@ func (s *Server) InitClients() {
 	}
 }
 
-// Connects to client and adds connection to s.Clients.
-//
-//	TEMPLATE
+// Connects to client and adds connection to s.Clients
+// TEMPLATE
 func (s *Server) InitTemplateClient(opts []grpc.DialOption) (err error) {
 	conn, err := grpc.NewClient(ports.Users, opts...)
 	if err != nil {
