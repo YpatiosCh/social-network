@@ -1,8 +1,8 @@
-import { getMockPosts } from '@/mock-data/posts';
-import PostCard from "@/components/ui/post-card";
+import { fetchFeedPosts } from "@/actions/posts/posts";
+import FeedList from "@/components/feed/feed-list";
 
-export default function FriendsFeedPage() {
-    const posts = getMockPosts();
+export default async function FriendsFeedPage() {
+    const initialPosts = await fetchFeedPosts(0, 5);
 
     return (
         <div className="feed-container">
@@ -11,11 +11,7 @@ export default function FriendsFeedPage() {
                 <p className="feed-subtitle">Updates from your friends</p>
             </div>
 
-            <div className="flex flex-col">
-                {posts.map((post, i) => (
-                    <PostCard key={i} post={post} />
-                ))}
-            </div>
+            <FeedList initialPosts={initialPosts} fetchPosts={fetchFeedPosts} />
         </div>
     );
 }
