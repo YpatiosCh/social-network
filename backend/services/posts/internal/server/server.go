@@ -34,7 +34,7 @@ func (s *Server) RunGRPCServer() {
 
 	grpcServer := grpc.NewServer()
 
-	// pb.RegisterUserServiceServer(grpcServer, &Server{})
+	// pb.RegisterUserServiceServer(grpcServer, s)
 
 	// ================================================
 	// TEST GRPC CONN
