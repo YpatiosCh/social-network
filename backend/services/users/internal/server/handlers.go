@@ -165,3 +165,160 @@ func (s *Server) UpdateUserEmail(ctx context.Context, req *pb.UpdateEmailRequest
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (s *Server) GetFollowersPaginated(ctx context.Context, req *pb.Pagination) (*pb.ListUsers, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "GetFollowersPaginated: request is nil")
+	}
+
+	userId := req.GetUserId()
+	limit := req.GetLimit()
+	offset := req.GetOffset()
+	if userId == 0 || offset < 0 || limit > application.MAX_FOLLOWERS_PAGE_LIMIT {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("UpdateUserEmail: userId %v, limit: %v, offset: %v", userId, limit, offset))
+	}
+
+	pag := application.Pagination{
+		UserId: userId,
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	resp, err := s.Service.GetFollowersPaginated(ctx, pag)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "GetFollowersPaginated: %v", err)
+	}
+	return usersToPB(resp), nil
+}
+
+func (s *Server) GetFollowingPaginated(ctx context.Context, req *pb.Pagination) (*pb.ListUsers, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "GetFollowingPaginated: request is nil")
+	}
+
+	userId := req.GetUserId()
+	limit := req.GetLimit()
+	offset := req.GetOffset()
+	if userId == 0 || offset < 0 || limit > application.MAX_FOLLOWERS_PAGE_LIMIT {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("GetFollowingPaginated: userId %v, limit: %v, offset: %v", userId, limit, offset))
+	}
+
+	pag := application.Pagination{
+		UserId: userId,
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	resp, err := s.Service.GetFollowingPaginated(ctx, pag)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "GetFollowingPaginated: %v", err)
+	}
+	return usersToPB(resp), nil
+}
+
+func (s *Server) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "FollowUser: request is nil")
+	}
+
+	followerId := req.GetFollowerId()
+	targetUserId := req.GetTargetUserId()
+	if followerId == 0 || targetUserId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "follower id and target user id are required")
+	}
+
+	resp, err := s.Service.FollowUser(ctx, application.FollowUserReq{
+		FollowerId:   followerId,
+		TargetUserId: targetUserId,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "FollowUser: %v", err)
+	}
+
+	return &pb.FollowUserResponse{
+		IsPending:         resp.IsPending,
+		ViewerIsFollowing: resp.ViewerIsFollowing,
+	}, nil
+}
+
+func (s *Server) UnFollowUser(ctx context.Context, req *pb.FollowUserRequest) (*wrapperspb.BoolValue, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "UnFollowUser: request is nil")
+	}
+	followerId := req.GetFollowerId()
+	targetId := req.GetTargetUserId()
+	if followerId == 0 || targetId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "follower id and target user id are required")
+	}
+
+	resp, err := s.Service.UnFollowUser(ctx, application.FollowUserReq{
+		FollowerId:   followerId,
+		TargetUserId: targetId,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "UnFollowUser: %v", err)
+	}
+
+	return wrapperspb.Bool(resp), nil
+}
+
+func (s *Server) HandleFollowRequest(ctx context.Context, req *pb.HandleFollowRequestRequest) (*emptypb.Empty, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "HandleFollowRequest: request is nil")
+	}
+
+	userID := req.GetUserId()
+	reqID := req.GetRequesterId()
+	acc := req.GetAccept()
+	if userID == 0 || reqID == 0 {
+		return nil, status.Error(codes.InvalidArgument, "follower id and requester id are required")
+	}
+	err := s.Service.HandleFollowRequest(ctx, application.HandleFollowRequestReq{
+		UserId:      userID,
+		RequesterId: reqID,
+		Accept:      acc,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "HandleFollowRequest: %v", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *Server) GetFollowingIds(ctx context.Context, req *wrapperspb.Int64Value) (*pb.Int64Arr, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "GetFollowingIds: request is nil")
+	}
+
+	resp, err := s.Service.GetFollowingIds(ctx, req.GetValue())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "GetFollowingIds: %v", err)
+	}
+	return &pb.Int64Arr{Values: resp}, nil
+}
+
+func (s *Server) GetFollowSuggestions(ctx context.Context, req *wrapperspb.Int64Value) (*pb.ListUsers, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "GetFollowSuggestions: request is nil")
+	}
+
+	resp, err := s.Service.GetFollowSuggestions(ctx, req.GetValue())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "GetFollowSuggestions: %v", err)
+	}
+
+	return usersToPB(resp), nil
+}
+
+func usersToPB(dbUsers []application.User) *pb.ListUsers {
+	pbUsers := make([]*pb.User, 0, len(dbUsers))
+
+	for _, u := range dbUsers {
+		pbUsers = append(pbUsers, &pb.User{
+			UserId:   u.UserId,
+			Username: u.Username,
+			Avatar:   u.Avatar,
+		})
+	}
+
+	return &pb.ListUsers{Users: pbUsers}
+}
