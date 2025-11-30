@@ -24,5 +24,10 @@ COPY services/users/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/seeds/seed.sh && \
     chmod +x /app/entrypoint.sh
 
-ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["./users_service"]
+
+
+#Aleksis: changed to inline entrypoint because there was an issue with the sh script not running properly in Docker container, possibly due to windows text file formatting issues
+# ENTRYPOINT ["/app/entrypoint.sh"]
+# CMD ["./users_service"]
+CMD ["sh", "-c", "set -e; echo 'Running migrations...' && ./migrate; echo 'Running seeds...' && ./seeds/seed.sh || true; echo 'Starting service...' && exec ./users_service"]
+

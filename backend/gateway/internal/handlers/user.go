@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
-	"social-network/gateway/internal/security"
 	"social-network/gateway/internal/utils"
 	"social-network/shared/gen-go/users"
 	"strconv"
@@ -10,7 +10,7 @@ import (
 
 func (h *Handlers) getUserProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		fmt.Println("getUserProfile handler called")
 		userIdStr := r.URL.Query().Get("user_id")
 		if userIdStr == "" {
 			utils.ErrorJSON(w, http.StatusBadRequest, "missing user_id query param")
@@ -23,11 +23,13 @@ func (h *Handlers) getUserProfile() http.HandlerFunc {
 			return
 		}
 
-		claims, ok := utils.GetValue[security.Claims](r, utils.ClaimsKey)
-		if !ok {
-			panic(1)
-		}
-		requesterId := int64(claims.UserId)
+		// claims, ok := utils.GetValue[security.Claims](r, utils.ClaimsKey)
+		// if !ok {
+		// 	panic(1)
+		// }
+		// requesterId := int64(claims.UserId)
+
+		var requesterId int64 = 0
 
 		grpcReq := users.GetUserProfileRequest{
 			UserId:      userId,
@@ -36,7 +38,7 @@ func (h *Handlers) getUserProfile() http.HandlerFunc {
 
 		basicUserResp, err := h.Services.Users.GetUserProfile(r.Context(), &grpcReq)
 		if err != nil {
-			utils.ErrorJSON(w, http.StatusInternalServerError, "failed to get user info")
+			utils.ErrorJSON(w, http.StatusInternalServerError, "failed to get user info: "+err.Error())
 			return
 		}
 
