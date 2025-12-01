@@ -672,14 +672,16 @@ func ValidateStruct(s any) error {
 		validator, ok := val.(Validator)
 
 		nullable := fieldType.Tag.Get("validate") == "nullable"
+		isPrimitive := fieldVal.Type().PkgPath() == "" // exclude primitives
+		zeroOk := allowedZeroVal[fieldVal.Type().Name()]
 
-		if !nullable {
+		if !nullable && !isPrimitive && !zeroOk {
 			if isZeroValue(fieldVal) {
 				allErrors = append(allErrors, fmt.Sprintf("%s: required field missing", fieldType.Name))
 				continue
 			}
 		}
-		// Call Validate() if the field implements Validator
+
 		if ok {
 			if err := validator.Validate(); err != nil {
 				allErrors = append(allErrors, fmt.Sprintf("%s: %v", fieldType.Name, err))
@@ -691,6 +693,11 @@ func ValidateStruct(s any) error {
 		return fmt.Errorf("validation errors: %v", allErrors)
 	}
 	return nil
+}
+
+// Excluded types from nul check
+var allowedZeroVal = map[string]bool{
+	"Offset": true,
 }
 
 // isZeroValue returns true if the reflect.Value is its type's zero value

@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"social-network/shared/customtypes"
+	"strings"
 	"testing"
 	"time"
 )
@@ -284,4 +285,36 @@ func stringsAfter(s, sep string) string {
 		return s
 	}
 	return s[i:]
+}
+
+func TestValidateStruct_BoolAndOffsetExempt(t *testing.T) {
+	type TestStruct struct {
+		Flag   bool               `validate:""` // bool = false should NOT trigger required
+		Number customtypes.Offset `validate:""` // Offset = 0 should NOT trigger required
+		Name   customtypes.Name   `validate:""` // string = "" SHOULD trigger required
+	}
+	s := TestStruct{
+		Flag:   false, // should NOT fail
+		Number: 0,     // should NOT fail
+		Name:   "",    // should fail
+	}
+
+	err := customtypes.ValidateStruct(s)
+	if err == nil {
+		t.Fatalf("expected validation error but got none")
+	}
+
+	// We expect ONLY Name to fail
+	msg := err.Error()
+	if !strings.Contains(msg, "Name: required field missing") {
+		t.Fatalf("expected missing name error, got: %v", msg)
+	}
+
+	// Verify bool and Offset are NOT included in errors
+	if strings.Contains(msg, "Flag") {
+		t.Fatalf("bool=false should not produce error, got: %v", msg)
+	}
+	if strings.Contains(msg, "Number") {
+		t.Fatalf("Offset=0 should not produce error, got: %v", msg)
+	}
 }
