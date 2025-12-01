@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
+	"social-network/services/posts/internal/application"
+	"social-network/services/posts/internal/db/sqlc"
 
 	"time"
 
@@ -37,8 +39,9 @@ func main() {
 
 	log.Println("Service ready!")
 
-	// queries := sqlc.New(pool)
-	// postsService := postsservice.NewPostsService(queries, pool)
+	queries := sqlc.New(pool)
+	postsService := application.NewPostsService(queries, pool)
+	_ = postsService
 
 	// server := server.NewPostsServer(postsService)
 	// server.RunGRPCServer()
