@@ -457,7 +457,7 @@ func (s *Server) SearchGroups(ctx context.Context, req *pb.GroupSearchRequest) (
 
 	resp, err := s.Application.SearchGroups(ctx, application.GroupSearchReq{
 		UserId:     ct.Id(userId),
-		SearchTerm: search,
+		SearchTerm: ct.SearchTerm(search),
 		Limit:      ct.Limit(limit),
 		Offset:     ct.Offset(offset),
 	})
@@ -721,7 +721,7 @@ func (s *Server) SearchUsers(ctx context.Context, req *pb.UserSearchRequest) (*p
 	}
 
 	resp, err := s.Application.SearchUsers(ctx, application.UserSearchReq{
-		SearchTerm: SearchTerm,
+		SearchTerm: ct.SearchTerm(SearchTerm),
 		Limit:      ct.Limit(limit),
 	})
 	if err != nil {

@@ -9,7 +9,9 @@ import (
 )
 
 func (s *Application) RegisterUser(ctx context.Context, req RegisterUserRequest) (User, error) {
-	//TODO add checks for all fields
+	if err := ct.ValidateStruct(req); err != nil {
+		return User{}, err
+	}
 
 	//if no username assign full name
 	if req.Username == "" {

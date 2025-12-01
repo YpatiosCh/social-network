@@ -54,7 +54,7 @@ type User struct {
 }
 
 type UserSearchReq struct {
-	SearchTerm string
+	SearchTerm ct.SearchTerm
 	Limit      ct.Limit
 }
 
@@ -125,7 +125,7 @@ type GroupUser struct {
 }
 
 type GroupSearchReq struct {
-	SearchTerm string
+	SearchTerm ct.SearchTerm
 	UserId     ct.Id
 	Limit      ct.Limit
 	Offset     ct.Offset

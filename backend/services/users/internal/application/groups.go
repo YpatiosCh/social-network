@@ -120,7 +120,6 @@ func (s *Application) GetGroupInfo(ctx context.Context, req GeneralGroupReq) (Gr
 }
 
 func (s *Application) GetGroupMembers(ctx context.Context, req GroupMembersReq) ([]GroupUser, error) {
-
 	if err := ct.ValidateStruct(req); err != nil {
 		return []GroupUser{}, err
 	}
@@ -170,7 +169,7 @@ func (s *Application) SearchGroups(ctx context.Context, req GroupSearchReq) ([]G
 	//weighted (title more important than description)
 	//paginated (most members first)
 	rows, err := s.db.SearchGroupsFuzzy(ctx, sqlc.SearchGroupsFuzzyParams{
-		Similarity: req.SearchTerm,
+		Similarity: req.SearchTerm.String(),
 		GroupOwner: req.UserId.Int64(),
 		Limit:      req.Limit.Int32(),
 		Offset:     req.Offset.Int32(),

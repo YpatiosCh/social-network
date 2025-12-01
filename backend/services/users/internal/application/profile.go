@@ -111,7 +111,7 @@ func (s *Application) SearchUsers(ctx context.Context, req UserSearchReq) ([]Use
 	}
 
 	rows, err := s.db.SearchUsers(ctx, sqlc.SearchUsersParams{
-		Username: req.SearchTerm,
+		Username: req.SearchTerm.String(),
 		Limit:    req.Limit.Int32(),
 	})
 
