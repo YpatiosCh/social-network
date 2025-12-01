@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"runtime"
 	"social-network/services/users/internal/application"
-	ct "social-network/shared/customtypes"
 	pb "social-network/shared/gen-go/users"
+	ct "social-network/shared/go/customtypes"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
