@@ -16,24 +16,45 @@ idea
 backend/services/post-service
 
 
-downloads.txt
-wget
-wget-log
-mirror-log
-dev-log.txt
-downloader-log
+==== frontend ====
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Downloads
-*.html
-*.css
-*js
-*.zip
-*.img
-*.jpg
-*.png
-*.xml
-*.com
-*.io
-*.gz
-*.part
-*.mirror
+# dependencies
+social-sphere/node_modules
+social-sphere/.pnp
+social-sphere/.pnp.*
+social-sphere/.yarn/*
+social-sphere/.yarn/patches
+social-sphere/.yarn/plugins
+social-sphere/.yarn/releases
+social-sphere/.yarn/versions
+
+# testing
+social-sphere/coverage
+
+# next.js
+social-sphere/.next/
+social-sphere/out
+
+# production
+social-sphere/build
+
+# misc
+social-sphere/.DS_Store
+social-sphere/*.pem
+
+# debug
+social-sphere/npm-debug.log*
+social-sphere/yarn-debug.log*
+social-sphere/yarn-error.log*
+social-sphere/.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
