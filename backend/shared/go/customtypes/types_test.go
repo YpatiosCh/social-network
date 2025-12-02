@@ -319,3 +319,294 @@ func TestValidateStruct_BoolAndOffsetExempt(t *testing.T) {
 		t.Fatalf("Offset=0 should not produce error, got: %v", msg)
 	}
 }
+
+func TestValidateStruct_SliceOfCustomTypes(t *testing.T) {
+	type TestStruct struct {
+		// Slice of custom types - nullable
+		NullableIDs []customtypes.Id `validate:"nullable"`
+
+		// Slice of custom types - elements can be empty
+		ElementsNullableIDs []customtypes.Id `validate:"nullable,elements=nullable"`
+
+		// Slice of custom types - both nullable
+		BothNullableIDs []customtypes.Id `validate:"nullable,elements=nullable"`
+
+		// Required field to satisfy other validations
+		Email customtypes.Email
+	}
+
+	type TestStructElementsOnly struct {
+		// Slice of custom types - elements can be empty but slice required
+		ElementsNullableIDs []customtypes.Id `validate:"elements=nullable"`
+
+		// Required field to satisfy other validations
+		Email customtypes.Email
+	}
+
+	type TestStructRequired struct {
+		// Slice of custom types - not nullable
+		RequiredIDs []customtypes.Id
+
+		// Required field to satisfy other validations
+		Email customtypes.Email
+	}
+
+	tests := []struct {
+		name      string
+		input     interface{}
+		wantError bool
+		errorMsg  string
+	}{
+		{
+			name: "valid required IDs",
+			input: TestStructRequired{
+				RequiredIDs: []customtypes.Id{1, 2},
+				Email:       "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "nil required IDs - should fail",
+			input: TestStructRequired{
+				RequiredIDs: nil,
+				Email:       "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredIDs: required field missing",
+		},
+		{
+			name: "empty required IDs - should fail",
+			input: TestStructRequired{
+				RequiredIDs: []customtypes.Id{},
+				Email:       "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredIDs: required field missing",
+		},
+		{
+			name: "required IDs with zero element - should fail",
+			input: TestStructRequired{
+				RequiredIDs: []customtypes.Id{1, 0},
+				Email:       "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredIDs[1]: required element missing",
+		},
+		{
+			name: "required IDs with negative element - should fail on validation",
+			input: TestStructRequired{
+				RequiredIDs: []customtypes.Id{1, -1},
+				Email:       "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredIDs[1]:",
+		},
+		{
+			name: "nullable IDs with nil - should pass",
+			input: TestStruct{
+				NullableIDs: nil,
+				Email:       "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "nullable IDs with empty slice - should pass",
+			input: TestStruct{
+				NullableIDs: []customtypes.Id{},
+				Email:       "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "nullable IDs with zero element - should fail (elements still validated)",
+			input: TestStruct{
+				NullableIDs: []customtypes.Id{1, 0},
+				Email:       "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "NullableIDs[1]: required element missing",
+		},
+		{
+			name: "elements nullable with zero element - should pass",
+			input: TestStructElementsOnly{
+				ElementsNullableIDs: []customtypes.Id{1, 0},
+				Email:               "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "elements nullable but slice nil - should fail",
+			input: TestStructElementsOnly{
+				ElementsNullableIDs: nil,
+				Email:               "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "ElementsNullableIDs: required field missing",
+		},
+		{
+			name: "both nullable with nil - should pass",
+			input: TestStruct{
+				BothNullableIDs: nil,
+				Email:           "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "both nullable with zero elements - should pass",
+			input: TestStruct{
+				BothNullableIDs: []customtypes.Id{0, 0},
+				Email:           "test@example.com",
+			},
+			wantError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := customtypes.ValidateStruct(tt.input)
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("expected error but got none")
+					return
+				}
+				if tt.errorMsg != "" && !strings.Contains(err.Error(), tt.errorMsg) {
+					t.Errorf("expected error containing %q, got %q", tt.errorMsg, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("expected no error but got: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateStruct_SliceOfPrimitives(t *testing.T) {
+	type TestStruct struct {
+		// Slice of primitives - not nullable
+		RequiredStrings []string
+
+		// Slice of primitives - nullable
+		NullableStrings []string `validate:"nullable"`
+
+		// Slice of primitives - not nullable (should allow zero values)
+		RequiredInts []int
+
+		// Required field to satisfy other validations
+		Email customtypes.Email
+	}
+
+	tests := []struct {
+		name      string
+		input     TestStruct
+		wantError bool
+		errorMsg  string
+	}{
+		{
+			name: "required strings with values - should pass",
+			input: TestStruct{
+				RequiredStrings: []string{"a", "b"},
+				RequiredInts:    []int{1},
+				Email:           "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "required strings with empty string - should pass (primitives not validated)",
+			input: TestStruct{
+				RequiredStrings: []string{"a", ""},
+				RequiredInts:    []int{1},
+				Email:           "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "required strings nil - should fail",
+			input: TestStruct{
+				RequiredStrings: nil,
+				RequiredInts:    []int{1},
+				Email:           "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredStrings: required field missing",
+		},
+		{
+			name: "required strings empty - should fail",
+			input: TestStruct{
+				RequiredStrings: []string{},
+				RequiredInts:    []int{1},
+				Email:           "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredStrings: required field missing",
+		},
+		{
+			name: "nullable strings nil - should pass",
+			input: TestStruct{
+				NullableStrings: nil,
+				RequiredStrings: []string{"a"},
+				RequiredInts:    []int{1},
+				Email:           "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "nullable strings empty - should pass",
+			input: TestStruct{
+				NullableStrings: []string{},
+				RequiredStrings: []string{"a"},
+				RequiredInts:    []int{1},
+				Email:           "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "required ints with zero value - should pass (primitives not validated)",
+			input: TestStruct{
+				RequiredInts:    []int{0, 1, 0},
+				RequiredStrings: []string{"a"},
+				Email:           "test@example.com",
+			},
+			wantError: false,
+		},
+		{
+			name: "required ints nil - should fail",
+			input: TestStruct{
+				RequiredInts:    nil,
+				RequiredStrings: []string{"a"},
+				Email:           "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredInts: required field missing",
+		},
+		{
+			name: "required ints empty - should fail",
+			input: TestStruct{
+				RequiredInts:    []int{},
+				RequiredStrings: []string{"a"},
+				Email:           "test@example.com",
+			},
+			wantError: true,
+			errorMsg:  "RequiredInts: required field missing",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := customtypes.ValidateStruct(tt.input)
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("expected error but got none")
+					return
+				}
+				if tt.errorMsg != "" && !strings.Contains(err.Error(), tt.errorMsg) {
+					t.Errorf("expected error containing %q, got %q", tt.errorMsg, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("expected no error but got: %v", err)
+				}
+			}
+		})
+	}
+}
