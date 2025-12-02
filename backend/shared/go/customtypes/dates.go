@@ -12,9 +12,6 @@ import (
 // DateOfBirth
 // ------------------------------------------------------------
 
-// TODO: Make not nullable
-// DateOfBirth is non nullable. If value is the zero time instant, January 1, year 1, 00:00:00 UTC validation returns error.
-
 func (d DateOfBirth) MarshalJSON() ([]byte, error) {
 	t := time.Time(d)
 	return json.Marshal(t.Format(dobLayout))
@@ -128,12 +125,8 @@ func (ed EventDate) IsValid() bool {
 
 	// Must not be more than N months ahead
 	limit := now.AddDate(0, eventDateMaxMonthsAhead, 0)
-	if t.After(limit) {
-		return false
-	}
 
-	return true
-
+	return !t.After(limit)
 }
 
 func (ed EventDate) Validate() error {

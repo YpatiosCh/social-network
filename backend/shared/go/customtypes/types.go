@@ -10,12 +10,12 @@ type Validator interface {
 	Validate() error
 }
 
-type About string
+type About string // Can be used for bio or descritpion. About is a nullable field. If `validation:"nullable"` tag is present zero values don't return error.
 type Audience string
 type PostBody string
 type CommentBody string
 type EventBody string
-type DateOfBirth time.Time
+type DateOfBirth time.Time // DateOfBirth is non nullable. If value is the zero time instant, January 1, year 1, 00:00:00 UTC validation returns error.
 type EventDate time.Time
 type EncryptedId int64
 type Id int64
