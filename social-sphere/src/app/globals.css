@@ -1,19 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fbfbf9; /* Warmer off-white */
-  --foreground: #1c1917; /* Warm black */
-  --muted: #78716c; /* Warm gray */
+  --background: #fbfbf9;
+  /* Warmer off-white */
+  --foreground: #1c1917;
+  /* Warm black */
+  --muted: #78716c;
+  /* Warm gray */
   --accent: #000000;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0c0a09; /* Warm dark background */
-    --foreground: #e7e5e4; /* Warm light gray */
-    --muted: #a8a29e;
-    --accent: #ffffff;
-  }
 }
 
 body {
@@ -234,7 +228,7 @@ body {
 }
 
 .post-card {
-  @apply flex gap-4 px-4 py-6 border-b border-(--muted)/10 hover:bg-(--muted)/5 transition-colors cursor-pointer ;
+  @apply flex gap-4 px-4 py-6 border-b border-(--muted)/10 hover:bg-(--muted)/5 transition-colors cursor-pointer;
 }
 
 .post-avatar-container {
