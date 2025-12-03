@@ -66,16 +66,17 @@ export function isValidUsername(username) {
  * @returns {{valid: boolean, error: string}} Validation result
  */
 export function isValidAvatarFile(file) {
-    if (file.name === "blob") return { valid: true, error: "" }; // Optional
-
-    console.log(file);
+    // Avatar is optional - if no file provided, it's valid
+    if (!file || file.size === 0) {
+        return { valid: true, error: "" };
+    }
 
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
         return { valid: false, error: "Avatar must be JPEG, PNG, or GIF." };
     }
 
     if (file.size > MAX_FILE_SIZE) {
-        return { valid: false, error: "Avatar must be less than 5MB." };
+        return { valid: false, error: "Avatar must be less than 20MB." };
     }
 
     return { valid: true, error: "" };

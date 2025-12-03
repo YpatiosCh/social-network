@@ -1,7 +1,10 @@
+"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Upload, X } from "lucide-react";
 import { register } from "@/actions/auth/auth";
+
 
 export default function RegisterForm() {
     const router = useRouter();
