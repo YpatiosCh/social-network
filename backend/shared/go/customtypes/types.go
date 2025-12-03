@@ -17,7 +17,7 @@ type CommentBody string    // Can be used for comment body. CommentBody is a nul
 type EventBody string      // Can be used for event body. EventBody is a nullable field. If `validation:"nullable"` tag is present zero values don't return error.
 type DateOfBirth time.Time // DateOfBirth is non nullable. If value is the zero time instant, January 1, year 1, 00:00:00 UTC validation returns error.
 type EventDate time.Time   // Non nullable. If value is the zero time instant, January 1, year 1, 00:00:00 UTC validation returns error.
-type EncryptedId int64     // Encrypted id is nullable. If `validation:"nullable` tag is present zero values don't return error.
+type EncryptedId int64     // Encrypted id is nullable. If `validation:"nullable` tag is present zero values don't return error. When json decoded string is unhashed to int64. The reverse is applied on Json encode.
 type Id int64              // Id is nullable. If `validation:"nullable"` tag is present zero values don't return error. Negative values return error.
 type Ids []Id              // Ids is nullable. If `validation:"nullable"` tag is present zero values don't return error. Contents are allowed to be nullable with tag elements=nullable
 type Email string          // Not nullable. Error upon validation is returned if string doesn't match email format or is empty.

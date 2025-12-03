@@ -23,6 +23,7 @@ const (
 	ReqId            ctxKey = "X-Request-Id"
 	ReqActionDetails ctxKey = "X-Action-Details"
 	ReqTimestamp     ctxKey = "X-Timestamp"
+	ReqUUID          ctxKey = "requestId"
 )
 
 // Adds value val to r context with key 'key'

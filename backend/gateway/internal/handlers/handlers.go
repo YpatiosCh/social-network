@@ -30,6 +30,7 @@ func (h *Handlers) BuildMux() *http.ServeMux {
 	mux.HandleFunc("/login", Chain().AllowedMethod("POST").EnrichContext().Finalize(h.loginHandler()))
 	mux.HandleFunc("/register", Chain().AllowedMethod("POST").EnrichContext().Finalize(h.registerHandler()))
 	mux.HandleFunc("/logout", Chain().AllowedMethod("POST").EnrichContext().Auth().Finalize(h.logoutHandler()))
+	mux.HandleFunc("/auth-status", Chain().AllowedMethod("POST").EnrichContext().Auth().Finalize(h.authStatus()))
 
 	return mux
 }

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -53,8 +52,8 @@ func (m *MiddleSystem) AllowedMethod(methods ...string) *MiddleSystem {
 // Enrich context with request ID
 func (m *MiddleSystem) EnrichContext() *MiddleSystem {
 	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
-		ctx := context.WithValue(r.Context(), "requestId", utils.GenUUID())
-		return true, r.WithContext(ctx)
+		r = utils.RequestWithValue(r, utils.ReqUUID, utils.GenUUID())
+		return true, r
 	})
 	return m
 }
@@ -88,15 +87,18 @@ func (m *MiddleSystem) Auth() *MiddleSystem {
 // Bind request meta into context
 func (m *MiddleSystem) BindReqMeta() *MiddleSystem {
 	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
-		rid := r.Header.Get("X-Request-Id")
-		act := r.Header.Get("X-Action-Details")
-		ts := r.Header.Get("X-Timestamp")
+		// rid := r.Header.Get("X-Request-Id")
+		// act := r.Header.Get("X-Action-Details")
+		// ts := r.Header.Get("X-Timestamp")
 
-		ctx := context.WithValue(r.Context(), utils.ReqId, rid)
-		ctx = context.WithValue(ctx, utils.ReqActionDetails, act)
-		ctx = context.WithValue(ctx, utils.ReqTimestamp, ts)
+		r = utils.RequestWithValue(r, utils.ReqId, r.Header.Get("X-Request-Id"))
+		r = utils.RequestWithValue(r, utils.ReqActionDetails, r.Header.Get("X-Action-Details"))
+		r = utils.RequestWithValue(r, utils.ReqTimestamp, r.Header.Get("X-Timestamp"))
+		// ctx := context.WithValue(r.Context(), utils.ReqId, rid)
+		// ctx = context.WithValue(ctx, utils.ReqActionDetails, act)
+		// ctx = context.WithValue(ctx, utils.ReqTimestamp, ts)
 
-		return true, r.WithContext(ctx)
+		return true, r
 	})
 	return m
 }

@@ -89,6 +89,16 @@ func (h *Handlers) loginHandler() http.HandlerFunc {
 
 func (h *Handlers) registerHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Check if user already logged in
+		cookie, _ := r.Cookie("jwt")
+		if cookie != nil {
+			_, err := security.ParseAndValidate(cookie.Value)
+			if err == nil {
+				utils.ErrorJSON(w, http.StatusForbidden, "Already logged in. Log out to register.")
+				return
+			}
+		}
+
 		fmt.Println("register handler called, with: ", r.Body)
 		//READ REQUEST BODY
 		type registerHttpRequest struct {
@@ -222,5 +232,12 @@ func (h *Handlers) logoutHandler() http.HandlerFunc {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "failed to send logout ACK")
 			return
 		}
+	}
+}
+
+// Returns status ok if passed Auth
+func (h *Handlers) authStatus() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		utils.WriteJSON(w, http.StatusOK, "user is logged in")
 	}
 }
