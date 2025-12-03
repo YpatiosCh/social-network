@@ -3,6 +3,7 @@ package customtypes
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -78,6 +79,24 @@ func (d DateOfBirth) Time() time.Time {
 // Helper to parse time.Time value to proto *timestamppb.Timestamp
 func (d DateOfBirth) ToProto() *timestamppb.Timestamp {
 	return timestamppb.New(time.Time(d))
+}
+
+func ParseDateOfBirth(s string) (DateOfBirth, error) {
+	if s == "" {
+		return DateOfBirth{}, errors.New("date_of_birth is required")
+	}
+
+	t, err := time.Parse(dobLayout, s)
+	if err != nil {
+		return DateOfBirth{}, fmt.Errorf("invalid date_of_birth format: %w", err)
+	}
+
+	dob := DateOfBirth(t)
+	if err := dob.Validate(); err != nil {
+		return DateOfBirth{}, err
+	}
+
+	return dob, nil
 }
 
 // ------------------------------------------------------------

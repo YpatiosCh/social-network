@@ -4,8 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"slices"
 
 	"github.com/google/uuid"
 )
@@ -70,4 +74,31 @@ func B64urlDecode(s string) ([]byte, error) {
 func GenUUID() string {
 	uuid := uuid.New()
 	return uuid.String()
+}
+
+var (
+	ErrImageTooBig      = errors.New("image too big")
+	ErrInvalidImageFile = errors.New("invalid image file: Only PNG, JPG, or GIF allowed")
+	ImageTypes          = []string{"jpg, png, svg"}
+)
+
+// Parses the image file and stores it to the configured path. Returns a uuid as filename
+func CheckImage(file multipart.File, header *multipart.FileHeader) (filetype string, err error) {
+	if header.Size > 10*1024*1024 {
+		return "", ErrImageTooBig
+	}
+
+	buf := make([]byte, 512)
+	_, err = file.Read(buf)
+	if err != nil {
+		return "", ErrInvalidImageFile
+	}
+	filetype = http.DetectContentType(buf)
+	file.Seek(0, io.SeekStart)
+
+	if slices.Contains(ImageTypes, filetype) {
+		return "", ErrInvalidImageFile
+	}
+
+	return filetype, nil
 }

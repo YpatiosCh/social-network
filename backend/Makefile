@@ -62,5 +62,9 @@ reset:
 	kubectl delete namespace users --ignore-not-found=true
 	kubectl create namespace users
 
+docker-up:
+	build-base
+	docker-compose up --build
+
 all: build-base build-services apply-namespace deploy-nginx apply-pvc apply-db  deploy-users run-migrations apply-ingress
 

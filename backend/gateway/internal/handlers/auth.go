@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	remoteservices "social-network/gateway/internal/remote_services"
 	"social-network/gateway/internal/security"
 	"social-network/gateway/internal/utils"
 	"social-network/shared/gen-go/users"
 	ct "social-network/shared/go/customtypes"
 	"time"
+
+	"github.com/minio/minio-go/v7"
 )
 
 func (h *Handlers) loginHandler() http.HandlerFunc {
@@ -100,23 +103,58 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 			Password    ct.Password    `json:"password,omitempty"`
 		}
 
-		httpReq := registerHttpRequest{}
-		decoder := json.NewDecoder(r.Body)
-		defer r.Body.Close()
-		if err := decoder.Decode(&httpReq); err != nil {
-			utils.ErrorJSON(w, http.StatusBadRequest, "json decoding failed: "+err.Error())
+		// Parse up to 20MB file+fields
+		err := r.ParseMultipartForm(20 << 20)
+		if err != nil {
+			utils.ErrorJSON(w, http.StatusBadRequest, "invalid multipart form: "+err.Error())
 			return
+		}
+
+		dob, err := ct.ParseDateOfBirth(r.FormValue("date_of_birth"))
+		if err != nil {
+			utils.ErrorJSON(w, http.StatusBadRequest, err.Error())
+		}
+
+		// Extract form fields
+		httpReq := registerHttpRequest{
+			Username:    ct.Username(r.FormValue("username")),
+			FirstName:   ct.Name(r.FormValue("first_name")),
+			LastName:    ct.Name(r.FormValue("last_name")),
+			DateOfBirth: dob,
+			About:       ct.About(r.FormValue("about")),
+			Public:      r.FormValue("public") == "true",
+			Email:       ct.Email(r.FormValue("email")),
+			Password:    ct.Password(r.FormValue("password")),
 		}
 
 		if err := ct.ValidateStruct(httpReq); err != nil {
 			utils.ErrorJSON(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		var uploadInfo minio.UploadInfo
+		// Extract and upload avatar (optional)
+		file, header, err := r.FormFile("avatar")
+		if err == http.ErrMissingFile {
+			// no avatar uploaded → fine
+		} else if err != nil {
+			utils.ErrorJSON(w, http.StatusBadRequest, "avatar upload error: "+err.Error())
+			return
+		} else {
+			defer file.Close()
+			fileType, err := utils.CheckImage(file, header)
+			if err != nil {
+				utils.ErrorJSON(w, http.StatusBadRequest, "avatar upload error: "+err.Error())
+				return
+			}
+
+			uploadInfo, err = remoteservices.UploadToMinIO(r.Context(), h.MinIOClient, file, header, "images", fileType)
+			if err != nil {
+				utils.ErrorJSON(w, http.StatusInternalServerError, "failed to upload avatar: "+err.Error())
+				return
+			}
 		}
 
-		//VALIDATE INPUT
-		// if httpReq.Username == "" || httpReq.Email == "" || httpReq.Password == "" {
-		// 	utils.ErrorJSON(w, http.StatusBadRequest, "missing required fields")
-		// 	return
-		// }
+		_ = uploadInfo
 
 		//MAKE GRPC REQUEST
 		gRpcReq := users.RegisterUserRequest{
@@ -124,11 +162,11 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 			FirstName:   string(httpReq.FirstName),
 			LastName:    string(httpReq.LastName),
 			DateOfBirth: httpReq.DateOfBirth.ToProto(),
-			Avatar:      httpReq.Avatar,
 			About:       string(httpReq.About),
 			Public:      httpReq.Public,
 			Email:       string(httpReq.Email),
 			Password:    string(httpReq.Password),
+			// Avatar:      httpReq.Avatar,
 		}
 
 		resp, err := h.Services.Users.RegisterUser(r.Context(), &gRpcReq)

@@ -4,15 +4,19 @@ import (
 	"net/http"
 	"social-network/gateway/internal/middleware"
 	remoteservices "social-network/gateway/internal/remote_services"
+
+	"github.com/minio/minio-go/v7"
 )
 
 type Handlers struct {
-	Services remoteservices.GRpcServices
+	Services    remoteservices.GRpcServices
+	MinIOClient *minio.Client
 }
 
 func NewHandlers() Handlers {
 	handlers := Handlers{}
 	handlers.Services = remoteservices.NewServices()
+	handlers.MinIOClient = remoteservices.NewMinIOConn()
 	return handlers
 }
 
