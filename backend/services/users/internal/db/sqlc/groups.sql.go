@@ -247,7 +247,7 @@ const getGroupMembers = `-- name: GetGroupMembers :many
 SELECT
     u.id,
     u.username,
-    u.avatar,
+    u.avatar_id,
     gm.role,
     gm.joined_at
 FROM group_members gm
@@ -268,7 +268,7 @@ type GetGroupMembersParams struct {
 type GetGroupMembersRow struct {
 	ID       int64
 	Username string
-	Avatar   string
+	AvatarID int64
 	Role     NullGroupRole
 	JoinedAt pgtype.Timestamptz
 }
@@ -285,7 +285,7 @@ func (q *Queries) GetGroupMembers(ctx context.Context, arg GetGroupMembersParams
 		if err := rows.Scan(
 			&i.ID,
 			&i.Username,
-			&i.Avatar,
+			&i.AvatarID,
 			&i.Role,
 			&i.JoinedAt,
 		); err != nil {

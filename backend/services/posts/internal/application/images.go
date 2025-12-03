@@ -25,3 +25,5 @@ func (s *PostsService) UpdateImage(ctx context.Context) error {
 func (s *PostsService) getImages(ctx context.Context, req GenericReq) ([]string, error) {
 	return nil, nil
 }
+
+//ONE IMAGE!!!

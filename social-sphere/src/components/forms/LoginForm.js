@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 import { login } from "@/actions/auth/auth";
+import { validateLoginForm } from "@/utils/validation";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -13,12 +14,23 @@ export default function LoginForm() {
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
+    // Real-time validation state
+    const [fieldErrors, setFieldErrors] = useState({});
+
     async function handleSubmit(event) {
         event.preventDefault();
         setIsLoading(true);
         setError("");
 
         const formData = new FormData(event.currentTarget);
+
+        // Client-side validation using validation utilities
+        const validation = validateLoginForm(formData);
+        if (!validation.valid) {
+            setError(validation.error);
+            setIsLoading(false);
+            return;
+        }
 
         try {
             const result = await login(formData);
@@ -36,6 +48,31 @@ export default function LoginForm() {
         }
     }
 
+    // Real-time validation handlers
+    function validateField(name, value) {
+        const errors = { ...fieldErrors };
+
+        switch (name) {
+            case "identifier":
+                if (!value.trim()) {
+                    errors.identifier = "Email or Username is required.";
+                } else {
+                    delete errors.identifier;
+                }
+                break;
+
+            case "password":
+                if (!value) {
+                    errors.password = "Password is required.";
+                } else {
+                    delete errors.password;
+                }
+                break;
+        }
+
+        setFieldErrors(errors);
+    }
+
     return (
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6">
             <div className="form-group">
@@ -48,8 +85,12 @@ export default function LoginForm() {
                     type="text"
                     required
                     className="form-input"
-                    placeholder="Email/Nickname"
+                    placeholder="Email/Username"
+                    onChange={(e) => validateField("identifier", e.target.value)}
                 />
+                {fieldErrors.identifier && (
+                    <div className="text-red-500 text-xs mt-1">{fieldErrors.identifier}</div>
+                )}
             </div>
 
             <div className="form-group">
@@ -72,6 +113,7 @@ export default function LoginForm() {
                         required
                         className="form-input pr-10"
                         placeholder="••••••••"
+                        onChange={(e) => validateField("password", e.target.value)}
                     />
                     <button
                         type="button"
@@ -81,6 +123,9 @@ export default function LoginForm() {
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                 </div>
+                {fieldErrors.password && (
+                    <div className="text-red-500 text-xs mt-1">{fieldErrors.password}</div>
+                )}
             </div>
 
             {error && (

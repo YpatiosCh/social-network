@@ -5,7 +5,7 @@ SELECT
     first_name,
     last_name,
     date_of_birth,
-    avatar,
+    avatar_id,
     about_me,
     profile_public,
     created_at
@@ -17,7 +17,7 @@ WHERE id = $1
 SELECT
     id,
     username,
-    avatar
+    avatar_id
 FROM users
 WHERE id = $1;
   
@@ -29,7 +29,7 @@ SET
     first_name    = $3,
     last_name     = $4,
     date_of_birth = $5,
-    avatar        = $6,
+    avatar_id        = $6,
     about_me      = $7,
     updated_at    = CURRENT_TIMESTAMP
 WHERE id = $1 AND deleted_at IS NULL
@@ -58,7 +58,7 @@ WHERE user_id = $1;
 SELECT
     id,
     username,
-    avatar,
+    avatar_id,
     profile_public
 FROM users
 WHERE deleted_at IS NULL

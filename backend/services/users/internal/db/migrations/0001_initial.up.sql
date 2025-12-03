@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     date_of_birth DATE NOT NULL,
-    avatar VARCHAR(255) NOT NULL,
+    avatar_id BIGINT NOT NULL,
     about_me TEXT NOT NULL, 
     profile_public BOOLEAN NOT NULL DEFAULT TRUE,
     current_status user_status NOT NULL DEFAULT 'active',

@@ -3,9 +3,9 @@ package application
 import "context"
 
 //FRONT: Do you prefer full Comment instead of just id?
-func (s *PostsService) CreateComment(ctx context.Context, req CreateCommentReq) (commentId int64, err error) {
+func (s *PostsService) CreateComment(ctx context.Context, req CreateCommentReq) (err error) {
 	// check requester can actually view parent entity? (probably not needed?)
-	return 0, nil
+	return nil
 }
 
 // FRONT: Do I return full comment or just error?
@@ -24,7 +24,7 @@ func (s *PostsService) GetCommentsByParentId(ctx context.Context, req GenericPag
 	return nil, nil
 }
 
-//FRONT: I assume this is a different endpoint that feed? Or do you prefer I include this in every Post in []Post I return?
+//FRONT: I assume this is a different endpoint that feed? Or do you prefer I include this in every Post in []Post I return?- IN POST
 func (s *PostsService) GetLatestCommentForPostId(ctx context.Context, req GenericReq) (Comment, error) {
 	// check requester can actually view parent entity?
 	return Comment{}, nil

@@ -15,7 +15,7 @@ const getUserBasic = `-- name: GetUserBasic :one
 SELECT
     id,
     username,
-    avatar
+    avatar_id
 FROM users
 WHERE id = $1
 `
@@ -23,13 +23,13 @@ WHERE id = $1
 type GetUserBasicRow struct {
 	ID       int64
 	Username string
-	Avatar   string
+	AvatarID int64
 }
 
 func (q *Queries) GetUserBasic(ctx context.Context, id int64) (GetUserBasicRow, error) {
 	row := q.db.QueryRow(ctx, getUserBasic, id)
 	var i GetUserBasicRow
-	err := row.Scan(&i.ID, &i.Username, &i.Avatar)
+	err := row.Scan(&i.ID, &i.Username, &i.AvatarID)
 	return i, err
 }
 
@@ -40,7 +40,7 @@ SELECT
     first_name,
     last_name,
     date_of_birth,
-    avatar,
+    avatar_id,
     about_me,
     profile_public,
     created_at
@@ -55,7 +55,7 @@ type GetUserProfileRow struct {
 	FirstName     string
 	LastName      string
 	DateOfBirth   pgtype.Date
-	Avatar        string
+	AvatarID      int64
 	AboutMe       string
 	ProfilePublic bool
 	CreatedAt     pgtype.Timestamptz
@@ -70,7 +70,7 @@ func (q *Queries) GetUserProfile(ctx context.Context, id int64) (GetUserProfileR
 		&i.FirstName,
 		&i.LastName,
 		&i.DateOfBirth,
-		&i.Avatar,
+		&i.AvatarID,
 		&i.AboutMe,
 		&i.ProfilePublic,
 		&i.CreatedAt,
@@ -82,7 +82,7 @@ const searchUsers = `-- name: SearchUsers :many
 SELECT
     id,
     username,
-    avatar,
+    avatar_id,
     profile_public
 FROM users
 WHERE deleted_at IS NULL
@@ -105,7 +105,7 @@ type SearchUsersParams struct {
 type SearchUsersRow struct {
 	ID            int64
 	Username      string
-	Avatar        string
+	AvatarID      int64
 	ProfilePublic bool
 }
 
@@ -121,7 +121,7 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 		if err := rows.Scan(
 			&i.ID,
 			&i.Username,
-			&i.Avatar,
+			&i.AvatarID,
 			&i.ProfilePublic,
 		); err != nil {
 			return nil, err
@@ -193,11 +193,11 @@ SET
     first_name    = $3,
     last_name     = $4,
     date_of_birth = $5,
-    avatar        = $6,
+    avatar_id        = $6,
     about_me      = $7,
     updated_at    = CURRENT_TIMESTAMP
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, username, first_name, last_name, date_of_birth, avatar, about_me, profile_public, current_status, ban_ends_at, created_at, updated_at, deleted_at
+RETURNING id, username, first_name, last_name, date_of_birth, avatar_id, about_me, profile_public, current_status, ban_ends_at, created_at, updated_at, deleted_at
 `
 
 type UpdateUserProfileParams struct {
@@ -206,7 +206,7 @@ type UpdateUserProfileParams struct {
 	FirstName   string
 	LastName    string
 	DateOfBirth pgtype.Date
-	Avatar      string
+	AvatarID    int64
 	AboutMe     string
 }
 
@@ -217,7 +217,7 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 		arg.FirstName,
 		arg.LastName,
 		arg.DateOfBirth,
-		arg.Avatar,
+		arg.AvatarID,
 		arg.AboutMe,
 	)
 	var i User
@@ -227,7 +227,7 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 		&i.FirstName,
 		&i.LastName,
 		&i.DateOfBirth,
-		&i.Avatar,
+		&i.AvatarID,
 		&i.AboutMe,
 		&i.ProfilePublic,
 		&i.CurrentStatus,

@@ -8,7 +8,7 @@
 -------------------------------------------------------
 -- Users
 -------------------------------------------------------
-INSERT INTO users (id, username, first_name, last_name, date_of_birth, avatar, about_me, profile_public, current_status)
+INSERT INTO users (id, username, first_name, last_name, date_of_birth, avatar_id, about_me, profile_public, current_status)
 OVERRIDING SYSTEM VALUE
 VALUES
 (1, 'alice', 'Alice', 'Wonder', '1990-01-01', 'https://example.com/avatars/alice.jpg', 'Love nature and outdoor activities', TRUE, 'active'),

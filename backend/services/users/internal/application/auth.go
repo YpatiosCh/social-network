@@ -34,7 +34,7 @@ func (s *Application) RegisterUser(ctx context.Context, req RegisterUserRequest)
 			FirstName:     req.FirstName.String(),
 			LastName:      req.LastName.String(),
 			DateOfBirth:   dob,
-			Avatar:        req.Avatar,
+			AvatarID:      req.AvatarId.Int64(),
 			AboutMe:       req.About.String(),
 			ProfilePublic: req.Public,
 		})
@@ -58,7 +58,7 @@ func (s *Application) RegisterUser(ctx context.Context, req RegisterUserRequest)
 	return User{
 		UserId:   newId,
 		Username: req.Username,
-		Avatar:   req.Avatar,
+		AvatarId: req.AvatarId,
 	}, nil
 
 }
@@ -79,7 +79,7 @@ func (s *Application) LoginUser(ctx context.Context, req LoginRequest) (User, er
 		u = User{
 			UserId:   ct.Id(row.ID),
 			Username: ct.Username(row.Username),
-			Avatar:   row.Avatar,
+			AvatarId: ct.Id(row.AvatarID),
 		}
 
 		if !checkPassword(row.PasswordHash, req.Password.String()) {

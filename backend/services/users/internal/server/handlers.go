@@ -33,7 +33,7 @@ func (s *Server) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) 
 		Email:       ct.Email(req.GetEmail()),
 		Password:    ct.Password(req.GetPassword()),
 		DateOfBirth: ct.DateOfBirth(req.GetDateOfBirth().AsTime()),
-		Avatar:      req.GetAvatar(),
+		AvatarId:    ct.Id(req.GetAvatar()),
 		About:       ct.About(req.GetAbout()),
 		Public:      req.GetPublic(),
 	})
@@ -45,7 +45,7 @@ func (s *Server) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) 
 	return &pb.User{
 		UserId:   user.UserId.Int64(),
 		Username: user.Username.String(),
-		Avatar:   user.Avatar,
+		Avatar:   user.AvatarId.Int64(),
 	}, nil
 }
 
@@ -78,7 +78,7 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginRequest) (*pb.User,
 	return &pb.User{
 		UserId:   user.UserId.Int64(),
 		Username: user.Username.String(),
-		Avatar:   user.Avatar,
+		Avatar:   user.AvatarId.Int64(),
 	}, nil
 }
 
@@ -670,7 +670,7 @@ func (s *Server) GetBasicUserInfo(ctx context.Context, req *wrapperspb.Int64Valu
 	return &pb.User{
 		UserId:   u.UserId.Int64(),
 		Username: u.Username.String(),
-		Avatar:   u.Avatar,
+		Avatar:   u.AvatarId.Int64(),
 	}, nil
 }
 
@@ -747,7 +747,7 @@ func (s *Server) UpdateUserProfile(ctx context.Context, req *pb.UpdateProfileReq
 		FirstName:   ct.Name(req.GetFirstName()),
 		LastName:    ct.Name(req.GetLastName()),
 		DateOfBirth: ct.DateOfBirth(req.GetDateOfBirth().AsTime()),
-		Avatar:      req.GetAvatar(),
+		AvatarId:    ct.Id(req.GetAvatar()),
 		About:       ct.About(req.GetAbout()),
 	})
 	if err != nil {
@@ -765,7 +765,7 @@ func (s *Server) UpdateUserProfile(ctx context.Context, req *pb.UpdateProfileReq
 		FirstName:   resp.FirstName.String(),
 		LastName:    resp.LastName.String(),
 		DateOfBirth: dob,
-		Avatar:      resp.Avatar,
+		Avatar:      resp.AvatarId.Int64(),
 		About:       resp.About.String(),
 		Public:      resp.Public,
 	}, nil
@@ -801,7 +801,7 @@ func usersToPB(dbUsers []application.User) *pb.ListUsers {
 		pbUsers = append(pbUsers, &pb.User{
 			UserId:   u.UserId.Int64(),
 			Username: u.Username.String(),
-			Avatar:   u.Avatar,
+			Avatar:   u.AvatarId.Int64(),
 		})
 	}
 
@@ -838,7 +838,7 @@ func groupUsersToPB(users []application.GroupUser) *pb.GroupUserArr {
 		out.GroupUserArr = append(out.GroupUserArr, &pb.GroupUser{
 			UserId:    u.UserId.Int64(),
 			Username:  u.Username.String(),
-			Avatar:    u.Avatar,
+			Avatar:    u.AvatarId.Int64(),
 			GroupRole: u.GroupRole,
 		})
 	}

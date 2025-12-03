@@ -240,7 +240,7 @@ func TestGetGroupMembers_Success(t *testing.T) {
 		{
 			ID:       1,
 			Username: "user1",
-			Avatar:   "avatar1.jpg",
+			AvatarID: 2,
 			Role: sqlc.NullGroupRole{
 				GroupRole: "owner",
 				Valid:     true,
@@ -249,7 +249,7 @@ func TestGetGroupMembers_Success(t *testing.T) {
 		{
 			ID:       2,
 			Username: "user2",
-			Avatar:   "avatar2.jpg",
+			AvatarID: 3,
 			Role: sqlc.NullGroupRole{
 				GroupRole: "member",
 				Valid:     true,

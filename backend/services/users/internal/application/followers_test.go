@@ -26,13 +26,13 @@ func TestGetFollowersPaginated_Success(t *testing.T) {
 		{
 			ID:            2,
 			Username:      "follower1",
-			Avatar:        "avatar1.jpg",
+			AvatarID:      3,
 			ProfilePublic: true,
 		},
 		{
 			ID:            3,
 			Username:      "follower2",
-			Avatar:        "avatar2.jpg",
+			AvatarID:      4,
 			ProfilePublic: true,
 		},
 	}
@@ -91,13 +91,13 @@ func TestGetFollowingPaginated_Success(t *testing.T) {
 		{
 			ID:            2,
 			Username:      "following1",
-			Avatar:        "avatar1.jpg",
+			AvatarID:      3,
 			ProfilePublic: true,
 		},
 		{
 			ID:            3,
 			Username:      "following2",
-			Avatar:        "avatar2.jpg",
+			AvatarID:      4,
 			ProfilePublic: false,
 		},
 	}

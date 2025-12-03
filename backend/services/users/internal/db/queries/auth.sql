@@ -4,7 +4,7 @@ INSERT INTO users (
     first_name,
     last_name,
     date_of_birth,
-    avatar,
+    avatar_id,
     about_me,
     profile_public
 ) VALUES (
@@ -32,7 +32,7 @@ WHERE user_id=$1;
 SELECT
     u.id,
     u.username,
-    u.avatar,
+    u.avatar_id,
     u.profile_public,
     au.password_hash
 FROM users u
