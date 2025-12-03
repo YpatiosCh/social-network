@@ -155,7 +155,7 @@ func (s *Application) GetGroupMembers(ctx context.Context, req GroupMembersReq) 
 		members = append(members, GroupUser{
 			UserId:    ct.Id(r.ID),
 			Username:  ct.Username(r.Username),
-			Avatar:    r.Avatar,
+			AvatarId:  ct.Id(r.AvatarID),
 			GroupRole: role,
 		})
 	}

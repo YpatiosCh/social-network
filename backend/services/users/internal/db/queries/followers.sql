@@ -11,7 +11,7 @@ WHERE follower_id = $1 AND following_id = $2;
 
 
 -- name: GetFollowers :many
-SELECT u.id, u.username, u.avatar,u.profile_public, f.created_at AS followed_at
+SELECT u.id, u.username, u.avatar_id,u.profile_public, f.created_at AS followed_at
 FROM follows f
 JOIN users u ON u.id = f.follower_id
 WHERE f.following_id = $1
@@ -20,7 +20,7 @@ LIMIT $2 OFFSET $3;
 
 
 -- name: GetFollowing :many
-SELECT u.id, u.username,u.avatar,u.profile_public, f.created_at AS followed_at
+SELECT u.id, u.username,u.avatar_id,u.profile_public, f.created_at AS followed_at
 FROM follows f
 JOIN users u ON u.id = f.following_id
 WHERE f.follower_id = $1
@@ -145,7 +145,7 @@ combined AS (
 SELECT 
     u.id,
     u.username,
-    u.avatar,
+    u.avatar_id,
     c.total_score
 FROM combined c
 JOIN users u ON u.id = c.user_id

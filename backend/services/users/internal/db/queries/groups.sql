@@ -143,7 +143,7 @@ WHERE id=$1
 SELECT
     u.id,
     u.username,
-    u.avatar,
+    u.avatar_id,
     gm.role,
     gm.joined_at
 FROM group_members gm

@@ -33,7 +33,7 @@ const getUserForLogin = `-- name: GetUserForLogin :one
 SELECT
     u.id,
     u.username,
-    u.avatar,
+    u.avatar_id,
     u.profile_public,
     au.password_hash
 FROM users u
@@ -46,7 +46,7 @@ WHERE (u.username = $1 OR au.email = $1)
 type GetUserForLoginRow struct {
 	ID            int64
 	Username      string
-	Avatar        string
+	AvatarID      int64
 	ProfilePublic bool
 	PasswordHash  string
 }
@@ -57,7 +57,7 @@ func (q *Queries) GetUserForLogin(ctx context.Context, username string) (GetUser
 	err := row.Scan(
 		&i.ID,
 		&i.Username,
-		&i.Avatar,
+		&i.AvatarID,
 		&i.ProfilePublic,
 		&i.PasswordHash,
 	)
@@ -85,7 +85,7 @@ INSERT INTO users (
     first_name,
     last_name,
     date_of_birth,
-    avatar,
+    avatar_id,
     about_me,
     profile_public
 ) VALUES (
@@ -99,7 +99,7 @@ type InsertNewUserParams struct {
 	FirstName     string
 	LastName      string
 	DateOfBirth   pgtype.Date
-	Avatar        string
+	AvatarID      int64
 	AboutMe       string
 	ProfilePublic bool
 }
@@ -110,7 +110,7 @@ func (q *Queries) InsertNewUser(ctx context.Context, arg InsertNewUserParams) (i
 		arg.FirstName,
 		arg.LastName,
 		arg.DateOfBirth,
-		arg.Avatar,
+		arg.AvatarID,
 		arg.AboutMe,
 		arg.ProfilePublic,
 	)

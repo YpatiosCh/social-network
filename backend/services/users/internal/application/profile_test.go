@@ -24,7 +24,7 @@ func TestGetBasicUserInfo_Success(t *testing.T) {
 	expectedRow := sqlc.GetUserBasicRow{
 		ID:       userID,
 		Username: "testuser",
-		Avatar:   "avatar.jpg",
+		AvatarID: 2,
 	}
 
 	mockDB.On("GetUserBasic", ctx, userID).Return(expectedRow, nil)
@@ -34,7 +34,7 @@ func TestGetBasicUserInfo_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ct.Id(userID), user.UserId)
 	assert.Equal(t, "testuser", user.Username.String())
-	assert.Equal(t, "avatar.jpg", user.Avatar)
+	assert.Equal(t, ct.Id(2), user.AvatarId)
 	mockDB.AssertExpectations(t)
 }
 
@@ -74,7 +74,7 @@ func TestGetUserProfile_Public_Success(t *testing.T) {
 		FirstName:     "Test",
 		LastName:      "User",
 		DateOfBirth:   dobDate,
-		Avatar:        "avatar.jpg",
+		AvatarID:      2,
 		AboutMe:       "About me",
 		ProfilePublic: true,
 	}
@@ -131,7 +131,7 @@ func TestGetUserProfile_Private_NotFollowing(t *testing.T) {
 		FirstName:     "Test",
 		LastName:      "User",
 		DateOfBirth:   dobDate,
-		Avatar:        "avatar.jpg",
+		AvatarID:      0,
 		AboutMe:       "About me",
 		ProfilePublic: false,
 	}
@@ -177,7 +177,7 @@ func TestGetUserProfile_Private_IsFollowing(t *testing.T) {
 		FirstName:     "Test",
 		LastName:      "User",
 		DateOfBirth:   dobDate,
-		Avatar:        "avatar.jpg",
+		AvatarID:      2,
 		AboutMe:       "About me",
 		ProfilePublic: false,
 	}
@@ -225,13 +225,13 @@ func TestSearchUsers_Success(t *testing.T) {
 		{
 			ID:            1,
 			Username:      "testuser1",
-			Avatar:        "avatar1.jpg",
+			AvatarID:      2,
 			ProfilePublic: true,
 		},
 		{
 			ID:            2,
 			Username:      "testuser2",
-			Avatar:        "avatar2.jpg",
+			AvatarID:      3,
 			ProfilePublic: true,
 		},
 	}
@@ -289,7 +289,7 @@ func TestUpdateUserProfile_Success(t *testing.T) {
 		FirstName:   ct.Name("NewFirst"),
 		LastName:    ct.Name("NewLast"),
 		DateOfBirth: ct.DateOfBirth(dob),
-		Avatar:      "newavatar.jpg",
+		AvatarId:    ct.Id(7),
 		About:       ct.About("New about"),
 	}
 
@@ -299,7 +299,7 @@ func TestUpdateUserProfile_Success(t *testing.T) {
 		FirstName:     "NewFirst",
 		LastName:      "NewLast",
 		DateOfBirth:   dobDate,
-		Avatar:        "newavatar.jpg",
+		AvatarID:      7,
 		AboutMe:       "New about",
 		ProfilePublic: true,
 	}

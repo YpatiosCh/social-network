@@ -93,7 +93,7 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 			FirstName   ct.Name        `json:"first_name,omitempty"`
 			LastName    ct.Name        `json:"last_name,omitempty"`
 			DateOfBirth ct.DateOfBirth `json:"date_of_birth,omitempty"`
-			Avatar      string         `json:"avatar,omitempty"`
+			Avatar      ct.Id          `json:"avatar,omitempty"`
 			About       ct.About       `json:"about,omitempty"`
 			Public      bool           `json:"public,omitempty"`
 			Email       ct.Email       `json:"email,omitempty"`
@@ -124,7 +124,7 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 			FirstName:   string(httpReq.FirstName),
 			LastName:    string(httpReq.LastName),
 			DateOfBirth: httpReq.DateOfBirth.ToProto(),
-			Avatar:      httpReq.Avatar,
+			Avatar:      int64(httpReq.Avatar),
 			About:       string(httpReq.About),
 			Public:      httpReq.Public,
 			Email:       string(httpReq.Email),

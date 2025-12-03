@@ -24,7 +24,7 @@ func (s *Application) GetFollowersPaginated(ctx context.Context, req Pagination)
 		users = append(users, User{
 			UserId:   ct.Id(r.ID),
 			Username: ct.Username(r.Username),
-			Avatar:   r.Avatar,
+			AvatarId: ct.Id(r.AvatarID),
 		})
 	}
 
@@ -51,7 +51,7 @@ func (s *Application) GetFollowingPaginated(ctx context.Context, req Pagination)
 		users = append(users, User{
 			UserId:   ct.Id(r.ID),
 			Username: ct.Username(r.Username),
-			Avatar:   r.Avatar,
+			AvatarId: ct.Id(r.AvatarID),
 		})
 	}
 
@@ -149,7 +149,7 @@ func (s *Application) GetFollowSuggestions(ctx context.Context, userId ct.Id) ([
 		users = append(users, User{
 			UserId:   ct.Id(r.ID),
 			Username: ct.Username(r.Username),
-			Avatar:   r.Avatar,
+			AvatarId: ct.Id(r.AvatarID),
 		})
 	}
 	return users, nil

@@ -2,7 +2,7 @@ package application
 
 import "context"
 
-//FRONT: Are posts for groups the requester is a member of included here? I assumed no
+//FRONT: Are posts for groups the requester is a member of included here? I assumed no - NO
 func (s *PostsService) GetPersonalizedFeed(ctx context.Context, req GetPersonalizedFeedReq) ([]Post, error) {
 	//API Gateway needs to provide list of ids the requester follows
 	//(and in case we include group posts, a list of groups they are a member of)

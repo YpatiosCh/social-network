@@ -24,7 +24,7 @@ func (s *Application) GetBasicUserInfo(ctx context.Context, userId ct.Id) (resp 
 	u := User{
 		UserId:   ct.Id(userId),
 		Username: ct.Username(row.Username),
-		Avatar:   row.Avatar,
+		AvatarId: ct.Id(row.AvatarID),
 	}
 	return u, nil
 
@@ -52,7 +52,7 @@ func (s *Application) GetUserProfile(ctx context.Context, req UserProfileRequest
 		FirstName:   ct.Name(row.FirstName),
 		LastName:    ct.Name(row.LastName),
 		DateOfBirth: ct.DateOfBirth(dob),
-		Avatar:      row.Avatar,
+		AvatarId:    ct.Id(row.AvatarID),
 		About:       ct.About(row.AboutMe),
 		Public:      row.ProfilePublic,
 		CreatedAt:   row.CreatedAt.Time,
@@ -124,7 +124,7 @@ func (s *Application) SearchUsers(ctx context.Context, req UserSearchReq) ([]Use
 		users = append(users, User{
 			UserId:   ct.Id(r.ID),
 			Username: ct.Username(r.Username),
-			Avatar:   r.Avatar,
+			AvatarId: ct.Id(r.AvatarID),
 		})
 	}
 
@@ -149,7 +149,7 @@ func (s *Application) UpdateUserProfile(ctx context.Context, req UpdateProfileRe
 		FirstName:   req.FirstName.String(),
 		LastName:    req.LastName.String(),
 		DateOfBirth: dob,
-		Avatar:      req.Avatar,
+		AvatarID:    req.AvatarId.Int64(),
 		AboutMe:     req.About.String(),
 	})
 	if err != nil {
@@ -167,7 +167,7 @@ func (s *Application) UpdateUserProfile(ctx context.Context, req UpdateProfileRe
 		FirstName:   ct.Name(row.FirstName),
 		LastName:    ct.Name(row.LastName),
 		DateOfBirth: ct.DateOfBirth(newDob),
-		Avatar:      row.Avatar,
+		AvatarId:    ct.Id(row.AvatarID),
 		About:       ct.About(row.AboutMe),
 		Public:      row.ProfilePublic,
 	}

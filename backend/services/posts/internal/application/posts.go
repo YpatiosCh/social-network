@@ -1,15 +1,41 @@
 package application
 
-import "context"
+import (
+	"context"
+	"social-network/services/posts/internal/db/sqlc"
+	ct "social-network/shared/go/customtypes"
+)
 
 // GENERAL NOTE For every response that includes a userId, actual basic user info will be retrieved by Gateway from Users
 
-//FRONT: do you prefer full post instead of just id?
-func (s *PostsService) CreatePost(ctx context.Context, req CreatePostReq) (postId int64, err error) {
-	// if group post, check creator is a member?
+func (s *PostsService) CreatePost(ctx context.Context, req CreatePostReq) (err error) {
+	// if group post, check creator is a member (GATEWAY)
+
+	if err := ct.ValidateStruct(req); err != nil {
+		return err
+	}
+
+	return s.runTx(ctx, func(q sqlc.Querier) error {
+
+		// 1) create a post
+		_, err := q.CreatePost(ctx, sqlc.CreatePostParams{
+			PostBody:  req.Body.String(),
+			CreatorID: req.CreatorId.Int64(),
+			//GroupID:   req.GroupId.Int64(),
+			//Audience:  req.Audience,
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil // commit
+	})
 	//if audience=selected, s.InsertPostAudience in transaction
 	//if there are images, insert in transaction
-	return 0, nil
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // NOT GRPC
@@ -30,9 +56,9 @@ func (s *PostsService) DeletePost(ctx context.Context, req GenericReq) error {
 }
 
 // FRONT: do you prefer just error instead of full post?
-func (s *PostsService) EditPostContent(ctx context.Context, req EditPostContentReq) (Post, error) {
+func (s *PostsService) EditPostContent(ctx context.Context, req EditPostContentReq) error {
 	// check requester is post creator
-	return Post{}, nil
+	return nil
 }
 
 // FRONT: do you prefer full post instead of just error?
@@ -50,13 +76,14 @@ func (s *PostsService) GetGroupPostsPaginated(ctx context.Context, req GenericPa
 	return nil, nil
 }
 
-//FRONT: If you also want to display liked by user information I also need the requester id
+// FRONT: If you also want to display liked by user information I also need the requester id- NOT liked by user
 func (s *PostsService) GetMostPopularPostInGroup(ctx context.Context, groupId int64) (Post, error) {
 	//anyone can see this
+	// if no post ErrNoPost
 	return Post{}, nil
 }
 
-// FRONT: if we only have one image per post it's likely you'll never need this?
+// FRONT: if we only have one image per post it's likely you'll never need this? - LEAVE FOR LATER
 func (s *PostsService) GetPostById(ctx context.Context, req GenericReq) (Post, error) {
 	//check requester is allowed to view post, dependes on post audience:
 	//everyone: any requester can see

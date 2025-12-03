@@ -346,7 +346,7 @@ type User struct {
 	FirstName     string
 	LastName      string
 	DateOfBirth   pgtype.Date
-	Avatar        string
+	AvatarID      int64
 	AboutMe       string
 	ProfilePublic bool
 	CurrentStatus UserStatus

@@ -7,14 +7,14 @@ import (
 )
 
 type PostsService struct {
-	db   sqlc.Querier  // interface, can be *sqlc.Queries or mock
-	pool *pgxpool.Pool // needed to start transactions
+	q    *sqlc.Queries
+	pool *pgxpool.Pool
 }
 
 // NewPostsService constructs a new PostsService
-func NewPostsService(db sqlc.Querier, pool *pgxpool.Pool) *PostsService {
+func NewPostsService(pool *pgxpool.Pool) *PostsService {
 	return &PostsService{
-		db:   db,
+		q:    sqlc.New(pool),
 		pool: pool,
 	}
 }

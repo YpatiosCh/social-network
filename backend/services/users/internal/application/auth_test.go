@@ -23,7 +23,7 @@ func TestUpdateUserPassword_Success(t *testing.T) {
 
 	oldPassword := "oldpassword"
 	newPassword := "newpassword"
-	hashedOld, _ := bcrypt.GenerateFromPassword([]byte(oldPassword), bcrypt.DefaultCost)
+	storedPassword := "oldpassword"
 
 	req := UpdatePasswordRequest{
 		UserId:      ct.Id(1),
@@ -33,7 +33,7 @@ func TestUpdateUserPassword_Success(t *testing.T) {
 
 	ctx := context.Background()
 
-	mockDB.On("GetUserPassword", ctx, int64(1)).Return(string(hashedOld), nil)
+	mockDB.On("GetUserPassword", ctx, int64(1)).Return(string(storedPassword), nil)
 	mockDB.On("UpdateUserPassword", ctx, mock.MatchedBy(func(arg sqlc.UpdateUserPasswordParams) bool {
 		return arg.UserID == 1
 	})).Return(nil)

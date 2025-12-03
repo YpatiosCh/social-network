@@ -14,7 +14,7 @@ type RegisterUserRequest struct {
 	FirstName   ct.Name
 	LastName    ct.Name
 	DateOfBirth ct.DateOfBirth
-	Avatar      string
+	AvatarId    ct.Id    `validate:"nullable"`
 	About       ct.About `validate:"nullable"`
 	Public      bool
 	Email       ct.Email
@@ -50,7 +50,7 @@ type UserId int64
 type User struct {
 	UserId   ct.Id
 	Username ct.Username
-	Avatar   string
+	AvatarId ct.Id `validate:"nullable"`
 }
 
 type UserSearchReq struct {
@@ -69,7 +69,7 @@ type UserProfileResponse struct {
 	FirstName         ct.Name
 	LastName          ct.Name
 	DateOfBirth       ct.DateOfBirth
-	Avatar            string
+	AvatarId          ct.Id `validate:"nullable"`
 	About             ct.About
 	Public            bool
 	CreatedAt         time.Time
@@ -88,7 +88,7 @@ type UpdateProfileRequest struct {
 	FirstName   ct.Name
 	LastName    ct.Name
 	DateOfBirth ct.DateOfBirth
-	Avatar      string
+	AvatarId    ct.Id    `validate:"nullable"`
 	About       ct.About `validate:"nullable"`
 }
 
@@ -120,7 +120,7 @@ type Pagination struct {
 type GroupUser struct {
 	UserId    ct.Id
 	Username  ct.Username
-	Avatar    string
+	AvatarId  ct.Id `validate:"nullable"`
 	GroupRole string
 }
 
