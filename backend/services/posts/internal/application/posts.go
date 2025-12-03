@@ -19,8 +19,6 @@ func (s *PostsService) CreatePost(ctx context.Context, req CreatePostReq) (err e
 
 	return s.runTx(ctx, func(q sqlc.Querier) error {
 
-		// 1) create a post
-
 		var groupId pgtype.Int8
 		groupId.Int64 = req.GroupId.Int64()
 		if req.GroupId == 0 {
@@ -40,20 +38,28 @@ func (s *PostsService) CreatePost(ctx context.Context, req CreatePostReq) (err e
 		}
 
 		if audience == "selected" {
-			q.InsertPostAudience(ctx, sqlc.InsertPostAudienceParams{
-				PostID: postId,
-				//Column2:req.AudienceIds,
+			err = q.InsertPostAudience(ctx, sqlc.InsertPostAudienceParams{
+				PostID:  postId,
+				Column2: req.AudienceIds.Int64(), //does nil work here? And do I allow it? TODO test
 			})
+			if err != nil {
+				return err
+			}
+		}
+
+		if req.Image != 0 {
+			err = q.InsertImage(ctx, sqlc.InsertImageParams{
+				Column1: req.Image.Int64(),
+				Column2: postId,
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
 	})
-	//if audience=selected, s.InsertPostAudience in transaction
-	//if there are images, insert in transaction
-	if err != nil {
-		return err
-	}
-	return nil
+
 }
 
 // NOT GRPC

@@ -9,7 +9,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/lib/pq v1.10.9
-	github.com/minio/minio-go/v7 v7.0.97
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/protobuf v1.36.10
@@ -44,6 +43,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/minio/minio-go/v7 v7.0.97
 	github.com/redis/go-redis/v9 v9.17.2
 	golang.org/x/crypto v0.43.0
 	golang.org/x/sync v0.17.0 // indirect

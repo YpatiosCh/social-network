@@ -92,12 +92,12 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 		fmt.Println("register handler called, with: ", r.Body)
 		//READ REQUEST BODY
 		type registerHttpRequest struct {
-			Username    ct.Username    `json:"username,omitempty"`
+			Username    ct.Username    `json:"username,omitempty" validate:"nullable"`
 			FirstName   ct.Name        `json:"first_name,omitempty"`
 			LastName    ct.Name        `json:"last_name,omitempty"`
 			DateOfBirth ct.DateOfBirth `json:"date_of_birth,omitempty"`
-			Avatar      ct.Id          `json:"avatar,omitempty"`
-			About       ct.About       `json:"about,omitempty"`
+			Avatar      ct.Id          `json:"avatar,omitempty" validate:"nullable"`
+			About       ct.About       `json:"about,omitempty" validate:"nullable"`
 			Public      bool           `json:"public,omitempty"`
 			Email       ct.Email       `json:"email,omitempty"`
 			Password    ct.Password    `json:"password,omitempty"`

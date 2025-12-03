@@ -20,8 +20,8 @@ type GenericPaginatedReq struct { //two different ones with nullable and not?
 type hasRightToView struct {
 	RequesterId         ct.Id
 	ParentEntityId      ct.Id
-	RequesterFollowsIds []ct.Id `validate:"nullable"`
-	RequesterGroups     []ct.Id `validate:"nullable"`
+	RequesterFollowsIds ct.Ids `validate:"nullable"`
+	RequesterGroups     ct.Ids `validate:"nullable"`
 }
 
 // -------------------------------------------
@@ -48,7 +48,8 @@ type CreatePostReq struct {
 	Body        ct.PostBody
 	GroupId     ct.Id `validate:"nullable"`
 	Audience    ct.Audience
-	AudienceIds []ct.Id `validate:"nullable"`
+	AudienceIds ct.Ids `validate:"nullable"`
+	Image       ct.Id  `validate:"nullable"`
 }
 
 type EditPostContentReq struct {
@@ -60,12 +61,12 @@ type EditPostContentReq struct {
 
 type insertPostAudienceReq struct {
 	PostId      ct.Id
-	AudienceIds []ct.Id `validate:"nullable"`
+	AudienceIds ct.Ids `validate:"nullable"`
 }
 
 type GetUserPostsReq struct {
 	CreatorId        ct.Id
-	CreatorFollowers []ct.Id `validate:"nullable"`
+	CreatorFollowers ct.Ids `validate:"nullable"`
 	RequesterId      ct.Id
 	Limit            ct.Limit
 	Offset           ct.Offset
@@ -73,7 +74,7 @@ type GetUserPostsReq struct {
 
 type GetPersonalizedFeedReq struct {
 	RequesterId         ct.Id
-	RequesterFollowsIds []ct.Id //from user service
+	RequesterFollowsIds ct.Ids //from user service
 	Limit               ct.Limit
 	Offset              ct.Offset
 }
@@ -98,6 +99,7 @@ type CreateCommentReq struct {
 	CreatorId ct.Id
 	ParentId  ct.Id
 	Body      ct.CommentBody
+	Image     ct.Id `validate:"nullable"`
 }
 
 type EditCommentReq struct {
