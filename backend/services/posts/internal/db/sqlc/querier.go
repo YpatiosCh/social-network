@@ -16,7 +16,7 @@ type Querier interface {
 	CreateEvent(ctx context.Context, arg CreateEventParams) error
 	CreatePost(ctx context.Context, arg CreatePostParams) (int64, error)
 	DeleteComment(ctx context.Context, arg DeleteCommentParams) (int64, error)
-	DeleteEvent(ctx context.Context, id int64) (int64, error)
+	DeleteEvent(ctx context.Context, arg DeleteEventParams) (int64, error)
 	DeleteEventResponse(ctx context.Context, arg DeleteEventResponseParams) (int64, error)
 	DeleteImage(ctx context.Context, id int64) (int64, error)
 	DeletePost(ctx context.Context, arg DeletePostParams) (int64, error)
@@ -45,6 +45,7 @@ type Querier interface {
 	SuggestUsersByPostActivity(ctx context.Context, creatorID int64) ([]int64, error)
 	ToggleReactionIfExists(ctx context.Context, arg ToggleReactionIfExistsParams) (ToggleReactionIfExistsRow, error)
 	UpdatePostAudience(ctx context.Context, arg UpdatePostAudienceParams) (int64, error)
+	UpsertEventResponse(ctx context.Context, arg UpsertEventResponseParams) (int64, error)
 	UpsertImage(ctx context.Context, arg UpsertImageParams) error
 }
 
