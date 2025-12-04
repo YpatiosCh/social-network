@@ -185,21 +185,27 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 			return
 		}
 
+		//PREPARE SUCCESS RESPONSE
 		now := time.Now().Unix()
-		exp := time.Now().AddDate(0, 6, 0).Unix()
+		exp := time.Now().AddDate(0, 6, 0).Unix() // six months from now
 
-		security.CreateToken(security.Claims{
+		claims := security.Claims{
 			UserId: resp.UserId,
-			Exp:    exp,
 			Iat:    now,
-			Nbf:    time.Now().Unix(),
-		})
+			Exp:    exp,
+		}
+
+		token, err := security.CreateToken(claims)
+		if err != nil {
+			utils.ErrorJSON(w, http.StatusInternalServerError, "token generation failed")
+			return
+		}
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     "jwt",
-			Value:    "",
+			Value:    token,
 			Path:     "/",
-			Expires:  time.Unix(0, 0),
+			Expires:  time.Unix(exp, 0),
 			HttpOnly: true,
 			Secure:   false, //TODO: set to true in production
 			SameSite: http.SameSiteLaxMode,

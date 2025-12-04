@@ -6,126 +6,6 @@ import (
 	"strings"
 )
 
-// func ValidateStruct(s any) error {
-// 	return ValidateType(reflect.ValueOf(s), "")
-// }
-
-// func ValidateType(v reflect.Value, fieldName string) error {
-// 	if v.Kind() == reflect.Pointer {
-// 		if v.IsNil() {
-// 			return nil
-// 		}
-// 		v = v.Elem()
-// 	}
-
-// 	switch v.Kind() {
-// 	case reflect.Struct:
-// 		return validateStruct(v)
-// 	case reflect.Slice:
-// 		return validateSlice(v, fieldName)
-// 	default:
-// 		return validateValidator(v, fieldName)
-// 	}
-// }
-
-// // validateStruct checks each exported field of a struct for required rules and,
-// // if applicable, runs Validator-based validation on the field value.
-// func validateStruct(v reflect.Value) error {
-// 	t := v.Type()
-// 	var allErrors []string
-
-// 	for i := 0; i < v.NumField(); i++ {
-// 		fieldVal := v.Field(i)
-// 		fieldType := t.Field(i)
-
-// 		if !fieldVal.CanInterface() {
-// 			continue
-// 		}
-
-// 		tag := fieldType.Tag.Get("validate")
-// 		nullable := tag == "nullable"
-
-// 		isPrimitive := isPrimitiveField(fieldVal)
-// 		_, zeroOk := allowedZeroVal[fieldVal.Type().Name()]
-
-// 		// Required-field check
-// 		if !nullable && !isPrimitive && !zeroOk && isZeroValue(fieldVal) {
-// 			allErrors = append(allErrors,
-// 				fmt.Sprintf("%s: required field missing", fieldType.Name))
-// 			continue
-// 		}
-
-// 		err := validateValidator(fieldVal, fieldType.Name)
-
-// 		if err != nil {
-// 			allErrors = append(allErrors, err.Error())
-// 		}
-// 	}
-
-// 	if len(allErrors) > 0 {
-// 		return fmt.Errorf("validation errors: %v", allErrors)
-// 	}
-// 	return nil
-// }
-
-// func validateSlice(v reflect.Value, fieldName string) error {
-
-// 	elemType := v.Type().Elem()
-// 	isPrimitive := elemType.PkgPath() == ""
-
-// 	// Primitive slices require no element validation
-// 	if isPrimitive {
-// 		return nil
-// 	}
-
-// 	var errs []string
-
-// 	for i := 0; i < v.Len(); i++ {
-// 		elemVal := v.Index(i)
-// 		elemAny := elemVal.Interface()
-
-// 		validator, ok := elemAny.(Validator)
-// 		if !ok {
-// 			errs = append(errs,
-// 				fmt.Sprintf("%s[%d]: element does not implement Validator", fieldName, i))
-// 			continue
-// 		}
-
-// 		if err := validator.Validate(); err != nil {
-// 			errs = append(errs,
-// 				fmt.Sprintf("%s[%d]: %v", fieldName, i, err))
-// 		}
-// 	}
-
-// 	if len(errs) > 0 {
-// 		return fmt.Errorf("validation errors: %v", errs)
-// 	}
-// 	return nil
-// }
-
-// // validateValidator runs validation on a value only if it implements
-// // the Validator interface; primitives and non-validator types are ignored.
-// func validateValidator(v reflect.Value, fieldName string) error {
-// 	val := v.Interface()
-
-// 	validator, ok := val.(Validator)
-// 	if !ok {
-// 		return nil // primitive or non-validator → no extra validation
-// 	}
-
-// 	if err := validator.Validate(); err != nil {
-// 		return fmt.Errorf("%s: %v", fieldName, err)
-// 	}
-// 	return nil
-// }
-
-// func isPrimitiveField(v reflect.Value) bool {
-// 	if v.Kind() == reflect.Slice {
-// 		return v.Type().Elem().PkgPath() == ""
-// 	}
-// 	return v.Type().PkgPath() == ""
-// }
-
 // ValidateStruct iterates over exported struct fields and validates them.
 //   - If a field implements Validator, its Validate() method is called.
 //   - If a field does not have `validate:"nullable"` tag, zero values are flagged as errors.
@@ -162,7 +42,7 @@ func ValidateStruct(s any) error {
 		}
 
 		val := fieldVal.Interface()
-		validator, ok := val.(Validator)
+		validator, implementsValidator := val.(Validator)
 
 		validateTag := fieldType.Tag.Get("validate")
 		// Check for exact "nullable" match (not "elements=nullable")
@@ -190,6 +70,13 @@ func ValidateStruct(s any) error {
 
 		// Skip validation for nullable fields that are empty
 		if nullable && isZeroValue(fieldVal) {
+			continue
+		}
+
+		if implementsValidator {
+			if err := validator.Validate(); err != nil {
+				allErrors = append(allErrors, fmt.Sprintf("%s: %v", fieldType.Name, err))
+			}
 			continue
 		}
 
@@ -233,12 +120,6 @@ func ValidateStruct(s any) error {
 				}
 			}
 			continue
-		}
-
-		if ok {
-			if err := validator.Validate(); err != nil {
-				allErrors = append(allErrors, fmt.Sprintf("%s: %v", fieldType.Name, err))
-			}
 		}
 	}
 

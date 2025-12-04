@@ -10,9 +10,6 @@ import (
 	"social-network/services/users/internal/db/sqlc"
 	"social-network/services/users/internal/server"
 
-	// Seems to be a relic from when migrations were run from here
-	// _ "github.com/golang-migrate/migrate/v4/source/file"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 )
