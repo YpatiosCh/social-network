@@ -36,14 +36,13 @@ type Querier interface {
 	GetUserPostsPaginated(ctx context.Context, arg GetUserPostsPaginatedParams) ([]GetUserPostsPaginatedRow, error)
 	GetWhoLikedEntityId(ctx context.Context, contentID int64) ([]int64, error)
 	InsertPostAudience(ctx context.Context, arg InsertPostAudienceParams) (int64, error)
-	InsertReaction(ctx context.Context, arg InsertReactionParams) (InsertReactionRow, error)
 	// U1: Users who liked one or more of *your public posts*
 	// U2: Users who commented on your public posts
 	// U3: Users who liked the same posts as you
 	// U4: Users who commented on the same posts as you
 	// Combine scores
 	SuggestUsersByPostActivity(ctx context.Context, creatorID int64) ([]int64, error)
-	ToggleReactionIfExists(ctx context.Context, arg ToggleReactionIfExistsParams) (ToggleReactionIfExistsRow, error)
+	ToggleOrInsertReaction(ctx context.Context, arg ToggleOrInsertReactionParams) (int64, error)
 	UpdatePostAudience(ctx context.Context, arg UpdatePostAudienceParams) (int64, error)
 	UpsertEventResponse(ctx context.Context, arg UpsertEventResponseParams) (int64, error)
 	UpsertImage(ctx context.Context, arg UpsertImageParams) error

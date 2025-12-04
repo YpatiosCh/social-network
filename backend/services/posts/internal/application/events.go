@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"social-network/services/posts/internal/db/sqlc"
 	ct "social-network/shared/go/customtypes"
 
@@ -57,23 +58,46 @@ func (s *Application) EditEvent(ctx context.Context, req EditEventReq) error {
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
 	}
-	// convert date
-	eventDate := pgtype.Date{
-		Time:  req.EventDate.Time(),
-		Valid: true,
-	}
-	rowsAffected, err := s.db.EditEvent(ctx, sqlc.EditEventParams{
-		EventTitle:     req.Title.String(),
-		EventBody:      req.Body.String(),
-		EventDate:      eventDate,
-		ID:             req.EventId.Int64(),
-		EventCreatorID: req.RequesterId.Int64(),
+	err := s.runTx(ctx, func(q *sqlc.Queries) error {
+		// convert date
+		eventDate := pgtype.Date{
+			Time:  req.EventDate.Time(),
+			Valid: true,
+		}
+		rowsAffected, err := s.db.EditEvent(ctx, sqlc.EditEventParams{
+			EventTitle:     req.Title.String(),
+			EventBody:      req.Body.String(),
+			EventDate:      eventDate,
+			ID:             req.EventId.Int64(),
+			EventCreatorID: req.RequesterId.Int64(),
+		})
+		if err != nil {
+			return err
+		}
+		if rowsAffected != 1 {
+			return ErrNotFound
+		}
+		if req.Image > 0 {
+			err := s.db.UpsertImage(ctx, sqlc.UpsertImageParams{
+				ID:       req.Image.Int64(),
+				ParentID: req.EventId.Int64(),
+			})
+			if err != nil {
+				return err
+			}
+		} else {
+			rowsAffected, err := s.db.DeleteImage(ctx, req.Image.Int64())
+			if err != nil {
+				return err
+			}
+			if rowsAffected != 1 {
+				fmt.Println("image not found")
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		return err
-	}
-	if rowsAffected != 1 {
-		return ErrNotFound
 	}
 	return nil
 }
