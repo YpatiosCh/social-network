@@ -15,7 +15,7 @@ type Querier interface {
 	CreateComment(ctx context.Context, arg CreateCommentParams) error
 	CreateEvent(ctx context.Context, arg CreateEventParams) error
 	CreatePost(ctx context.Context, arg CreatePostParams) (int64, error)
-	DeleteComment(ctx context.Context, id int64) (int64, error)
+	DeleteComment(ctx context.Context, arg DeleteCommentParams) (int64, error)
 	DeleteEvent(ctx context.Context, id int64) (int64, error)
 	DeleteEventResponse(ctx context.Context, arg DeleteEventResponseParams) (int64, error)
 	DeleteImage(ctx context.Context, id int64) (int64, error)

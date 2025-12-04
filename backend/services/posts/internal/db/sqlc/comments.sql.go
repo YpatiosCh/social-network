@@ -30,11 +30,16 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) er
 const deleteComment = `-- name: DeleteComment :execrows
 UPDATE comments
 SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL
+WHERE id = $1 AND comment_creator_id=$2 AND deleted_at IS NULL
 `
 
-func (q *Queries) DeleteComment(ctx context.Context, id int64) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteComment, id)
+type DeleteCommentParams struct {
+	ID               int64
+	CommentCreatorID int64
+}
+
+func (q *Queries) DeleteComment(ctx context.Context, arg DeleteCommentParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteComment, arg.ID, arg.CommentCreatorID)
 	if err != nil {
 		return 0, err
 	}
@@ -44,16 +49,17 @@ func (q *Queries) DeleteComment(ctx context.Context, id int64) (int64, error) {
 const editComment = `-- name: EditComment :execrows
 UPDATE comments
 SET comment_body = $1
-WHERE id = $2 AND deleted_at IS NULL
+WHERE id = $2 AND comment_creator_id=$3 AND deleted_at IS NULL
 `
 
 type EditCommentParams struct {
-	CommentBody string
-	ID          int64
+	CommentBody      string
+	ID               int64
+	CommentCreatorID int64
 }
 
 func (q *Queries) EditComment(ctx context.Context, arg EditCommentParams) (int64, error) {
-	result, err := q.db.Exec(ctx, editComment, arg.CommentBody, arg.ID)
+	result, err := q.db.Exec(ctx, editComment, arg.CommentBody, arg.ID, arg.CommentCreatorID)
 	if err != nil {
 		return 0, err
 	}
