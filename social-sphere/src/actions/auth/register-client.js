@@ -52,7 +52,8 @@ export async function registerClient(formData) {
             return { success: false, error: errorData.error || "Registration failed. Please try again." };
         }
 
-        return { success: true };
+        const data = await response.json();
+        return { success: true, user: data };
     } catch (error) {
         console.error("Registration error:", error);
         return { success: false, error: "Network error. Please try again later." };
