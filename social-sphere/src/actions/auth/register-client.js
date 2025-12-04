@@ -1,53 +1,20 @@
-"use server";
+"use client";
 
-import { validateRegistrationForm, validateLoginForm } from "@/utils/validation";
+import { validateRegistrationForm } from "@/utils/validation";
 
-export async function login(formData) {
-
-    // server side validation 
-    const validation = validateLoginForm(formData);
-    if (!validation.valid) {
-        return { success: false, error: validation.error };
-    }
-
-    // extract fields for backend request
-    const identifier = formData.get("identifier")?.trim();
-    const password = formData.get("password");
-
-    // prepare data for backend
-    const backendFormData = new FormData();
-    backendFormData.append("identifier", identifier);
-    backendFormData.append("password", password);
-
-    // login endpoint
-    const loginEndpoint = process.env.LOGIN || "/login";
-    const apiBase = process.env.API_BASE || "http://localhost:8081";
-
-    // request login 
-    const response = await fetch(`${apiBase}${loginEndpoint}`, {
-        method: "POST",
-        body: backendFormData,
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Login failed:", errorData);
-        return { success: false, error: errorData.error || "Login failed. Please try again." };
-    }
-
-    return { success: true };
-}
-
-export async function register(formData) {
+/**
+ * Client-side registration function that calls the API route directly.
+ * Must be called from client components so browser cookies are included.
+ */
+export async function registerClient(formData) {
     // Extract avatar file
     const avatar = formData.get("avatar");
 
-    // Shared validation
+    // Client-side validation
     const validation = validateRegistrationForm(formData, avatar);
     if (!validation.valid) {
         return { success: false, error: validation.error };
     }
-    console.log("Validation passed");
 
     // Extract fields for backend request
     const firstName = formData.get("firstName")?.trim();
@@ -71,17 +38,12 @@ export async function register(formData) {
     if (aboutMe) backendFormData.append("about", aboutMe);
     if (avatar && avatar.size > 0) backendFormData.append("avatar", avatar);
 
-    console.log("Backend data prepared");
-    console.log("Backend data:", backendFormData);
-    console.log("Sending request");
     try {
-        const apiBase = process.env.API_BASE || "http://localhost:8081";
-        const registerEndpoint = process.env.REGISTER || "/register";
-
-        const response = await fetch(`${apiBase}${registerEndpoint}`, {
+        // Call API route directly from client
+        const response = await fetch("/api/auth/register", {
             method: "POST",
             body: backendFormData,
-            // Next.js/Node fetch automatically sets Content-Type to multipart/form-data with boundary
+            credentials: "include", // Important: include cookies
         });
 
         if (!response.ok) {
@@ -96,4 +58,3 @@ export async function register(formData) {
         return { success: false, error: "Network error. Please try again later." };
     }
 }
-
