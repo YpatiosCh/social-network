@@ -7,7 +7,6 @@ import { fetchUserProfile } from "@/actions/profile/profile-actions";
 import { fetchUserPosts } from "@/actions/posts/posts";
 import { getUserByID } from "@/mock-data/users";
 import FeedList from "@/components/feed/feed-list";
-import { test } from "@/actions/test_conn/test";
 
 export default function ProfilePage({ params }) {
     const { id } = use(params);
@@ -15,21 +14,6 @@ export default function ProfilePage({ params }) {
     const [user, setUser] = useState(null);
     const [initialPosts, setInitialPosts] = useState([]);
     const [postsLoaded, setPostsLoaded] = useState(false);
-
-    // Run test call once on mount
-    useEffect(() => {
-        const runTest = async () => {
-            try {
-                const result = await test("http://localhost:8081/test");
-                console.log(result);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        runTest();
-    }, []);
-
 
     // mock data
     const currentUser = getUserByID("1");
