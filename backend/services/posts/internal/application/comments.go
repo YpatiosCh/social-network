@@ -1,31 +1,95 @@
 package application
 
-import "context"
+import (
+	"context"
+	"social-network/services/posts/internal/db/sqlc"
+	ct "social-network/shared/go/customtypes"
+)
 
-//FRONT: Do you prefer full Comment instead of just id?
-func (s *PostsService) CreateComment(ctx context.Context, req CreateCommentReq) (err error) {
+func (s *Application) CreateComment(ctx context.Context, req CreateCommentReq) (err error) {
 	// check requester can actually view parent entity? (probably not needed?)
+	if err := ct.ValidateStruct(req); err != nil {
+		return err
+	}
+
+	err = s.db.CreateComment(ctx, sqlc.CreateCommentParams{
+		CommentCreatorID: req.CreatorId.Int64(),
+		ParentID:         req.ParentId.Int64(),
+		CommentBody:      req.Body.String(),
+	})
+
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-// FRONT: Do I return full comment or just error?
-func (s *PostsService) EditComment(ctx context.Context, req EditCommentReq) error {
-	//check requester is creator
+func (s *Application) EditComment(ctx context.Context, req EditCommentReq) error {
+
+	if err := ct.ValidateStruct(req); err != nil {
+		return err
+	}
+
+	rowsAffected, err := s.db.EditComment(ctx, sqlc.EditCommentParams{
+		CommentBody:      req.Body.String(),
+		ID:               req.CommentId.Int64(),
+		CommentCreatorID: req.CreatorId.Int64(),
+	})
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return ErrNotFound
+	}
+
 	return nil
 }
 
-func (s *PostsService) DeleteComment(ctx context.Context, req GenericReq) error {
-	//check requester is comment creator
+func (s *Application) DeleteComment(ctx context.Context, req GenericReq) error {
+
+	if err := ct.ValidateStruct(req); err != nil {
+		return err
+	}
+	rowsAffected, err := s.db.DeleteComment(ctx, sqlc.DeleteCommentParams{
+		ID:               req.EntityId.Int64(),
+		CommentCreatorID: req.RequesterId.Int64(),
+	})
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return ErrNotFound
+	}
 	return nil
 }
 
-func (s *PostsService) GetCommentsByParentId(ctx context.Context, req GenericPaginatedReq) ([]Comment, error) {
+func (s *Application) GetCommentsByParentId(ctx context.Context, req GenericPaginatedReq) ([]Comment, error) {
 	// check requester can actually view parent entity?
-	return nil, nil
-}
-
-//FRONT: I assume this is a different endpoint that feed? Or do you prefer I include this in every Post in []Post I return?- IN POST
-func (s *PostsService) GetLatestCommentForPostId(ctx context.Context, req GenericReq) (Comment, error) {
-	// check requester can actually view parent entity?
-	return Comment{}, nil
+	if err := ct.ValidateStruct(req); err != nil {
+		return nil, err
+	}
+	rows, err := s.db.GetCommentsByPostId(ctx, sqlc.GetCommentsByPostIdParams{
+		ParentID: req.EntityId.Int64(),
+		UserID:   req.RequesterId.Int64(),
+		Limit:    req.Limit.Int32(),
+		Offset:   req.Offset.Int32(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	comments := make([]Comment, 0, len(rows))
+	for _, r := range rows {
+		comments = append(comments, Comment{
+			CommentId:      ct.Id(r.ID),
+			ParentId:       req.EntityId,
+			Body:           ct.CommentBody(r.CommentBody),
+			CreatorId:      ct.Id(r.CommentCreatorID),
+			ReactionsCount: int(r.ReactionsCount),
+			CreatedAt:      r.CreatedAt.Time,
+			UpdatedAt:      r.UpdatedAt.Time,
+			LikedByUser:    r.LikedByUser,
+			Image:          ct.Id(r.Image),
+		})
+	}
+	return comments, nil
 }
