@@ -47,8 +47,7 @@ func (h *Handlers) loginHandler() http.HandlerFunc {
 
 		user, err := h.Services.Users.LoginUser(r.Context(), &gRpcReq)
 		if err != nil {
-			//TODO: distinguish error types
-			utils.ErrorJSON(w, http.StatusInternalServerError, "login failed")
+			utils.ErrorJSON(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -181,7 +180,7 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 
 		resp, err := h.Services.Users.RegisterUser(r.Context(), &gRpcReq)
 		if err != nil {
-			utils.ErrorJSON(w, http.StatusInternalServerError, "registration failed")
+			utils.ErrorJSON(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
