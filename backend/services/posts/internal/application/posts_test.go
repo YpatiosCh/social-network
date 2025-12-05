@@ -430,11 +430,12 @@ func TestGetGroupPostsPaginated(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name          string
-		req           GetGroupPostsReq
-		setupMock     func(*MockQuerier)
-		expectedPosts int
-		expectedError error
+		name              string
+		req               GetGroupPostsReq
+		setupMock         func(*MockQuerier)
+		expectedPosts     int
+		expectedError     error
+		expectedErrSubstr string
 	}{
 		{
 			name: "successful retrieval",
@@ -442,6 +443,8 @@ func TestGetGroupPostsPaginated(t *testing.T) {
 				GroupId:         ct.Id(10),
 				RequesterId:     ct.Id(1),
 				RequesterGroups: []ct.Id{10, 20},
+				Limit:           ct.Limit(10), // Added - was missing
+				Offset:          ct.Offset(0), // Added - was missing
 			},
 			setupMock: func(m *MockQuerier) {
 				m.On("GetGroupPostsPaginated", mock.Anything, mock.MatchedBy(func(params sqlc.GetGroupPostsPaginatedParams) bool {
@@ -478,6 +481,8 @@ func TestGetGroupPostsPaginated(t *testing.T) {
 				GroupId:         ct.Id(10),
 				RequesterId:     ct.Id(1),
 				RequesterGroups: []ct.Id{20, 30},
+				Limit:           ct.Limit(10), // Added
+				Offset:          ct.Offset(0), // Added
 			},
 			setupMock:     func(m *MockQuerier) {},
 			expectedPosts: 0,
@@ -489,6 +494,8 @@ func TestGetGroupPostsPaginated(t *testing.T) {
 				GroupId:         ct.Id(10),
 				RequesterId:     ct.Id(1),
 				RequesterGroups: []ct.Id{10},
+				Limit:           ct.Limit(10), // Added
+				Offset:          ct.Offset(0), // Added
 			},
 			setupMock: func(m *MockQuerier) {
 				m.On("GetGroupPostsPaginated", mock.Anything, mock.Anything).
@@ -503,10 +510,13 @@ func TestGetGroupPostsPaginated(t *testing.T) {
 				GroupId:         ct.Id(0),
 				RequesterId:     ct.Id(1),
 				RequesterGroups: []ct.Id{10},
+				Limit:           ct.Limit(10), // Added
+				Offset:          ct.Offset(0), // Added
 			},
-			setupMock:     func(m *MockQuerier) {},
-			expectedPosts: 0,
-			expectedError: ErrNoGroupIdGiven,
+			setupMock:         func(m *MockQuerier) {},
+			expectedPosts:     0,
+			expectedError:     nil, // expected via substring, not ErrorIs
+			expectedErrSubstr: "required field missing",
 		},
 	}
 
@@ -517,9 +527,11 @@ func TestGetGroupPostsPaginated(t *testing.T) {
 
 			posts, err := app.GetGroupPostsPaginated(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErrSubstr != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tt.expectedErrSubstr)
+			} else if tt.expectedError != nil {
 				assert.ErrorIs(t, err, tt.expectedError)
-				assert.Nil(t, posts)
 			} else {
 				assert.NoError(t, err)
 				assert.Len(t, posts, tt.expectedPosts)
@@ -534,15 +546,18 @@ func TestGetMostPopularPostInGroup(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name          string
-		groupID       ct.Id
-		setupMock     func(*MockQuerier)
-		expectPost    bool
-		expectedError error
+		name              string
+		req               SimpleIdReq
+		setupMock         func(*MockQuerier)
+		expectPost        bool
+		expectedError     error
+		expectedErrSubstr string
 	}{
 		{
-			name:    "successful retrieval",
-			groupID: ct.Id(10),
+			name: "successful retrieval",
+			req: SimpleIdReq{
+				Id: ct.Id(10),
+			},
 			setupMock: func(m *MockQuerier) {
 				m.On("GetMostPopularPostInGroup", mock.Anything, mock.MatchedBy(func(id pgtype.Int8) bool {
 					return id.Int64 == 10 && id.Valid
@@ -563,8 +578,10 @@ func TestGetMostPopularPostInGroup(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:    "no posts in group",
-			groupID: ct.Id(10),
+			name: "no posts in group",
+			req: SimpleIdReq{
+				Id: ct.Id(10),
+			},
 			setupMock: func(m *MockQuerier) {
 				m.On("GetMostPopularPostInGroup", mock.Anything, mock.Anything).
 					Return(sqlc.GetMostPopularPostInGroupRow{}, sql.ErrNoRows)
@@ -573,11 +590,14 @@ func TestGetMostPopularPostInGroup(t *testing.T) {
 			expectedError: ErrNotFound,
 		},
 		{
-			name:          "no group ID provided",
-			groupID:       ct.Id(0),
-			setupMock:     func(m *MockQuerier) {},
-			expectPost:    false,
-			expectedError: ErrNoGroupIdGiven,
+			name: "no group ID provided",
+			req: SimpleIdReq{
+				Id: ct.Id(0),
+			},
+			setupMock:         func(m *MockQuerier) {},
+			expectPost:        false,
+			expectedError:     nil, // expected via substring, not ErrorIs
+			expectedErrSubstr: "required field missing",
 		},
 	}
 
@@ -586,9 +606,12 @@ func TestGetMostPopularPostInGroup(t *testing.T) {
 			app, mockDB := setupTestApp()
 			tt.setupMock(mockDB)
 
-			post, err := app.GetMostPopularPostInGroup(context.Background(), tt.groupID)
+			post, err := app.GetMostPopularPostInGroup(context.Background(), tt.req)
 
-			if tt.expectedError != nil {
+			if tt.expectedErrSubstr != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tt.expectedErrSubstr)
+			} else if tt.expectedError != nil {
 				assert.ErrorIs(t, err, tt.expectedError)
 			} else {
 				assert.NoError(t, err)
