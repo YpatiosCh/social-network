@@ -30,7 +30,7 @@ func (s *Application) CreatePost(ctx context.Context, req CreatePostReq) (err er
 		return ErrNotAllowed
 	}
 
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
 
 		var groupId pgtype.Int8
 		groupId.Int64 = req.GroupId.Int64()
@@ -104,7 +104,7 @@ func (s *Application) EditPost(ctx context.Context, req EditPostReq) error {
 		return err
 	}
 
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
 		//edit content
 		if len(req.NewBody) > 0 {
 			rowsAffected, err := q.EditPostContent(ctx, sqlc.EditPostContentParams{

@@ -97,7 +97,7 @@ func (s *Application) EditEvent(ctx context.Context, req EditEventReq, accessCtx
 		return err
 	}
 
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
 		// convert date
 		eventDate := pgtype.Date{
 			Time:  req.EventDate.Time(),

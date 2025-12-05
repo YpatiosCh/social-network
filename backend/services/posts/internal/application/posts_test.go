@@ -176,15 +176,20 @@ func (m *MockQuerier) UpsertImage(ctx context.Context, arg sqlc.UpsertImageParam
 // MockTxRunner is a mock implementation of TxRunner
 type MockTxRunner struct {
 	mock.Mock
+	MockQuerier sqlc.Querier // The querier to pass to transaction functions
 }
 
-func (m *MockTxRunner) RunTx(ctx context.Context, fn func(*sqlc.Queries) error) error {
-	// We call the mock but DON'T execute fn
-	// This means we're testing that CreatePost calls RunTx correctly
-	// but we're NOT testing what happens inside the transaction
-	// (that would require integration tests or refactoring to pass Querier interface)
+func (m *MockTxRunner) RunTx(ctx context.Context, fn func(sqlc.Querier) error) error {
 	args := m.Called(ctx, fn)
-	return args.Error(0)
+
+	// Check if we should return an error before executing
+	if err := args.Error(0); err != nil {
+		return err
+	}
+
+	// Execute the function with our mock querier
+	// Now this works because fn expects sqlc.Querier interface!
+	return fn(m.MockQuerier)
 }
 
 // ============================================
@@ -202,7 +207,9 @@ func setupTestApp() (*Application, *MockQuerier) {
 
 func setupTestAppWithTx() (*Application, *MockQuerier, *MockTxRunner) {
 	mockDB := new(MockQuerier)
-	mockTx := new(MockTxRunner)
+	mockTx := &MockTxRunner{
+		MockQuerier: mockDB, // Pass the mock querier to the transaction runner
+	}
 
 	app := NewApplicationWithTxRunner(mockDB, mockTx)
 
@@ -217,11 +224,11 @@ func TestCreatePost(t *testing.T) {
 	tests := []struct {
 		name          string
 		req           CreatePostReq
-		setupMock     func(*MockTxRunner)
+		setupMock     func(*MockQuerier, *MockTxRunner)
 		expectedError error
 	}{
 		{
-			name: "successful post creation - transaction called",
+			name: "successful post creation with public audience",
 			req: CreatePostReq{
 				Body:            ct.PostBody("Test post content"),
 				CreatorId:       ct.Id(1),
@@ -229,25 +236,58 @@ func TestCreatePost(t *testing.T) {
 				Audience:        ct.Audience("everyone"),
 				RequesterGroups: []ct.Id{10, 20},
 			},
-			setupMock: func(tx *MockTxRunner) {
-				// Just verify RunTx is called and return success
+			setupMock: func(m *MockQuerier, tx *MockTxRunner) {
+				// Mock RunTx to actually execute the function
 				tx.On("RunTx", mock.Anything, mock.Anything).Return(nil)
+
+				// Mock the database calls that happen inside the transaction
+				m.On("CreatePost", mock.Anything, mock.MatchedBy(func(params sqlc.CreatePostParams) bool {
+					return params.PostBody == "Test post content" &&
+						params.CreatorID == 1 &&
+						params.Audience == "everyone"
+				})).Return(int64(100), nil)
 			},
 			expectedError: nil,
 		},
 		{
-			name: "transaction returns error",
+			name: "successful post creation with selected audience",
 			req: CreatePostReq{
 				Body:            ct.PostBody("Test post"),
 				CreatorId:       ct.Id(1),
 				GroupId:         ct.Id(10),
-				Audience:        ct.Audience("everyone"),
+				Audience:        ct.Audience("selected"),
+				AudienceIds:     []ct.Id{2, 3, 4},
 				RequesterGroups: []ct.Id{10},
 			},
-			setupMock: func(tx *MockTxRunner) {
-				tx.On("RunTx", mock.Anything, mock.Anything).Return(errors.New("transaction failed"))
+			setupMock: func(m *MockQuerier, tx *MockTxRunner) {
+				tx.On("RunTx", mock.Anything, mock.Anything).Return(nil)
+
+				m.On("CreatePost", mock.Anything, mock.Anything).Return(int64(100), nil)
+				m.On("InsertPostAudience", mock.Anything, mock.MatchedBy(func(params sqlc.InsertPostAudienceParams) bool {
+					return params.PostID == 100 && len(params.AllowedUserIds) == 3
+				})).Return(int64(3), nil)
 			},
-			expectedError: errors.New("transaction failed"),
+			expectedError: nil,
+		},
+		{
+			name: "successful post creation with image",
+			req: CreatePostReq{
+				Body:            ct.PostBody("Post with image"),
+				CreatorId:       ct.Id(1),
+				GroupId:         ct.Id(10),
+				Audience:        ct.Audience("everyone"),
+				Image:           ct.Id(500),
+				RequesterGroups: []ct.Id{10},
+			},
+			setupMock: func(m *MockQuerier, tx *MockTxRunner) {
+				tx.On("RunTx", mock.Anything, mock.Anything).Return(nil)
+
+				m.On("CreatePost", mock.Anything, mock.Anything).Return(int64(100), nil)
+				m.On("UpsertImage", mock.Anything, mock.MatchedBy(func(params sqlc.UpsertImageParams) bool {
+					return params.ID == 500 && params.ParentID == 100
+				})).Return(nil)
+			},
+			expectedError: nil,
 		},
 		{
 			name: "user not member of group",
@@ -258,27 +298,62 @@ func TestCreatePost(t *testing.T) {
 				Audience:        ct.Audience("everyone"),
 				RequesterGroups: []ct.Id{20, 30},
 			},
-			setupMock:     func(tx *MockTxRunner) {},
+			setupMock:     func(m *MockQuerier, tx *MockTxRunner) {},
 			expectedError: ErrNotAllowed,
+		},
+		{
+			name: "selected audience with no audience IDs",
+			req: CreatePostReq{
+				Body:            ct.PostBody("Test post"),
+				CreatorId:       ct.Id(1),
+				GroupId:         ct.Id(10),
+				Audience:        ct.Audience("selected"),
+				AudienceIds:     []ct.Id{},
+				RequesterGroups: []ct.Id{10},
+			},
+			setupMock: func(m *MockQuerier, tx *MockTxRunner) {
+				tx.On("RunTx", mock.Anything, mock.Anything).Return(nil)
+
+				m.On("CreatePost", mock.Anything, mock.Anything).Return(int64(100), nil)
+			},
+			expectedError: ErrNoAudienceSelected,
+		},
+		{
+			name: "database error during CreatePost",
+			req: CreatePostReq{
+				Body:            ct.PostBody("Test post"),
+				CreatorId:       ct.Id(1),
+				GroupId:         ct.Id(10),
+				Audience:        ct.Audience("everyone"),
+				RequesterGroups: []ct.Id{10},
+			},
+			setupMock: func(m *MockQuerier, tx *MockTxRunner) {
+				tx.On("RunTx", mock.Anything, mock.Anything).Return(nil)
+
+				m.On("CreatePost", mock.Anything, mock.Anything).
+					Return(int64(0), errors.New("database error"))
+			},
+			expectedError: errors.New("database error"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app, _, mockTx := setupTestAppWithTx()
-			tt.setupMock(mockTx)
+			app, mockDB, mockTx := setupTestAppWithTx()
+			tt.setupMock(mockDB, mockTx)
 
 			err := app.CreatePost(context.Background(), tt.req)
 
 			if tt.expectedError != nil {
 				assert.Error(t, err)
-				if tt.expectedError.Error() != "" {
+				if !errors.Is(tt.expectedError, ErrNotAllowed) && !errors.Is(tt.expectedError, ErrNoAudienceSelected) {
 					assert.Equal(t, tt.expectedError.Error(), err.Error())
 				}
 			} else {
 				assert.NoError(t, err)
 			}
 
+			mockDB.AssertExpectations(t)
 			mockTx.AssertExpectations(t)
 		})
 	}

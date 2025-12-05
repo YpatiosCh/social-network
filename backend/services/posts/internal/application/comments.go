@@ -23,7 +23,7 @@ func (s *Application) CreateComment(ctx context.Context, req CreateCommentReq, a
 	if err != nil {
 		return err
 	}
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
 		err = q.CreateComment(ctx, sqlc.CreateCommentParams{
 			CommentCreatorID: req.CreatorId.Int64(),
 			ParentID:         req.ParentId.Int64(),
@@ -66,7 +66,7 @@ func (s *Application) EditComment(ctx context.Context, req EditCommentReq, acces
 		return err
 	}
 
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
 		rowsAffected, err := q.EditComment(ctx, sqlc.EditCommentParams{
 			CommentBody:      req.Body.String(),
 			ID:               req.CommentId.Int64(),

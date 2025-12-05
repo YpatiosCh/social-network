@@ -9,7 +9,7 @@ import (
 
 // TxRunner defines the interface for running database transactions
 type TxRunner interface {
-	RunTx(ctx context.Context, fn func(*sqlc.Queries) error) error
+	RunTx(ctx context.Context, fn func(sqlc.Querier) error) error
 }
 
 // PgxTxRunner is the production implementation using pgxpool
@@ -27,7 +27,8 @@ func NewPgxTxRunner(pool *pgxpool.Pool, db *sqlc.Queries) *PgxTxRunner {
 }
 
 // RunTx runs a function inside a database transaction
-func (r *PgxTxRunner) RunTx(ctx context.Context, fn func(*sqlc.Queries) error) error {
+// The function receives a sqlc.Querier interface, not *sqlc.Queries
+func (r *PgxTxRunner) RunTx(ctx context.Context, fn func(sqlc.Querier) error) error {
 	// start tx
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -35,10 +36,10 @@ func (r *PgxTxRunner) RunTx(ctx context.Context, fn func(*sqlc.Queries) error) e
 	}
 	defer tx.Rollback(ctx)
 
-	// create queries with transaction
+	// create queries with transaction - returns *sqlc.Queries
 	qtx := r.db.WithTx(tx)
 
-	// run the function
+	// run the function, passing qtx as sqlc.Querier interface
 	if err := fn(qtx); err != nil {
 		return err
 	}
