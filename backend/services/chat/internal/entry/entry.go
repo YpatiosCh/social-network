@@ -10,6 +10,7 @@ import (
 	"social-network/services/chat/internal/application"
 	"social-network/services/chat/internal/db/sqlc"
 	"social-network/services/chat/internal/handler"
+	"social-network/shared/gen-go/chat"
 	"syscall"
 	"time"
 
@@ -23,13 +24,14 @@ func Run() error {
 		return fmt.Errorf("failed to connect db: %v", err)
 	}
 	defer pool.Close()
+
 	log.Println("Connected to chat database")
 
-	app := &application.ChatService{
-		Pool:    pool,
-		Queries: sqlc.New(pool),
-		Clients: InitClients(),
-	}
+	app := application.NewChatService(
+		pool,
+		InitClients(),
+		sqlc.New(pool),
+	)
 
 	service := &handler.ChatHandler{
 		Application: app,
@@ -37,6 +39,7 @@ func Run() error {
 	}
 
 	log.Println("Running gRpc service...")
+
 	grpc := RunGRPCServer(service)
 
 	// wait here for process termination signal to initiate graceful shutdown
@@ -49,7 +52,6 @@ func Run() error {
 	grpc.GracefulStop()
 	log.Println("Server stopped")
 	return nil
-
 }
 
 func connectToDb(ctx context.Context) (pool *pgxpool.Pool, err error) {
@@ -74,7 +76,7 @@ func RunGRPCServer(s *handler.ChatHandler) *grpc.Server {
 
 	grpcServer := grpc.NewServer()
 
-	// pb.RegisterChatServiceServer(grpcServer, s)
+	chat.RegisterChatServiceServer(grpcServer, s)
 
 	log.Printf("gRPC server listening on %s", s.Port)
 	go func() {
