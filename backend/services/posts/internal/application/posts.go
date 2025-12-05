@@ -30,7 +30,7 @@ func (s *Application) CreatePost(ctx context.Context, req CreatePostReq) (err er
 		return ErrNotAllowed
 	}
 
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
 
 		var groupId pgtype.Int8
 		groupId.Int64 = req.GroupId.Int64()
@@ -104,7 +104,7 @@ func (s *Application) EditPost(ctx context.Context, req EditPostReq) error {
 		return err
 	}
 
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
 		//edit content
 		if len(req.NewBody) > 0 {
 			rowsAffected, err := q.EditPostContent(ctx, sqlc.EditPostContentParams{
@@ -243,16 +243,13 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req GetGroupPo
 	return posts, nil
 }
 
-func (s *Application) GetMostPopularPostInGroup(ctx context.Context, groupID ct.Id) (Post, error) {
-	if err := ct.ValidateStruct(groupID); err != nil {
+func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req SimpleIdReq) (Post, error) {
+	if err := ct.ValidateStruct(req); err != nil {
 		return Post{}, err
 	}
 
 	var groupId pgtype.Int8
-	groupId.Int64 = groupID.Int64()
-	if groupID == 0 {
-		return Post{}, ErrNoGroupIdGiven
-	}
+	groupId.Int64 = req.Id.Int64()
 	groupId.Valid = true
 	p, err := s.db.GetMostPopularPostInGroup(ctx, groupId)
 	if err != nil {
@@ -265,7 +262,7 @@ func (s *Application) GetMostPopularPostInGroup(ctx context.Context, groupID ct.
 		PostId:          ct.Id(p.ID),
 		Body:            ct.PostBody(p.PostBody),
 		CreatorId:       ct.Id(p.CreatorID),
-		GroupId:         ct.Id(groupID.Int64()),
+		GroupId:         ct.Id(req.Id.Int64()),
 		Audience:        ct.Audience(p.Audience),
 		CommentsCount:   int(p.CommentsCount),
 		ReactionsCount:  int(p.ReactionsCount),

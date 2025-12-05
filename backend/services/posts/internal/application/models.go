@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type SimpleIdReq struct {
+	Id ct.Id
+}
+
 type GenericReq struct {
 	RequesterId ct.Id
 	EntityId    ct.Id
