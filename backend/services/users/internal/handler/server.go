@@ -1,29 +1,24 @@
-package server
+package handler
 
 import (
 	"log"
 	"net"
 
-	us "social-network/services/users/internal/application"
+	"social-network/services/users/internal/application"
 	pb "social-network/shared/gen-go/users"
 
 	"google.golang.org/grpc"
 )
 
 // Holds Client conns, services and handler funcs
-type Server struct {
+type UsersHandler struct {
 	pb.UnimplementedUserServiceServer
-	Clients     Clients
 	Port        string
-	Application *us.Application
-}
-
-// Holds connections to clients
-type Clients struct {
+	Application *application.Application
 }
 
 // RunGRPCServer starts the gRPC server and blocks
-func (s *Server) RunGRPCServer() {
+func (s *UsersHandler) RunGRPCServer() {
 	lis, err := net.Listen("tcp", s.Port)
 	if err != nil {
 		log.Fatalf("Failed to listen on %s: %v", s.Port, err)
@@ -39,10 +34,9 @@ func (s *Server) RunGRPCServer() {
 	}
 }
 
-func NewUsersServer(service *us.Application) *Server {
-	return &Server{
+func NewUsersHanlder(service *application.Application) *UsersHandler {
+	return &UsersHandler{
 		Port:        ":50051",
-		Clients:     Clients{},
 		Application: service,
 	}
 }

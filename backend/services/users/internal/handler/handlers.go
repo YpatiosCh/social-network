@@ -2,7 +2,7 @@
 Expose methods via gRpc
 */
 
-package server
+package handler
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 )
 
 // AUTH
-func (s *Server) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.User, error) {
+func (s *UsersHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.User, error) {
 	fmt.Println("RegisterUser gRPC method called")
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
@@ -49,7 +49,7 @@ func (s *Server) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) 
 	}, nil
 }
 
-func (s *Server) LoginUser(ctx context.Context, req *pb.LoginRequest) (*pb.User, error) {
+func (s *UsersHandler) LoginUser(ctx context.Context, req *pb.LoginRequest) (*pb.User, error) {
 	fmt.Println("LoginUser gRPC method called")
 
 	if req == nil {
@@ -82,7 +82,7 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginRequest) (*pb.User,
 	}, nil
 }
 
-func (s *Server) UpdateUserPassword(ctx context.Context, req *pb.UpdatePasswordRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) UpdateUserPassword(ctx context.Context, req *pb.UpdatePasswordRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "UpdateUserPassword: request is nil")
 	}
@@ -107,7 +107,7 @@ func (s *Server) UpdateUserPassword(ctx context.Context, req *pb.UpdatePasswordR
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) UpdateUserEmail(ctx context.Context, req *pb.UpdateEmailRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) UpdateUserEmail(ctx context.Context, req *pb.UpdateEmailRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "UpdateUserEmail: request is nil")
 	}
@@ -134,7 +134,7 @@ func (s *Server) UpdateUserEmail(ctx context.Context, req *pb.UpdateEmailRequest
 }
 
 // FOLLOW
-func (s *Server) GetFollowersPaginated(ctx context.Context, req *pb.Pagination) (*pb.ListUsers, error) {
+func (s *UsersHandler) GetFollowersPaginated(ctx context.Context, req *pb.Pagination) (*pb.ListUsers, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetFollowersPaginated: request is nil")
 	}
@@ -163,7 +163,7 @@ func (s *Server) GetFollowersPaginated(ctx context.Context, req *pb.Pagination) 
 	return usersToPB(resp), nil
 }
 
-func (s *Server) GetFollowingPaginated(ctx context.Context, req *pb.Pagination) (*pb.ListUsers, error) {
+func (s *UsersHandler) GetFollowingPaginated(ctx context.Context, req *pb.Pagination) (*pb.ListUsers, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetFollowingPaginated: request is nil")
 	}
@@ -192,7 +192,7 @@ func (s *Server) GetFollowingPaginated(ctx context.Context, req *pb.Pagination) 
 	return usersToPB(resp), nil
 }
 
-func (s *Server) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
+func (s *UsersHandler) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "FollowUser: request is nil")
 	}
@@ -221,7 +221,7 @@ func (s *Server) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb
 	}, nil
 }
 
-func (s *Server) UnFollowUser(ctx context.Context, req *pb.FollowUserRequest) (*wrapperspb.BoolValue, error) {
+func (s *UsersHandler) UnFollowUser(ctx context.Context, req *pb.FollowUserRequest) (*wrapperspb.BoolValue, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "UnFollowUser: request is nil")
 	}
@@ -247,7 +247,7 @@ func (s *Server) UnFollowUser(ctx context.Context, req *pb.FollowUserRequest) (*
 	return wrapperspb.Bool(resp), nil
 }
 
-func (s *Server) HandleFollowRequest(ctx context.Context, req *pb.HandleFollowRequestRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) HandleFollowRequest(ctx context.Context, req *pb.HandleFollowRequestRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "HandleFollowRequest: request is nil")
 	}
@@ -275,7 +275,7 @@ func (s *Server) HandleFollowRequest(ctx context.Context, req *pb.HandleFollowRe
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) GetFollowingIds(ctx context.Context, req *wrapperspb.Int64Value) (*pb.Int64Arr, error) {
+func (s *UsersHandler) GetFollowingIds(ctx context.Context, req *wrapperspb.Int64Value) (*pb.Int64Arr, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetFollowingIds: request is nil")
 	}
@@ -291,7 +291,7 @@ func (s *Server) GetFollowingIds(ctx context.Context, req *wrapperspb.Int64Value
 	return &pb.Int64Arr{Values: resp}, nil
 }
 
-func (s *Server) GetFollowSuggestions(ctx context.Context, req *wrapperspb.Int64Value) (*pb.ListUsers, error) {
+func (s *UsersHandler) GetFollowSuggestions(ctx context.Context, req *wrapperspb.Int64Value) (*pb.ListUsers, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetFollowSuggestions: request is nil")
 	}
@@ -310,7 +310,7 @@ func (s *Server) GetFollowSuggestions(ctx context.Context, req *wrapperspb.Int64
 }
 
 // GROUPS
-func (s *Server) GetAllGroupsPaginated(ctx context.Context, req *pb.Pagination) (*pb.GroupArr, error) {
+func (s *UsersHandler) GetAllGroupsPaginated(ctx context.Context, req *pb.Pagination) (*pb.GroupArr, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetAllGroupsPaginated: request is nil")
 	}
@@ -339,7 +339,7 @@ func (s *Server) GetAllGroupsPaginated(ctx context.Context, req *pb.Pagination) 
 	return groupsToPb(resp), nil
 }
 
-func (s *Server) GetUserGroupsPaginated(ctx context.Context, req *pb.Pagination) (*pb.GroupArr, error) {
+func (s *UsersHandler) GetUserGroupsPaginated(ctx context.Context, req *pb.Pagination) (*pb.GroupArr, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetUserGroupsPaginated: request is nil")
 	}
@@ -368,7 +368,7 @@ func (s *Server) GetUserGroupsPaginated(ctx context.Context, req *pb.Pagination)
 	return groupsToPb(resp), nil
 }
 
-func (s *Server) GetGroupInfo(ctx context.Context, req *pb.GeneralGroupRequest) (*pb.Group, error) {
+func (s *UsersHandler) GetGroupInfo(ctx context.Context, req *pb.GeneralGroupRequest) (*pb.Group, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetGroupInfo: request is nil")
 	}
@@ -404,7 +404,7 @@ func (s *Server) GetGroupInfo(ctx context.Context, req *pb.GeneralGroupRequest) 
 	}, nil
 }
 
-func (s *Server) GetGroupMembers(ctx context.Context, req *pb.GroupMembersRequest) (*pb.GroupUserArr, error) {
+func (s *UsersHandler) GetGroupMembers(ctx context.Context, req *pb.GroupMembersRequest) (*pb.GroupUserArr, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetGroupMembers: request is nil")
 	}
@@ -436,7 +436,7 @@ func (s *Server) GetGroupMembers(ctx context.Context, req *pb.GroupMembersReques
 	return groupUsersToPB(resp), nil
 }
 
-func (s *Server) SearchGroups(ctx context.Context, req *pb.GroupSearchRequest) (*pb.GroupArr, error) {
+func (s *UsersHandler) SearchGroups(ctx context.Context, req *pb.GroupSearchRequest) (*pb.GroupArr, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "SearchGroups: request is nil")
 	}
@@ -469,7 +469,7 @@ func (s *Server) SearchGroups(ctx context.Context, req *pb.GroupSearchRequest) (
 	return groupsToPb(resp), nil
 }
 
-func (s *Server) InviteToGroup(ctx context.Context, req *pb.InviteToGroupRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) InviteToGroup(ctx context.Context, req *pb.InviteToGroupRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "InviteToGroup: request is nil")
 	}
@@ -501,7 +501,7 @@ func (s *Server) InviteToGroup(ctx context.Context, req *pb.InviteToGroupRequest
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) RequestJoinGroupOrCancel(ctx context.Context, req *pb.GroupJoinRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) RequestJoinGroupOrCancel(ctx context.Context, req *pb.GroupJoinRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "RequestJoinGroupOrCancel: request is nil")
 	}
@@ -526,7 +526,7 @@ func (s *Server) RequestJoinGroupOrCancel(ctx context.Context, req *pb.GroupJoin
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) RespondToGroupInvite(ctx context.Context, req *pb.HandleGroupInviteRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) RespondToGroupInvite(ctx context.Context, req *pb.HandleGroupInviteRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "RespondToGroupInvite: request is nil")
 	}
@@ -555,7 +555,7 @@ func (s *Server) RespondToGroupInvite(ctx context.Context, req *pb.HandleGroupIn
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) HandleGroupJoinRequest(ctx context.Context, req *pb.HandleJoinRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) HandleGroupJoinRequest(ctx context.Context, req *pb.HandleJoinRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "HandleGroupJoinRequest: request is nil")
 	}
@@ -589,7 +589,7 @@ func (s *Server) HandleGroupJoinRequest(ctx context.Context, req *pb.HandleJoinR
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) LeaveGroup(ctx context.Context, req *pb.GeneralGroupRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) LeaveGroup(ctx context.Context, req *pb.GeneralGroupRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "LeaveGroup: request is nil")
 	}
@@ -614,7 +614,7 @@ func (s *Server) LeaveGroup(ctx context.Context, req *pb.GeneralGroupRequest) (*
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (*wrapperspb.Int64Value, error) {
+func (s *UsersHandler) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (*wrapperspb.Int64Value, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "CreateGroup: request is nil")
 	}
@@ -652,7 +652,7 @@ func (s *Server) CreateGroup(ctx context.Context, req *pb.CreateGroupRequest) (*
 }
 
 // PROFILE
-func (s *Server) GetBasicUserInfo(ctx context.Context, req *wrapperspb.Int64Value) (*pb.User, error) {
+func (s *UsersHandler) GetBasicUserInfo(ctx context.Context, req *wrapperspb.Int64Value) (*pb.User, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
 	}
@@ -674,7 +674,7 @@ func (s *Server) GetBasicUserInfo(ctx context.Context, req *wrapperspb.Int64Valu
 	}, nil
 }
 
-func (s *Server) GetUserProfile(ctx context.Context, req *pb.GetUserProfileRequest) (*pb.UserProfileResponse, error) {
+func (s *UsersHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfileRequest) (*pb.UserProfileResponse, error) {
 	fmt.Println("GetUserProfile gRPC method called")
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
@@ -706,7 +706,7 @@ func (s *Server) GetUserProfile(ctx context.Context, req *pb.GetUserProfileReque
 	}, nil
 }
 
-func (s *Server) SearchUsers(ctx context.Context, req *pb.UserSearchRequest) (*pb.ListUsers, error) {
+func (s *UsersHandler) SearchUsers(ctx context.Context, req *pb.UserSearchRequest) (*pb.ListUsers, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "SearchUsers: request is nil")
 	}
@@ -731,7 +731,7 @@ func (s *Server) SearchUsers(ctx context.Context, req *pb.UserSearchRequest) (*p
 	return usersToPB(resp), nil
 }
 
-func (s *Server) UpdateUserProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UserProfileResponse, error) {
+func (s *UsersHandler) UpdateUserProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UserProfileResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "UpdateUserProfile: request is nil")
 	}
@@ -771,7 +771,7 @@ func (s *Server) UpdateUserProfile(ctx context.Context, req *pb.UpdateProfileReq
 	}, nil
 }
 
-func (s *Server) UpdateProfilePrivacy(ctx context.Context, req *pb.UpdateProfilePrivacyRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) UpdateProfilePrivacy(ctx context.Context, req *pb.UpdateProfilePrivacyRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "UpdateProfilePrivacy: request is nil")
 	}

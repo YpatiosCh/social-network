@@ -9,11 +9,12 @@ sql:
         package: sqlc
         out: "./sqlc"
         sql_package: "pgx/v5"
+        # sql_package: "database/sql"
         emit_empty_slices: true
         emit_enum_valid_method: true
         emit_interface: true
         overrides:
-          - db_type: "bigint"
-            go_type: "customtypes.Id"
-          - db_type: "bigint[]"
-            go_type: "customtypes.Ids"
+          - db_type: "int8"
+            go_type: "social-network/shared/go/customtypes.Id"
+          - db_type: "_int8"
+            go_type: "social-network/shared/go/customtypes.Ids"

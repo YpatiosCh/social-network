@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"social-network/services/chat/internal/handler"
+	"social-network/services/chat/internal/entry"
 )
 
 func main() {
-	if err := handler.Run(); err != nil {
+	err := entry.Run()
+	if err != nil {
 		fmt.Println(err)
 	}
 }
