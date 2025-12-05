@@ -1,4 +1,4 @@
-package server
+package client
 
 import (
 	"fmt"
@@ -8,9 +8,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
+
+	userpb "social-network/shared/gen-go/users"
 )
 
-func (s *Server) InitClients() {
+type Clients struct {
+	UserClient userpb.UserServiceClient
+}
+
+func InitClients() *Clients {
+	c := &Clients{}
+
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(`{
@@ -29,7 +37,7 @@ func (s *Server) InitClients() {
 
 	// List of initializer functions
 	initializers := []func(opts []grpc.DialOption) error{
-		s.InitTemplateClient, // template
+		c.InitUserClient,
 		// Add more here as you add more clients
 	}
 
@@ -38,17 +46,14 @@ func (s *Server) InitClients() {
 			fmt.Println(err)
 		}
 	}
+	return c
 }
 
-// Connects to client and adds connection to s.Clients.
-//
-//	TEMPLATE
-func (s *Server) InitTemplateClient(opts []grpc.DialOption) (err error) {
+func (c *Clients) InitUserClient(opts []grpc.DialOption) (err error) {
 	conn, err := grpc.NewClient(ports.Users, opts...)
 	if err != nil {
 		err = fmt.Errorf("failed to dial user service: %v", err)
 	}
-	_ = conn
-	// s.Clients.Example = explPb.NewUserServiceClient(conn)
+	c.UserClient = userpb.NewUserServiceClient(conn)
 	return err
 }
