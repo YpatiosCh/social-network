@@ -44,11 +44,6 @@ func (h *UserHydrator) HydrateUsers(ctx context.Context, items []HasUser) error 
 func (s *Application) hydratePost(ctx context.Context, post *Post) error {
 	items := []HasUser{post}
 
-	// If LatestComment exists (ID != 0)
-	if post.LatestComment.CommentId.Int64() != 0 {
-		items = append(items, &post.LatestComment)
-	}
-
 	return s.hydrator.HydrateUsers(ctx, items)
 }
 
@@ -59,10 +54,6 @@ func (s *Application) hydratePosts(ctx context.Context, posts []Post) error {
 		// Always include post creator
 		items = append(items, &posts[i])
 
-		// Include latest comment's user only if exists
-		if posts[i].LatestComment.CommentId.Int64() != 0 {
-			items = append(items, &posts[i].LatestComment)
-		}
 	}
 
 	return s.hydrator.HydrateUsers(ctx, items)

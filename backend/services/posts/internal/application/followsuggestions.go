@@ -13,11 +13,11 @@ import (
 // Users who liked the same posts as you
 // Users who commented on the same posts as you
 // Actual Basic User Info will be retrieved by HANDLER from users
-func (s *Application) SuggestUsersByPostActivity(ctx context.Context, userId ct.Id) (ct.Ids, error) {
-	if err := ct.ValidateStruct(userId); err != nil {
+func (s *Application) SuggestUsersByPostActivity(ctx context.Context, req SimpleIdReq) (ct.Ids, error) {
+	if err := ct.ValidateStruct(req); err != nil {
 		return nil, err
 	}
-	ids, err := s.db.SuggestUsersByPostActivity(ctx, userId.Int64())
+	ids, err := s.db.SuggestUsersByPostActivity(ctx, req.Id.Int64())
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound

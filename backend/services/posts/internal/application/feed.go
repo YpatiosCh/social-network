@@ -43,19 +43,6 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req GetPersonaliz
 			UpdatedAt:       r.UpdatedAt.Time,
 			LikedByUser:     r.LikedByUser,
 			Image:           ct.Id(r.Image),
-			LatestComment: Comment{
-				CommentId: ct.Id(r.LatestCommentID),
-				ParentId:  ct.Id(r.ID),
-				Body:      ct.CommentBody(r.LatestCommentBody),
-				User: User{
-					UserId: ct.Id(r.CreatorID),
-				},
-				ReactionsCount: int(r.LatestCommentReactionsCount),
-				CreatedAt:      r.LatestCommentCreatedAt.Time,
-				UpdatedAt:      r.LatestCommentUpdatedAt.Time,
-				LikedByUser:    r.LatestCommentLikedByUser,
-				Image:          ct.Id(r.LatestCommentImage),
-			},
 		})
 	}
 	if err := s.hydratePosts(ctx, posts); err != nil {
@@ -92,19 +79,6 @@ func (s *Application) GetPublicFeed(ctx context.Context, req EntityIdPaginatedRe
 			UpdatedAt:       r.UpdatedAt.Time,
 			LikedByUser:     r.LikedByUser,
 			Image:           ct.Id(r.Image),
-			LatestComment: Comment{
-				CommentId: ct.Id(r.LatestCommentID),
-				ParentId:  ct.Id(r.ID),
-				Body:      ct.CommentBody(r.LatestCommentBody),
-				User: User{
-					UserId: ct.Id(r.CreatorID),
-				},
-				ReactionsCount: int(r.LatestCommentReactionsCount),
-				CreatedAt:      r.LatestCommentCreatedAt.Time,
-				UpdatedAt:      r.LatestCommentUpdatedAt.Time,
-				LikedByUser:    r.LatestCommentLikedByUser,
-				Image:          ct.Id(r.LatestCommentImage),
-			},
 		})
 	}
 
@@ -154,19 +128,6 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req GetUserPost
 			UpdatedAt:       r.UpdatedAt.Time,
 			LikedByUser:     r.LikedByUser,
 			Image:           ct.Id(r.Image),
-			LatestComment: Comment{
-				CommentId: ct.Id(r.LatestCommentID),
-				ParentId:  ct.Id(r.ID),
-				Body:      ct.CommentBody(r.LatestCommentBody),
-				User: User{
-					UserId: ct.Id(r.CreatorID),
-				},
-				ReactionsCount: int(r.LatestCommentReactionsCount),
-				CreatedAt:      r.LatestCommentCreatedAt.Time,
-				UpdatedAt:      r.UpdatedAt.Time,
-				LikedByUser:    r.LatestCommentLikedByUser,
-				Image:          ct.Id(r.LatestCommentImage),
-			},
 		})
 
 	}
@@ -224,19 +185,6 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req GetGroupPo
 			UpdatedAt:       r.UpdatedAt.Time,
 			LikedByUser:     r.LikedByUser,
 			Image:           ct.Id(r.Image),
-			LatestComment: Comment{
-				CommentId: ct.Id(r.LatestCommentID),
-				ParentId:  ct.Id(r.ID),
-				Body:      ct.CommentBody(r.LatestCommentBody),
-				User: User{
-					UserId: ct.Id(r.CreatorID),
-				},
-				ReactionsCount: int(r.LatestCommentReactionsCount),
-				CreatedAt:      r.LatestCommentCreatedAt.Time,
-				UpdatedAt:      r.UpdatedAt.Time,
-				LikedByUser:    r.LatestCommentLikedByUser,
-				Image:          ct.Id(r.LatestCommentImage),
-			},
 		})
 	}
 
