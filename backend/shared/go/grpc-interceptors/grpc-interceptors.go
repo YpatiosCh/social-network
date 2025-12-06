@@ -18,6 +18,8 @@ import (
 	ATM SERVER INTERCEPTOR ISNT NEEDED
 */
 
+// UnaryServerInterceptorWithContextKeys returns a server interceptor that adds specified metadata values to context.
+//
 // IMPORTANT: Only "a-z", "0-9", and "-_." characters allowed for keys
 func UnaryServerInterceptorWithContextKeys(keys ...string) grpc.UnaryServerInterceptor {
 	if !validateContextKeys(keys...) {
@@ -41,10 +43,18 @@ func UnaryServerInterceptorWithContextKeys(keys ...string) grpc.UnaryServerInter
 
 type wrappedServerStream struct {
 	grpc.ServerStream
+	ctx context.Context
 }
 
-func newWrappedServerStream(s grpc.ServerStream) grpc.ServerStream {
-	return &wrappedServerStream{s}
+func (w *wrappedServerStream) Context() context.Context {
+	return w.ctx
+}
+
+func newWrappedServerStream(ctx context.Context, s grpc.ServerStream) grpc.ServerStream {
+	return &wrappedServerStream{
+		ServerStream: s,
+		ctx:          ctx,
+	}
 }
 
 func (w *wrappedServerStream) RecvMsg(m any) error {
@@ -55,9 +65,30 @@ func (w *wrappedServerStream) SendMsg(m any) error {
 	return w.ServerStream.SendMsg(m)
 }
 
-func StreamServerInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	err := handler(srv, newWrappedServerStream(ss))
-	return err
+// TODO UNTESTED
+// StreamServerInterceptorWithContextKeys returns a server interceptor that adds specified metadata values to context.
+//
+// IMPORTANT: Only "a-z", "0-9", and "-_." characters allowed for keys
+func StreamServerInterceptorWithContextKeys(keys ...string) grpc.StreamServerInterceptor {
+	if !validateContextKeys(keys...) {
+		panic("bad context keys")
+	}
+
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		md, _ := metadata.FromIncomingContext(ss.Context())
+
+		// Build new ctx
+		ctx := ss.Context()
+		for _, k := range keys {
+			vals := md.Get(k)
+			if len(vals) > 0 {
+				ctx = context.WithValue(ctx, k, vals[0])
+			}
+		}
+
+		wrapped := newWrappedServerStream(ctx, ss)
+		return handler(srv, wrapped)
+	}
 }
 
 /*
