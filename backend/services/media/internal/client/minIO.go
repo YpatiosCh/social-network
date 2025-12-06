@@ -48,7 +48,7 @@ func (c *Clients) UploadToMinIO(
 }
 
 // GetFromMiniIo returns an object from MinIO
-func (c *Clients) GetFromMiniIo(ctx context.Context, info models.ImageMeta) (*minio.Object, error) {
+func (c *Clients) GetFromMiniIo(ctx context.Context, info models.FileMeta) (*minio.Object, error) {
 	obj, err := c.MinIOClient.GetObject(ctx, info.Bucket, info.ObjectKey, minio.GetObjectOptions{})
 	if err != nil {
 		return obj, fmt.Errorf("failed to get object from MinIO: %w", err)

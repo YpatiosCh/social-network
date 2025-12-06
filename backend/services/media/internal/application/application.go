@@ -38,14 +38,14 @@ func NewMediaService(pool *pgxpool.Pool, clients *client.Clients, queries sqlc.Q
 	}
 }
 
-func (m *MediaService) SaveImage(ctx context.Context, file []byte, filename string) (models.ImageMeta, error) {
+func (m *MediaService) SaveImage(ctx context.Context, file []byte, filename string) (models.FileMeta, error) {
 	contentType, err := utils.ValidateImage(file, filename)
 	if err != nil {
-		return models.ImageMeta{}, err
+		return models.FileMeta{}, err
 	}
 	info, err := m.Clients.UploadToMinIO(ctx, file, filename, "images", contentType)
 	if err != nil {
-		return models.ImageMeta{}, err
+		return models.FileMeta{}, err
 	}
 	row, err := m.Queries.SaveImageMetadata(ctx,
 		sqlc.SaveImageMetadataParams{
@@ -57,9 +57,9 @@ func (m *MediaService) SaveImage(ctx context.Context, file []byte, filename stri
 		},
 	)
 	if err != nil {
-		return models.ImageMeta{}, err
+		return models.FileMeta{}, err
 	}
-	return models.ImageMeta{
+	return models.FileMeta{
 		Id:        row[0].ID,
 		Filename:  filename,
 		MimeType:  contentType,
@@ -69,7 +69,7 @@ func (m *MediaService) SaveImage(ctx context.Context, file []byte, filename stri
 	}, nil
 }
 
-func (m *MediaService) RetriveImageById(ctx context.Context, imageId customtypes.Id) (reader io.ReadCloser, meta models.ImageMeta, err error) {
+func (m *MediaService) RetriveImageById(ctx context.Context, imageId customtypes.Id) (reader io.ReadCloser, meta models.FileMeta, err error) {
 	// Call db
 	if !imageId.IsValid() {
 		return nil, meta, fmt.Errorf("invalid image id: %v", imageId)
@@ -82,7 +82,7 @@ func (m *MediaService) RetriveImageById(ctx context.Context, imageId customtypes
 	}
 
 	imageMeta = resp[0]
-	info := models.ImageMeta{
+	info := models.FileMeta{
 		Id:        imageMeta.ID,
 		Filename:  imageMeta.OriginalName,
 		MimeType:  imageMeta.MimeType,
