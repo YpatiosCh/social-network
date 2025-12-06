@@ -63,6 +63,6 @@ func NewApplicationWithMocksTx(db sqlc.Querier, clients ClientsInterface, txRunn
 		db:       db,
 		clients:  clients,
 		txRunner: txRunner,
-		hydrator: NewUserHydrator(nil), // or pass clients if needed
+		hydrator: NewUserHydrator(clients.(*client.Clients)), // <- pass real type
 	}
 }

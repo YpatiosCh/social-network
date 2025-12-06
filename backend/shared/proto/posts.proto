@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+package posts;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+
+
+option go_package = "social-network/shared/gen/posts;posts";
+
+service PostsService {
+    rpc CreatePost (CreatePostReq) returns (google.protobuf.Empty);
+    rpc DeletePost (GenericReq) returns (google.protobuf.Empty);
+    rpc EditPost (EditPostReq) returns (google.protobuf.Empty);
+    rpc GetMostPopularPostInGroup (SimpleIdReq) returns (Post);
+    rpc GetPersonalizedFeed (GetPersonalizedFeedReq) returns (ListPosts);
+    rpc GetPublicFeed (EntityIdPaginatedReq) returns (ListPosts);
+    rpc GetUserPostsPaginated (GetUserPostsReq) returns (ListPosts);
+    rpc GetGroupPostsPaginated (GetGroupPostsReq) returns (ListPosts);
+    rpc CreateComment (CreateCommentReq) returns (google.protobuf.Empty);
+    rpc EditComment (EditCommentReq) returns (google.protobuf.Empty);
+    rpc DeleteComment (GenericReq) returns (google.protobuf.Empty);
+    rpc GetCommentsByParentId (EntityIdPaginatedReq) returns (ListComments);
+    rpc CreateEvent (CreateEventReq) returns (google.protobuf.Empty);
+    rpc DeleteEvent (GenericReq) returns (google.protobuf.Empty);
+    rpc EditEvent (EditEventReq) returns (google.protobuf.Empty);
+    rpc GetEventsByGroupId (EntityIdPaginatedReq) returns (ListEvents);
+    rpc RespondToEvent (RespondToEventReq) returns (google.protobuf.Empty);
+    rpc RemoveEventResponse (GenericReq) returns (google.protobuf.Empty);
+    rpc SuggestUsersByPostActivity (SimpleIdReq) returns (Int64Arr);
+    rpc ToggleOrInsertReaction (GenericReq) returns (google.protobuf.Empty);
+}
+
+// COMMON & GENERIC
+message Int64Arr {
+  repeated int64 values = 1; 
+}
+
+message SimpleIdReq {
+    int64 id = 1;
+}
+message GenericReq {
+    int64 requester_id = 1;
+    int64 entity_id = 2;
+}
+
+message EntityIdPaginatedReq {
+    int64 requester_id = 1;
+    int64 entity_id = 2;
+    int32 limit = 3;
+    int32 offset = 4;
+}
+
+message GenericPaginatedReq {
+    int64 requester_id = 1;
+    int32 limit = 2;
+    int32 offset = 3;
+}
+
+message User {
+  int64 user_id = 1;
+  string username = 2;
+  int64 avatar = 3;
+}
+
+// POSTS
+
+message Post {
+    int64 post_id = 1;
+    string post_body = 2;
+    User user = 3;
+    int64 group_id = 4;
+    string audience = 5;
+    int32 comments_count = 6;
+    int32 reactions_count = 7;
+    google.protobuf.Timestamp last_commented_at = 8;
+    google.protobuf.Timestamp created_at = 9;
+    google.protobuf.Timestamp updated_at = 10;
+    bool liked_by_user = 11;
+    int64 image = 12;
+}
+
+message ListPosts {
+  repeated Post posts = 1;
+}
+
+message CreatePostReq {
+    int64 creator_id = 1;
+    string body = 2;
+    int64 group_id = 3;
+    string audience = 4;
+    Int64Arr audience_ids = 5;
+    int64 image = 6;
+}
+
+message EditPostReq {
+    int64 requester_id = 1;
+    int64 post_id = 2;
+    string body = 3;
+    int64 image = 4;
+    string audience = 5;
+    Int64Arr audience_ids = 6;
+}
+
+message GetUserPostsReq {
+    int64 creator_id = 1;
+    int64 requester_id = 2;
+    int32 limit = 3;
+    int32 offset = 4;
+}
+
+message GetPersonalizedFeedReq {
+    int64 requester_id = 1;
+    int32 limit = 2;
+    int32 offset = 3;
+}
+
+message GetGroupPostsReq {
+    int64 requester_id = 1;
+    int64 group_id = 2;
+    int32 limit = 3;
+    int32 offset = 4;
+}
+
+
+// COMMENTS
+message Comment {
+    int64 comment_id = 1;
+    int64 parent_id = 2;
+    string body = 3;
+    User user = 4;
+    int32 reactions_count = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+    bool liked_by_user = 8;
+    int64 image = 9;
+}
+
+message ListComments {
+  repeated Comment comments = 1;
+}
+
+
+message CreateCommentReq {
+    int64 creator_id = 1;
+    int64 parent_id = 2;
+    string body = 3;
+    int64 image = 4;
+}
+
+message EditCommentReq {
+    int64 creator_id = 1;
+    int64 comment_id = 2;
+    string body = 3;
+    int64 image = 4;
+}
+
+// EVENTS
+message Event {
+    int64 event_id = 1;
+    string title = 2;
+    string body = 3;
+    User user = 4;
+    int64 group_id = 5;
+    google.protobuf.Timestamp event_date = 6;
+    int32 going_count = 7;
+    int32 not_going_count = 8;
+    int64 image = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+    google.protobuf.BoolValue user_response = 12;
+}
+
+message ListEvents {
+  repeated Event events = 1;
+}
+
+message CreateEventReq {
+    string title = 1;
+    string body = 2;
+    int64 creator_id = 3;
+    int64 group_id = 4;
+    int64 image = 5;
+    google.protobuf.Timestamp event_date = 6;
+}
+
+message EditEventReq {
+    int64 event_id = 1;
+    int64 requester_id = 2;
+    string title = 3;
+    string body = 4;
+    int64 image = 5;
+    google.protobuf.Timestamp event_date = 6;
+}
+
+message RespondToEventReq {
+    int64 event_id = 1;
+    int64 responder_id = 2;
+    bool going = 3;
+}

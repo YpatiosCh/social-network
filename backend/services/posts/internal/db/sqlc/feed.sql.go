@@ -38,49 +38,11 @@ SELECT
        AND i.deleted_at IS NULL
      ORDER BY i.sort_order
      LIMIT 1
-    ) AS image,
+    ) AS image
 
-     -- latest comment using LATERAL join
-    lc.id AS latest_comment_id,
-    lc.comment_creator_id AS latest_comment_creator_id,
-    lc.comment_body AS latest_comment_body,
-    lc.reactions_count AS latest_comment_reactions_count,
-    lc.created_at AS latest_comment_created_at,
-    lc.updated_at AS latest_comment_updated_at,
-    lc.liked_by_user AS latest_comment_liked_by_user,
-    lc.image AS latest_comment_image
-
-
+  
 FROM posts p
 
-LEFT JOIN LATERAL (
-    SELECT
-        c.id,
-        c.comment_creator_id,
-        c.comment_body,
-        c.reactions_count,
-        c.created_at,
-        c.updated_at,
-        EXISTS (
-            SELECT 1 FROM reactions r
-            WHERE r.content_id = c.id
-              AND r.user_id = $2
-              AND r.deleted_at IS NULL
-        ) AS liked_by_user,
-        (
-            SELECT i.id
-            FROM images i
-            WHERE i.parent_id = c.id
-              AND i.deleted_at IS NULL
-            ORDER BY i.sort_order
-            LIMIT 1
-        ) AS image
-    FROM comments c
-    WHERE c.parent_id = p.id
-      AND c.deleted_at IS NULL
-    ORDER BY c.created_at DESC
-    LIMIT 1
-) lc ON TRUE
 
 
 WHERE p.group_id = $1                    -- group id filter
@@ -98,26 +60,18 @@ type GetGroupPostsPaginatedParams struct {
 }
 
 type GetGroupPostsPaginatedRow struct {
-	ID                          int64
-	PostBody                    string
-	CreatorID                   int64
-	GroupID                     pgtype.Int8
-	Audience                    IntendedAudience
-	CommentsCount               int32
-	ReactionsCount              int32
-	LastCommentedAt             pgtype.Timestamptz
-	CreatedAt                   pgtype.Timestamptz
-	UpdatedAt                   pgtype.Timestamptz
-	LikedByUser                 bool
-	Image                       int64
-	LatestCommentID             int64
-	LatestCommentCreatorID      int64
-	LatestCommentBody           string
-	LatestCommentReactionsCount int32
-	LatestCommentCreatedAt      pgtype.Timestamptz
-	LatestCommentUpdatedAt      pgtype.Timestamptz
-	LatestCommentLikedByUser    bool
-	LatestCommentImage          int64
+	ID              int64
+	PostBody        string
+	CreatorID       int64
+	GroupID         pgtype.Int8
+	Audience        IntendedAudience
+	CommentsCount   int32
+	ReactionsCount  int32
+	LastCommentedAt pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	LikedByUser     bool
+	Image           int64
 }
 
 func (q *Queries) GetGroupPostsPaginated(ctx context.Context, arg GetGroupPostsPaginatedParams) ([]GetGroupPostsPaginatedRow, error) {
@@ -147,14 +101,6 @@ func (q *Queries) GetGroupPostsPaginated(ctx context.Context, arg GetGroupPostsP
 			&i.UpdatedAt,
 			&i.LikedByUser,
 			&i.Image,
-			&i.LatestCommentID,
-			&i.LatestCommentCreatorID,
-			&i.LatestCommentBody,
-			&i.LatestCommentReactionsCount,
-			&i.LatestCommentCreatedAt,
-			&i.LatestCommentUpdatedAt,
-			&i.LatestCommentLikedByUser,
-			&i.LatestCommentImage,
 		); err != nil {
 			return nil, err
 		}
@@ -193,48 +139,10 @@ SELECT
         AND i.deleted_at IS NULL
       ORDER BY i.sort_order
       LIMIT 1
-    ) AS image,
+    ) AS image
 
-     -- latest comment using LATERAL join
-    lc.id AS latest_comment_id,
-    lc.comment_creator_id AS latest_comment_creator_id,
-    lc.comment_body AS latest_comment_body,
-    lc.reactions_count AS latest_comment_reactions_count,
-    lc.created_at AS latest_comment_created_at,
-    lc.updated_at AS latest_comment_updated_at,
-    lc.liked_by_user AS latest_comment_liked_by_user,
-    lc.image AS latest_comment_image
+   FROM posts p
 
-FROM posts p
-
-LEFT JOIN LATERAL (
-    SELECT
-        c.id,
-        c.comment_creator_id,
-        c.comment_body,
-        c.reactions_count,
-        c.created_at,
-        c.updated_at,
-        EXISTS (
-            SELECT 1 FROM reactions r
-            WHERE r.content_id = c.id
-              AND r.user_id = $1
-              AND r.deleted_at IS NULL
-        ) AS liked_by_user,
-        (
-            SELECT i.id
-            FROM images i
-            WHERE i.parent_id = c.id
-              AND i.deleted_at IS NULL
-            ORDER BY i.sort_order
-            LIMIT 1
-        ) AS image
-    FROM comments c
-    WHERE c.parent_id = p.id
-      AND c.deleted_at IS NULL
-    ORDER BY c.created_at DESC
-    LIMIT 1
-) lc ON TRUE
 
 
 WHERE p.deleted_at IS NULL
@@ -260,24 +168,16 @@ type GetPersonalizedFeedParams struct {
 }
 
 type GetPersonalizedFeedRow struct {
-	ID                          int64
-	PostBody                    string
-	CreatorID                   int64
-	CommentsCount               int32
-	ReactionsCount              int32
-	LastCommentedAt             pgtype.Timestamptz
-	CreatedAt                   pgtype.Timestamptz
-	UpdatedAt                   pgtype.Timestamptz
-	LikedByUser                 bool
-	Image                       int64
-	LatestCommentID             int64
-	LatestCommentCreatorID      int64
-	LatestCommentBody           string
-	LatestCommentReactionsCount int32
-	LatestCommentCreatedAt      pgtype.Timestamptz
-	LatestCommentUpdatedAt      pgtype.Timestamptz
-	LatestCommentLikedByUser    bool
-	LatestCommentImage          int64
+	ID              int64
+	PostBody        string
+	CreatorID       int64
+	CommentsCount   int32
+	ReactionsCount  int32
+	LastCommentedAt pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	LikedByUser     bool
+	Image           int64
 }
 
 func (q *Queries) GetPersonalizedFeed(ctx context.Context, arg GetPersonalizedFeedParams) ([]GetPersonalizedFeedRow, error) {
@@ -305,14 +205,6 @@ func (q *Queries) GetPersonalizedFeed(ctx context.Context, arg GetPersonalizedFe
 			&i.UpdatedAt,
 			&i.LikedByUser,
 			&i.Image,
-			&i.LatestCommentID,
-			&i.LatestCommentCreatorID,
-			&i.LatestCommentBody,
-			&i.LatestCommentReactionsCount,
-			&i.LatestCommentCreatedAt,
-			&i.LatestCommentUpdatedAt,
-			&i.LatestCommentLikedByUser,
-			&i.LatestCommentImage,
 		); err != nil {
 			return nil, err
 		}
@@ -347,48 +239,10 @@ SELECT
      WHERE i.parent_id = p.id AND i.deleted_at IS NULL
      ORDER BY i.sort_order ASC
      LIMIT 1
-    ) AS image,
+    ) AS image
 
-    -- latest comment using LATERAL join
-    lc.id AS latest_comment_id,
-    lc.comment_creator_id AS latest_comment_creator_id,
-    lc.comment_body AS latest_comment_body,
-    lc.reactions_count AS latest_comment_reactions_count,
-    lc.created_at AS latest_comment_created_at,
-    lc.updated_at AS latest_comment_updated_at,
-    lc.liked_by_user AS latest_comment_liked_by_user,
-    lc.image AS latest_comment_image
-
+   
 FROM posts p
-
-LEFT JOIN LATERAL (
-    SELECT
-        c.id,
-        c.comment_creator_id,
-        c.comment_body,
-        c.reactions_count,
-        c.created_at,
-        c.updated_at,
-        EXISTS (
-            SELECT 1 FROM reactions r
-            WHERE r.content_id = c.id
-              AND r.user_id = $1
-              AND r.deleted_at IS NULL
-        ) AS liked_by_user,
-        (
-            SELECT i.id
-            FROM images i
-            WHERE i.parent_id = c.id
-              AND i.deleted_at IS NULL
-            ORDER BY i.sort_order
-            LIMIT 1
-        ) AS image
-    FROM comments c
-    WHERE c.parent_id = p.id
-      AND c.deleted_at IS NULL
-    ORDER BY c.created_at DESC
-    LIMIT 1
-) lc ON TRUE
 
 
 WHERE p.deleted_at IS NULL
@@ -404,24 +258,16 @@ type GetPublicFeedParams struct {
 }
 
 type GetPublicFeedRow struct {
-	ID                          int64
-	PostBody                    string
-	CreatorID                   int64
-	CommentsCount               int32
-	ReactionsCount              int32
-	LastCommentedAt             pgtype.Timestamptz
-	CreatedAt                   pgtype.Timestamptz
-	UpdatedAt                   pgtype.Timestamptz
-	LikedByUser                 bool
-	Image                       int64
-	LatestCommentID             int64
-	LatestCommentCreatorID      int64
-	LatestCommentBody           string
-	LatestCommentReactionsCount int32
-	LatestCommentCreatedAt      pgtype.Timestamptz
-	LatestCommentUpdatedAt      pgtype.Timestamptz
-	LatestCommentLikedByUser    bool
-	LatestCommentImage          int64
+	ID              int64
+	PostBody        string
+	CreatorID       int64
+	CommentsCount   int32
+	ReactionsCount  int32
+	LastCommentedAt pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	LikedByUser     bool
+	Image           int64
 }
 
 func (q *Queries) GetPublicFeed(ctx context.Context, arg GetPublicFeedParams) ([]GetPublicFeedRow, error) {
@@ -444,14 +290,6 @@ func (q *Queries) GetPublicFeed(ctx context.Context, arg GetPublicFeedParams) ([
 			&i.UpdatedAt,
 			&i.LikedByUser,
 			&i.Image,
-			&i.LatestCommentID,
-			&i.LatestCommentCreatorID,
-			&i.LatestCommentBody,
-			&i.LatestCommentReactionsCount,
-			&i.LatestCommentCreatedAt,
-			&i.LatestCommentUpdatedAt,
-			&i.LatestCommentLikedByUser,
-			&i.LatestCommentImage,
 		); err != nil {
 			return nil, err
 		}
@@ -488,48 +326,12 @@ SELECT
        AND i.deleted_at IS NULL
      ORDER BY i.sort_order
      LIMIT 1
-    ) AS image,
+    ) AS image
 
-     -- latest comment using LATERAL join
-    lc.id AS latest_comment_id,
-    lc.comment_creator_id AS latest_comment_creator_id,
-    lc.comment_body AS latest_comment_body,
-    lc.reactions_count AS latest_comment_reactions_count,
-    lc.created_at AS latest_comment_created_at,
-    lc.updated_at AS latest_comment_updated_at,
-    lc.liked_by_user AS latest_comment_liked_by_user,
-    lc.image AS latest_comment_image
-
+  
 FROM posts p
 
-LEFT JOIN LATERAL (
-    SELECT
-        c.id,
-        c.comment_creator_id,
-        c.comment_body,
-        c.reactions_count,
-        c.created_at,
-        c.updated_at,
-        EXISTS (
-            SELECT 1 FROM reactions r
-            WHERE r.content_id = c.id
-              AND r.user_id = $2
-              AND r.deleted_at IS NULL
-        ) AS liked_by_user,
-        (
-            SELECT i.id
-            FROM images i
-            WHERE i.parent_id = c.id
-              AND i.deleted_at IS NULL
-            ORDER BY i.sort_order
-            LIMIT 1
-        ) AS image
-    FROM comments c
-    WHERE c.parent_id = p.id
-      AND c.deleted_at IS NULL
-    ORDER BY c.created_at DESC
-    LIMIT 1
-) lc ON TRUE
+
 
 WHERE p.creator_id = $1                      -- target user we are viewing
   AND p.group_id IS NULL                     -- exclude group posts
@@ -564,24 +366,16 @@ type GetUserPostsPaginatedParams struct {
 }
 
 type GetUserPostsPaginatedRow struct {
-	ID                          int64
-	PostBody                    string
-	CreatorID                   int64
-	CommentsCount               int32
-	ReactionsCount              int32
-	LastCommentedAt             pgtype.Timestamptz
-	CreatedAt                   pgtype.Timestamptz
-	UpdatedAt                   pgtype.Timestamptz
-	LikedByUser                 bool
-	Image                       int64
-	LatestCommentID             int64
-	LatestCommentCreatorID      int64
-	LatestCommentBody           string
-	LatestCommentReactionsCount int32
-	LatestCommentCreatedAt      pgtype.Timestamptz
-	LatestCommentUpdatedAt      pgtype.Timestamptz
-	LatestCommentLikedByUser    bool
-	LatestCommentImage          int64
+	ID              int64
+	PostBody        string
+	CreatorID       int64
+	CommentsCount   int32
+	ReactionsCount  int32
+	LastCommentedAt pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+	LikedByUser     bool
+	Image           int64
 }
 
 // pagination
@@ -611,14 +405,6 @@ func (q *Queries) GetUserPostsPaginated(ctx context.Context, arg GetUserPostsPag
 			&i.UpdatedAt,
 			&i.LikedByUser,
 			&i.Image,
-			&i.LatestCommentID,
-			&i.LatestCommentCreatorID,
-			&i.LatestCommentBody,
-			&i.LatestCommentReactionsCount,
-			&i.LatestCommentCreatedAt,
-			&i.LatestCommentUpdatedAt,
-			&i.LatestCommentLikedByUser,
-			&i.LatestCommentImage,
 		); err != nil {
 			return nil, err
 		}

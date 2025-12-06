@@ -59,7 +59,6 @@ type Post struct {
 	UpdatedAt       time.Time
 	LikedByUser     bool
 	Image           ct.Id `validate:"nullable"`
-	LatestComment   Comment
 }
 
 func (p *Post) GetUserId() int64 { return p.User.UserId.Int64() }

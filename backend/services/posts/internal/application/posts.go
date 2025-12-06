@@ -11,8 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// GENERAL NOTE For every response that includes a userId, actual basic user info will be retrieved by Gateway from Users
-
 func (s *Application) CreatePost(ctx context.Context, req CreatePostReq) (err error) {
 
 	if err := ct.ValidateStruct(req); err != nil {
