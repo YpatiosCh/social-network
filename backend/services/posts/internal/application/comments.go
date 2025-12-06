@@ -164,12 +164,15 @@ func (s *Application) GetCommentsByParentId(ctx context.Context, req EntityIdPag
 		return nil, err
 	}
 	comments := make([]Comment, 0, len(rows))
+
 	for _, r := range rows {
 		comments = append(comments, Comment{
-			CommentId:      ct.Id(r.ID),
-			ParentId:       req.EntityId,
-			Body:           ct.CommentBody(r.CommentBody),
-			CreatorId:      ct.Id(r.CommentCreatorID),
+			CommentId: ct.Id(r.ID),
+			ParentId:  req.EntityId,
+			Body:      ct.CommentBody(r.CommentBody),
+			User: User{
+				UserId: ct.Id(r.CommentCreatorID),
+			},
 			ReactionsCount: int(r.ReactionsCount),
 			CreatedAt:      r.CreatedAt.Time,
 			UpdatedAt:      r.UpdatedAt.Time,
@@ -177,5 +180,10 @@ func (s *Application) GetCommentsByParentId(ctx context.Context, req EntityIdPag
 			Image:          ct.Id(r.Image),
 		})
 	}
+
+	if err := s.hydrateComments(ctx, comments); err != nil {
+		return nil, err
+	}
+
 	return comments, nil
 }

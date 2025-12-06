@@ -32,14 +32,25 @@ type accessContext struct {
 	entityId    int64
 }
 
+type User struct {
+	UserId   ct.Id
+	Username ct.Username
+	AvatarId ct.Id `validate:"nullable"`
+}
+
+type HasUser interface {
+	GetUserId() int64
+	SetUser(User)
+}
+
 // -------------------------------------------
 // Posts
 // -------------------------------------------
 type Post struct {
 	PostId          ct.Id
 	Body            ct.PostBody
-	CreatorId       ct.Id
-	GroupId         ct.Id `validate:"nullable"` //add check that if audience=group it can't be nil
+	User            User
+	GroupId         ct.Id `validate:"nullable"`
 	Audience        ct.Audience
 	CommentsCount   int
 	ReactionsCount  int
@@ -51,14 +62,16 @@ type Post struct {
 	LatestComment   Comment
 }
 
+func (p *Post) GetUserId() int64 { return p.User.UserId.Int64() }
+func (p *Post) SetUser(u User)   { p.User = u }
+
 type CreatePostReq struct {
-	CreatorId       ct.Id
-	Body            ct.PostBody
-	GroupId         ct.Id `validate:"nullable"`
-	Audience        ct.Audience
-	AudienceIds     ct.Ids `validate:"nullable"`
-	Image           ct.Id  `validate:"nullable"`
-	RequesterGroups ct.Ids `validate:"nullable"`
+	CreatorId   ct.Id
+	Body        ct.PostBody
+	GroupId     ct.Id `validate:"nullable"`
+	Audience    ct.Audience
+	AudienceIds ct.Ids `validate:"nullable"`
+	Image       ct.Id  `validate:"nullable"`
 }
 
 type EditPostReq struct {
@@ -71,26 +84,23 @@ type EditPostReq struct {
 }
 
 type GetUserPostsReq struct {
-	CreatorId        ct.Id
-	CreatorFollowers ct.Ids `validate:"nullable"`
-	RequesterId      ct.Id
-	Limit            ct.Limit
-	Offset           ct.Offset
+	CreatorId   ct.Id
+	RequesterId ct.Id
+	Limit       ct.Limit
+	Offset      ct.Offset
 }
 
 type GetPersonalizedFeedReq struct {
-	RequesterId         ct.Id
-	RequesterFollowsIds ct.Ids //from user service
-	Limit               ct.Limit
-	Offset              ct.Offset
+	RequesterId ct.Id
+	Limit       ct.Limit
+	Offset      ct.Offset
 }
 
 type GetGroupPostsReq struct {
-	RequesterId     ct.Id
-	GroupId         ct.Id
-	Limit           ct.Limit
-	Offset          ct.Offset
-	RequesterGroups ct.Ids `validate:"nullable"`
+	RequesterId ct.Id
+	GroupId     ct.Id
+	Limit       ct.Limit
+	Offset      ct.Offset
 }
 
 //-------------------------------------------
@@ -101,13 +111,16 @@ type Comment struct {
 	CommentId      ct.Id
 	ParentId       ct.Id
 	Body           ct.CommentBody
-	CreatorId      ct.Id
+	User           User
 	ReactionsCount int
 	CreatedAt      time.Time
 	UpdatedAt      time.Time //can be nil
 	LikedByUser    bool
 	Image          ct.Id `validate:"nullable"`
 }
+
+func (c *Comment) GetUserId() int64 { return c.User.UserId.Int64() }
+func (c *Comment) SetUser(u User)   { c.User = u }
 
 type CreateCommentReq struct {
 	CreatorId ct.Id
@@ -131,7 +144,7 @@ type Event struct {
 	EventId       ct.Id
 	Title         ct.Title
 	Body          ct.EventBody
-	CreatorId     ct.Id
+	User          User
 	GroupId       ct.Id
 	EventDate     ct.EventDate
 	GoingCount    int
@@ -141,6 +154,9 @@ type Event struct {
 	UpdatedAt     time.Time
 	UserResponse  *bool
 }
+
+func (e *Event) GetUserId() int64 { return e.User.UserId.Int64() }
+func (e *Event) SetUser(u User)   { e.User = u }
 
 type CreateEventReq struct {
 	Title     ct.Title

@@ -19,26 +19,28 @@ func (s *Application) CreatePost(ctx context.Context, req CreatePostReq) (err er
 		return err
 	}
 
-	var isMember bool
-	for _, group := range req.RequesterGroups {
-		if req.GroupId == group {
-			isMember = true
-			break
-		}
-	}
-	if !isMember {
-		return ErrNotAllowed
+	var groupId pgtype.Int8
+	groupId.Int64 = req.GroupId.Int64()
+	if req.GroupId == 0 {
+		groupId.Valid = false
 	}
 
+	audience := sqlc.IntendedAudience(req.Audience.String())
+
+	if !groupId.Valid && audience == "group" {
+		return ErrNoGroupIdGiven
+	}
+
+	if groupId.Valid {
+		isMember, err := s.clients.IsGroupMember(ctx, req.CreatorId.Int64(), req.GroupId.Int64())
+		if err != nil {
+			return err
+		}
+		if !isMember {
+			return ErrNotAllowed
+		}
+	}
 	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
-
-		var groupId pgtype.Int8
-		groupId.Int64 = req.GroupId.Int64()
-		if req.GroupId == 0 {
-			groupId.Valid = false
-		}
-
-		audience := sqlc.IntendedAudience(req.Audience.String())
 
 		postId, err := q.CreatePost(ctx, sqlc.CreatePostParams{
 			PostBody:  req.Body.String(),
@@ -86,6 +88,19 @@ func (s *Application) DeletePost(ctx context.Context, req GenericReq) error {
 		return err
 	}
 
+	accessCtx := accessContext{
+		requesterId: req.RequesterId.Int64(),
+		entityId:    req.EntityId.Int64(),
+	}
+
+	hasAccess, err := s.hasRightToView(ctx, accessCtx)
+	if err != nil {
+		return err
+	}
+	if !hasAccess {
+		return ErrNotAllowed
+	}
+
 	rowsAffected, err := s.db.DeletePost(ctx, sqlc.DeletePostParams{
 		ID:        int64(req.EntityId),
 		CreatorID: req.RequesterId.Int64(),
@@ -102,6 +117,19 @@ func (s *Application) DeletePost(ctx context.Context, req GenericReq) error {
 func (s *Application) EditPost(ctx context.Context, req EditPostReq) error {
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
+	}
+
+	accessCtx := accessContext{
+		requesterId: req.RequesterId.Int64(),
+		entityId:    req.PostId.Int64(),
+	}
+
+	hasAccess, err := s.hasRightToView(ctx, accessCtx)
+	if err != nil {
+		return err
+	}
+	if !hasAccess {
+		return ErrNotAllowed
 	}
 
 	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
@@ -178,71 +206,6 @@ func (s *Application) EditPost(ctx context.Context, req EditPostReq) error {
 
 }
 
-func (s *Application) GetGroupPostsPaginated(ctx context.Context, req GetGroupPostsReq) ([]Post, error) {
-
-	if err := ct.ValidateStruct(req); err != nil {
-		return nil, err
-	}
-
-	var groupId pgtype.Int8
-	groupId.Int64 = req.GroupId.Int64()
-	if req.GroupId == 0 {
-		return nil, ErrNoGroupIdGiven
-	}
-	groupId.Valid = true
-
-	var isMember bool
-	for _, group := range req.RequesterGroups {
-		if req.GroupId == group {
-			isMember = true
-			break
-		}
-	}
-	if !isMember {
-		return nil, ErrNotAllowed
-	}
-
-	rows, err := s.db.GetGroupPostsPaginated(ctx, sqlc.GetGroupPostsPaginatedParams{
-		GroupID: groupId,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 {
-		return nil, ErrNotFound
-	}
-	posts := make([]Post, 0, len(rows))
-	for _, r := range rows {
-		posts = append(posts, Post{
-			PostId:          ct.Id(r.ID),
-			Body:            ct.PostBody(r.PostBody),
-			CreatorId:       ct.Id(r.CreatorID),
-			GroupId:         req.GroupId,
-			Audience:        ct.Audience(r.Audience),
-			CommentsCount:   int(r.CommentsCount),
-			ReactionsCount:  int(r.ReactionsCount),
-			LastCommentedAt: r.LastCommentedAt.Time,
-			CreatedAt:       r.CreatedAt.Time,
-			UpdatedAt:       r.UpdatedAt.Time,
-			LikedByUser:     r.LikedByUser,
-			Image:           ct.Id(r.Image),
-			LatestComment: Comment{
-				CommentId:      ct.Id(r.LatestCommentID),
-				ParentId:       ct.Id(r.ID),
-				Body:           ct.CommentBody(r.LatestCommentBody),
-				CreatorId:      ct.Id(r.LatestCommentCreatorID),
-				ReactionsCount: int(r.LatestCommentReactionsCount),
-				CreatedAt:      r.LatestCommentCreatedAt.Time,
-				UpdatedAt:      r.UpdatedAt.Time,
-				LikedByUser:    r.LatestCommentLikedByUser,
-				Image:          ct.Id(r.LatestCommentImage),
-			},
-		})
-	}
-
-	return posts, nil
-}
-
 func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req SimpleIdReq) (Post, error) {
 	if err := ct.ValidateStruct(req); err != nil {
 		return Post{}, err
@@ -258,10 +221,13 @@ func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req SimpleI
 		}
 		return Post{}, err
 	}
+
 	post := Post{
-		PostId:          ct.Id(p.ID),
-		Body:            ct.PostBody(p.PostBody),
-		CreatorId:       ct.Id(p.CreatorID),
+		PostId: ct.Id(p.ID),
+		Body:   ct.PostBody(p.PostBody),
+		User: User{
+			UserId: ct.Id(p.CreatorID),
+		},
 		GroupId:         ct.Id(req.Id.Int64()),
 		Audience:        ct.Audience(p.Audience),
 		CommentsCount:   int(p.CommentsCount),
@@ -272,57 +238,12 @@ func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req SimpleI
 		Image:           ct.Id(p.Image),
 		//no latest comment or liked by user needed here
 	}
+
+	if err := s.hydratePost(ctx, &post); err != nil {
+		return Post{}, err
+	}
+
 	return post, nil
-}
-
-func (s *Application) GetUserPostsPaginated(ctx context.Context, req GetUserPostsReq) ([]Post, error) {
-
-	if err := ct.ValidateStruct(req); err != nil {
-		return nil, err
-	}
-
-	rows, err := s.db.GetUserPostsPaginated(ctx, sqlc.GetUserPostsPaginatedParams{
-		CreatorID: req.CreatorId.Int64(),
-		UserID:    req.RequesterId.Int64(),
-		Column3:   req.CreatorFollowers.Int64(),
-		Limit:     req.Limit.Int32(),
-		Offset:    req.Offset.Int32(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) == 0 {
-		return nil, ErrNotFound
-	}
-	posts := make([]Post, 0, len(rows))
-	for _, r := range rows {
-		posts = append(posts, Post{
-			PostId:          ct.Id(r.ID),
-			Body:            ct.PostBody(r.PostBody),
-			CreatorId:       ct.Id(r.CreatorID),
-			CommentsCount:   int(r.CommentsCount),
-			ReactionsCount:  int(r.ReactionsCount),
-			LastCommentedAt: r.LastCommentedAt.Time,
-			CreatedAt:       r.CreatedAt.Time,
-			UpdatedAt:       r.UpdatedAt.Time,
-			LikedByUser:     r.LikedByUser,
-			Image:           ct.Id(r.Image),
-			LatestComment: Comment{
-				CommentId:      ct.Id(r.LatestCommentID),
-				ParentId:       ct.Id(r.ID),
-				Body:           ct.CommentBody(r.LatestCommentBody),
-				CreatorId:      ct.Id(r.LatestCommentCreatorID),
-				ReactionsCount: int(r.LatestCommentReactionsCount),
-				CreatedAt:      r.LatestCommentCreatedAt.Time,
-				UpdatedAt:      r.UpdatedAt.Time,
-				LikedByUser:    r.LatestCommentLikedByUser,
-				Image:          ct.Id(r.LatestCommentImage),
-			},
-		})
-
-	}
-
-	return posts, nil
 }
 
 // NOT CURRENTLY NEEDED

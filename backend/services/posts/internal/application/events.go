@@ -167,10 +167,12 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req EntityIdPagina
 	for _, r := range rows {
 
 		events = append(events, Event{
-			EventId:       ct.Id(r.ID),
-			Title:         ct.Title(r.EventTitle),
-			Body:          ct.EventBody(r.EventBody),
-			CreatorId:     ct.Id(r.EventCreatorID),
+			EventId: ct.Id(r.ID),
+			Title:   ct.Title(r.EventTitle),
+			Body:    ct.EventBody(r.EventBody),
+			User: User{
+				UserId: ct.Id(r.EventCreatorID),
+			},
 			GroupId:       ct.Id(r.GroupID),
 			EventDate:     ct.EventDate(r.EventDate.Time),
 			GoingCount:    int(r.GoingCount),
@@ -180,6 +182,10 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req EntityIdPagina
 			UpdatedAt:     r.UpdatedAt.Time,
 			UserResponse:  &r.UserResponse.Bool,
 		})
+	}
+
+	if err := s.hydrateEvents(ctx, events); err != nil {
+		return nil, err
 	}
 
 	return events, nil

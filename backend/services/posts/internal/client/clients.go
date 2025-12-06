@@ -3,6 +3,8 @@ package client
 import (
 	"context"
 	userpb "social-network/shared/gen-go/users"
+
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Holds connections to clients
@@ -43,18 +45,26 @@ func (c *Clients) GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*
 	return resp, nil
 }
 
-// func (c *Clients) GetFollowingIds(ctx context.Context, userId int64) ([]int64, error) {
-// 	req := &wrapperspb.Int64Value{Value: userId}
+func (c *Clients) GetBasicUserInfo(ctx context.Context, userId int64) (*userpb.User, error) {
+	req := &wrapperspb.Int64Value{Value: userId}
 
-// 	// Call the gRPC method
-// 	resp, err := c.UserClient.GetFollowingIds(ctx, req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	resp, err := c.UserClient.GetBasicUserInfo(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
 
-// 	// Assuming Int64Arr has a field called Ids []int64
-// 	return resp.Values, nil
-// }
+func (c *Clients) GetFollowingIds(ctx context.Context, userId int64) ([]int64, error) {
+	req := &wrapperspb.Int64Value{Value: userId}
+
+	resp, err := c.UserClient.GetFollowingIds(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Values, nil
+}
 
 // func (c *Clients) GetFollowerIds(ctx context.Context, userId int64) ([]int64, error) {
 // 	//need to make this in users
