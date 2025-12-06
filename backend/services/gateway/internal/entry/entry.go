@@ -35,7 +35,7 @@ func Start() {
 	if err != nil {
 		log.Fatalf("failed to connect to redis: %v", err)
 	}
-	fmt.Println("redis connection started")
+	fmt.Println("redis connection started correctly")
 
 	// set server
 	var server http.Server

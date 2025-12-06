@@ -12,6 +12,8 @@ import (
 var (
 	ErrNoConnection = errors.New("can't find redis")
 	ErrFailedTest   = errors.New("failed special connection test")
+	ErrNotFound     = errors.New("entry wasn't found")
+	ErrIncrExpFail  = errors.New("incr func failed to add expiration, extremely unexpected!!!")
 )
 
 type redisClient struct {
@@ -30,13 +32,41 @@ func NewRedisClient(addr string, password string, db int) redisClient {
 	return redisClient
 }
 
+// IncrEx increments the integer value of a key by one.
+func (c *redisClient) IncrEx(ctx context.Context, key string, expSeconds int64) (int, error) {
+	//incrementing number on redis for key, creates it if it doesn't exist
+	currentCount, err := c.client.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	//if it was created it will be at 1, so we add expiration date
+	if currentCount == 1 {
+		ok, err := c.client.Expire(ctx, key, time.Duration(expSeconds)*time.Second).Result()
+		if err != nil {
+			return 0, err
+		}
+
+		//somehow the key doesn't exist, even though we just created it...
+		if !ok {
+			return 0, ErrIncrExpFail
+		}
+	}
+	return int(currentCount), err
+}
+
+// SetStr stores a string value under `key` with expiration `exp`.
 func (c *redisClient) SetStr(ctx context.Context, key string, value string, exp time.Duration) error {
 	err := c.client.Set(ctx, key, value, exp).Err()
 	return err
 }
 
+// GetStr retrieves a string value stored under `key`.
 func (c *redisClient) GetStr(ctx context.Context, key string) (any, error) {
 	value, err := c.client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return nil, ErrNotFound
+	}
 	return value, err
 }
 
@@ -53,17 +83,19 @@ func (c *redisClient) SetObj(ctx context.Context, key string, value any, exp tim
 // `dest` must be a pointer to the value to populate.
 func (c *redisClient) GetObj(ctx context.Context, key string, dest any) error {
 	val, err := c.client.Get(ctx, key).Result()
-	if err != nil {
-		return err
+	if err == redis.Nil {
+		return ErrNotFound
 	}
 	return json.Unmarshal([]byte(val), dest)
 }
 
+// Del deletes the specified key from Redis.
 func (c *redisClient) Del(ctx context.Context, key string) error {
 	err := c.client.Del(ctx, key).Err()
 	return err
 }
 
+// TestRedisConnection performs a series of operations to verify the Redis connection is functioning correctly.
 func (c *redisClient) TestRedisConnection() error {
 	ctx := context.Background()
 	ping, err := c.client.Ping(ctx).Result()
@@ -88,8 +120,9 @@ func (c *redisClient) TestRedisConnection() error {
 	}
 
 	_, err = c.GetStr(ctx, "test_key123")
-	if err != redis.Nil {
+	if err != redis.Nil && err != nil {
 		return ErrFailedTest
 	}
+
 	return nil
 }
