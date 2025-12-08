@@ -5,14 +5,14 @@ import (
 	"net"
 
 	"social-network/services/posts/internal/application"
-	//pb "social-network/shared/gen-go/users"
+	pb "social-network/shared/gen-go/posts"
 
 	"google.golang.org/grpc"
 )
 
 // Holds Client conns, services and handler funcs
 type PostsHandler struct {
-	//pb.UnimplementedPostsServiceServer
+	pb.UnimplementedPostsServiceServer
 	Port        string
 	Application *application.Application
 }
@@ -26,7 +26,7 @@ func (s *PostsHandler) RunGRPCServer() {
 
 	grpcServer := grpc.NewServer()
 
-	//pb.RegisterUserServiceServer(grpcServer, s)
+	pb.RegisterPostsServiceServer(grpcServer, s)
 
 	log.Printf("gRPC server listening on %s", s.Port)
 	if err := grpcServer.Serve(lis); err != nil {

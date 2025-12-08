@@ -11,16 +11,16 @@
 INSERT INTO users (id, username, first_name, last_name, date_of_birth, avatar_id, about_me, profile_public, current_status)
 OVERRIDING SYSTEM VALUE
 VALUES
-(1, 'alice', 'Alice', 'Wonder', '1990-01-01', 'https://example.com/avatars/alice.jpg', 'Love nature and outdoor activities', TRUE, 'active'),
-(2, 'bob', 'Bob', 'Builder', '1992-02-02', 'https://example.com/avatars/bob.jpg', 'Professional builder and contractor', FALSE, 'active'),
-(3, 'charlie', 'Charlie', 'Day', '1991-03-03', 'https://example.com/avatars/charlie.jpg', 'Gamer and tech enthusiast', TRUE, 'active'),
-(4, 'diana', 'Diana', 'Prince', '1988-04-04', 'https://example.com/avatars/diana.jpg', 'Entrepreneur and business owner', TRUE, 'active'),
-(5, 'eve', 'Eve', 'Hacker', '1995-05-05', 'https://example.com/avatars/eve.jpg', 'Security researcher', FALSE, 'active'),
-(6, 'frank', 'Frank', 'Ocean', '1994-06-06', 'https://example.com/avatars/frank.jpg', 'Music producer and artist', TRUE, 'active'),
-(7, 'grace', 'Grace', 'Hopper', '1985-07-07', 'https://example.com/avatars/grace.jpg', 'Software engineer and mentor', TRUE, 'active'),
-(8, 'henry', 'Henry', 'Ford', '1986-08-08', 'https://example.com/avatars/henry.jpg', 'Automotive engineer', FALSE, 'active'),
-(9, 'ivy', 'Ivy', 'Green', '1993-09-09', 'https://example.com/avatars/ivy.jpg', 'Environmental activist', TRUE, 'active'),
-(10, 'jack', 'Jack', 'Black', '1990-10-10', 'https://example.com/avatars/jack.jpg', 'Actor and musician', TRUE, 'active')
+(1, 'alice', 'Alice', 'Wonder', '1990-01-01', 1, 'Love nature and outdoor activities', TRUE, 'active'),
+(2, 'bob', 'Bob', 'Builder', '1992-02-02', 2, 'Professional builder and contractor', FALSE, 'active'),
+(3, 'charlie', 'Charlie', 'Day', '1991-03-03', 3, 'Gamer and tech enthusiast', TRUE, 'active'),
+(4, 'diana', 'Diana', 'Prince', '1988-04-04', 4, 'Entrepreneur and business owner', TRUE, 'active'),
+(5, 'eve', 'Eve', 'Hacker', '1995-05-05', 5, 'Security researcher', FALSE, 'active'),
+(6, 'frank', 'Frank', 'Ocean', '1994-06-06', 6, 'Music producer and artist', TRUE, 'active'),
+(7, 'grace', 'Grace', 'Hopper', '1985-07-07', 7, 'Software engineer and mentor', TRUE, 'active'),
+(8, 'henry', 'Henry', 'Ford', '1986-08-08', 8, 'Automotive engineer', FALSE, 'active'),
+(9, 'ivy', 'Ivy', 'Green', '1993-09-09', 9, 'Environmental activist', TRUE, 'active'),
+(10, 'jack', 'Jack', 'Black', '1990-10-10', 10, 'Actor and musician', TRUE, 'active')
 ON CONFLICT (id) DO NOTHING;
 
 -------------------------------------------------------

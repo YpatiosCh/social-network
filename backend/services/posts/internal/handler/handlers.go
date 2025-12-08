@@ -4,21 +4,129 @@ Expose methods via gRpc
 
 package handler
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"runtime"
-// 	"social-network/services/posts/internal/application"
-// 	//pb "social-network/shared/gen-go/posts"
-// 	ct "social-network/shared/go/customtypes"
-// 	"time"
+import (
+	"context"
+	"fmt"
+	"social-network/services/posts/internal/application"
+	pb "social-network/shared/gen-go/posts"
+	ct "social-network/shared/go/customtypes"
+	"time"
 
-// 	"google.golang.org/grpc/codes"
-// 	"google.golang.org/grpc/status"
-// 	"google.golang.org/protobuf/types/known/emptypb"
-// 	"google.golang.org/protobuf/types/known/timestamppb"
-// 	"google.golang.org/protobuf/types/known/wrapperspb"
-// )
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+// POSTS
+
+func (s *PostsHandler) CreatePost(ctx context.Context, req *pb.CreatePostReq) (*emptypb.Empty, error) {
+	fmt.Println("CreatePost gRPC method called")
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is nil")
+	}
+	err := s.Application.CreatePost(ctx, application.CreatePostReq{
+		CreatorId:   ct.Id(req.CreatorId),
+		Body:        ct.PostBody(req.Body),
+		GroupId:     ct.Id(req.GroupId),
+		Audience:    ct.Audience(req.Audience),
+		AudienceIds: ct.FromInt64s(req.AudienceIds.Values),
+		Image:       ct.Id(req.Image),
+	})
+	if err != nil {
+		fmt.Println("Error in CreatePost:", err)
+		return nil, status.Errorf(codes.Internal, "failed to create post: %v", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *PostsHandler) DeletePost(ctx context.Context, req *pb.GenericReq) (*emptypb.Empty, error) {
+	fmt.Println("DeletePost gRPC method called")
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is nil")
+	}
+	err := s.Application.DeletePost(ctx, application.GenericReq{
+		RequesterId: ct.Id(req.RequesterId),
+		EntityId:    ct.Id(req.EntityId),
+	})
+	if err != nil {
+		fmt.Println("Error in DeletePost:", err)
+		return nil, status.Errorf(codes.Internal, "failed to delete post: %v", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *PostsHandler) EditPost(ctx context.Context, req *pb.EditPostReq) (*emptypb.Empty, error) {
+	fmt.Println("EditPost gRPC method called")
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is nil")
+	}
+	err := s.Application.EditPost(ctx, application.EditPostReq{
+		RequesterId: ct.Id(req.RequesterId),
+		PostId:      ct.Id(req.PostId),
+		NewBody:     ct.PostBody(req.Body),
+		Image:       ct.Id(req.Image),
+		Audience:    ct.Audience(req.Audience),
+		AudienceIds: ct.FromInt64s(req.AudienceIds.Values),
+	})
+	if err != nil {
+		fmt.Println("Error in EditPost:", err)
+		return nil, status.Errorf(codes.Internal, "failed to edit post: %v", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *PostsHandler) GetMostPopularPostInGroup(ctx context.Context, req *pb.SimpleIdReq) (*pb.Post, error) {
+	fmt.Println("GetMostPopularPostInGroup gRPC method called")
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is nil")
+	}
+
+	post, err := s.Application.GetMostPopularPostInGroup(ctx, application.SimpleIdReq{
+		Id: ct.Id(req.Id),
+	})
+	if err != nil {
+		fmt.Println("Error in GetMostPopularPostInGroup:", err)
+		return nil, status.Errorf(codes.Internal, "failed to get post: %v", err)
+	}
+	return &pb.Post{
+		PostId:   int64(post.PostId),
+		PostBody: string(post.Body),
+		User: &pb.User{
+			UserId:   post.User.UserId.Int64(),
+			Username: post.User.Username.String(),
+			Avatar:   post.User.AvatarId.Int64(),
+		},
+		GroupId:         int64(post.GroupId),
+		Audience:        post.Audience.String(),
+		CommentsCount:   int32(post.CommentsCount),
+		ReactionsCount:  int32(post.ReactionsCount),
+		LastCommentedAt: dateToProto(post.LastCommentedAt),
+		CreatedAt:       dateToProto(post.CreatedAt),
+		UpdatedAt:       dateToProto(post.UpdatedAt),
+		LikedByUser:     post.LikedByUser,
+		Image:           int64(post.Image),
+	}, nil
+}
+
+// func (s *PostsHandler) GetPersonalizedFeed(ctx context.Context, req *pb.GetPersonalizedFeedReq) (*pb.ListPosts, error) {
+// 	fmt.Println("GetPersonalizedFeed gRPC method called")
+// 	if req == nil {
+// 		return nil, status.Error(codes.InvalidArgument, "request is nil")
+// 	}
+// 	posts, err := s.Application.GetPersonalizedFeed(ctx, application.GetPersonalizedFeedReq{
+// 		RequesterId: ct.Id(req.RequesterId),
+// 		Limit:       ct.Limit(req.Limit),
+// 		Offset:      ct.Offset(req.Offset),
+// 	})
+// 	if err != nil {
+// 		fmt.Println("Error in GetPersonalizedFeed:", err)
+// 		return nil, status.Errorf(codes.Internal, "failed to get personalized feed: %v", err)
+// 	}
+// 	for _, p := range posts {
+
+// 	}
+// }
 
 // // AUTH
 // func (s *UsersHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.User, error) {
@@ -927,9 +1035,9 @@ package handler
 // 	return nil
 // }
 
-// func dateToProto(d time.Time) *timestamppb.Timestamp {
-// 	if d.IsZero() {
-// 		return nil
-// 	}
-// 	return timestamppb.New(time.Time(d))
-// }
+func dateToProto(d time.Time) *timestamppb.Timestamp {
+	if d.IsZero() {
+		return nil
+	}
+	return timestamppb.New(time.Time(d))
+}
