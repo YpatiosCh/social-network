@@ -15,6 +15,15 @@ CREATE TABLE images (
 );
 
 -- Auto-update timestamp
+-- Helper function used by triggers. Define it here so this migration is self-contained.
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER update_images_updated_at
 BEFORE UPDATE ON images
 FOR EACH ROW

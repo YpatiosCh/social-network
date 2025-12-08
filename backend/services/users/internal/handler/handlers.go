@@ -701,6 +701,8 @@ func (s *UsersHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfil
 		return nil, status.Errorf(codes.Internal, "GetUserProfile: %v", err)
 	}
 
+	fmt.Println("get user profile", profile)
+
 	return &pb.UserProfileResponse{
 		UserId:      profile.UserId.Int64(),
 		Username:    profile.Username.String(),

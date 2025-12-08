@@ -46,7 +46,7 @@ func (h *Handlers) getUserProfile() http.HandlerFunc {
 		fmt.Println("retrieved user profile: ", grpcResp)
 
 		type userProfile struct {
-			UserId            ct.Id          `json:"user_id,omitempty"`
+			UserId            ct.EncryptedId `json:"user_id,omitempty"`
 			Username          ct.Username    `json:"username,omitempty"`
 			FirstName         ct.Name        `json:"first_name,omitempty"`
 			LastName          ct.Name        `json:"last_name,omitempty"`
@@ -65,7 +65,7 @@ func (h *Handlers) getUserProfile() http.HandlerFunc {
 		}
 
 		userProfileResponse := userProfile{
-			UserId:            ct.Id(grpcResp.UserId),
+			UserId:            ct.EncryptedId(grpcResp.UserId),
 			Username:          ct.Username(grpcResp.Username),
 			FirstName:         ct.Name(grpcResp.FirstName),
 			LastName:          ct.Name(grpcResp.LastName),
