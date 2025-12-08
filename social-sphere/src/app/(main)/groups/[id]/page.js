@@ -1,4 +1,4 @@
-import { getGroupById, getGroupPosts, getGroupMembers, getGroupEvents } from "@/actions/groups/group-actions";
+import { getGroupById, getGroupPosts, getGroupMembers, getGroupEvents } from "@/services/groups/group-actions";
 import PostCard from "@/components/ui/post-card";
 
 export default async function GroupDetailPage({ params }) {

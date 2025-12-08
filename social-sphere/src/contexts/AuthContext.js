@@ -1,24 +1,27 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
+import { safeApiCall } from "@/lib/api-wrapper";
+
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     // Function to fetch user profile via proxy API
     const fetchUserProfile = async (userId) => {
         try {
+
+            const url = `/api/auth/profile/${userId}`
             // Call Next.js proxy API route instead of directly calling backend
-            const response = await fetch(`/api/auth/profile/${userId}`, {
+            const response = await safeApiCall(url, {
                 method: "GET",
-                credentials: "include", // Important: include cookies for authentication
             });
 
-            if (response.ok) {
-                const profileData = await response.json();
+            if (response.success) {
+                const profileData = await response.data;
                 setUser(profileData);
                 return profileData;
             } else {
@@ -40,13 +43,6 @@ export function AuthProvider({ children }) {
     const clearUser = () => {
         setUser(null);
     };
-
-    // Check authentication status on mount
-    useEffect(() => {
-        // You can add logic here to check if user is authenticated
-        // For now, we'll just set loading to false
-        setLoading(false);
-    }, []);
 
     return (
         <AuthContext.Provider

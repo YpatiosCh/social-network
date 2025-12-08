@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server';
+import { validateLoginForm } from '@/lib/validation';
 
 export async function POST(request) {
     try {
         const payload = await request.json();
+
+        // Validate payload
+        const formData = new FormData();
+        if (payload.identifier) formData.append("identifier", payload.identifier);
+        if (payload.password) formData.append("password", payload.password);
+
+        const validation = validateLoginForm(formData);
+        if (!validation.valid) {
+            return NextResponse.json(
+                { error: validation.error },
+                { status: 400 }
+            );
+        }
 
         const apiBase = process.env.API_BASE || "http://localhost:8081";
         const loginEndpoint = process.env.LOGIN || "/login";

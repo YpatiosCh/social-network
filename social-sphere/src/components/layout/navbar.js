@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Home, Users, MessageCircle, Bell, User, LogOut, Settings, Menu, X, Boxes, Search } from "lucide-react";
+import { Activity, Users, Send, Bell, User, LogOut, Settings, Menu, X, HeartPulse, Search } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Tooltip from "@/components/ui/tooltip";
 import { getUserByID } from "@/mock-data/users";
-import { logoutClient } from "@/actions/auth/logout-client";
+import { logoutClient } from "@/services/auth/logout-client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
@@ -39,55 +38,50 @@ export default function Navbar() {
     {
       label: "Public",
       href: "/feed/public",
-      icon: Home,
+      icon: Activity,
     },
     {
       label: "Friends",
       href: "/feed/friends",
-      icon: Users,
+      icon: HeartPulse,
     },
     {
       label: "Groups",
       href: "/groups",
-      icon: Boxes,
+      icon: Users,
     },
   ];
 
   const isActive = (path) => pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-black/5 dark:border-white/5 bg-(--background)/80 backdrop-blur-md">
-      <div className="max-w px-6 h-16 flex items-center justify-between gap-4">
+    <nav className="sticky top-0 z-50 w-full border-b border-(--border) bg-(--background)/95 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
         {/* Left: Logo */}
-        <div className="shrink-0 w-48">
-          <Link href="/feed/public" className="flex items-center gap-2 font-semibold text-lg tracking-tight hover:opacity-80 transition-opacity">
-            <Image
-              src="/logo.png"
-              alt="SocialSphere Logo"
-              width={32}
-              height={32}
-              className="w-8 h-8"
-            />
-            <span className="hidden md:block">SocialSphere</span>
+        <div className="flex items-center justify-start">
+          <Link href="/feed/public" className="flex items-center gap-2.5 group w-fit">
+            <span className="hidden md:block text-base font-medium tracking-tight text-(--foreground) group-hover:text-(--accent) transition-colors">
+              SocialSphere
+            </span>
           </Link>
         </div>
 
         {/* Center: Search Bar */}
-        <div className="hidden lg:flex flex-1 max-w-md mx-4 min-w-0">
+        <div className="pl-46 hidden lg:block w-full max-w-2xl mr-auto">
           <div className="relative w-full group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-(--muted) group-focus-within:text-(--foreground) transition-colors" />
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-(--muted) group-focus-within:text-(--accent) transition-colors" />
             </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-transparent rounded-full leading-5 bg-(--muted)/10 text-(--foreground) placeholder-(--muted) focus:outline-none focus:bg-(--background) focus:ring-2 focus:ring-(--foreground)/10 focus:border-(--muted)/20 sm:text-sm transition-all duration-200"
+              className="block w-full pl-11 pr-4 py-2.5 border border-(--border) rounded-full text-sm bg-(--muted)/5 text-(--foreground) placeholder-(--muted) hover:border-(--foreground) focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all"
               placeholder="Search users..."
             />
           </div>
         </div>
 
         {/* Right: Nav Links & Actions */}
-        <div className="flex items-center justify-end gap-2 w-48 shrink-0">
+        <div className="flex items-center gap-1.5">
 
           {/* Desktop Nav Links */}
           {navItems.map((item) => {
@@ -97,15 +91,12 @@ export default function Navbar() {
               <Tooltip key={item.href} content={item.label}>
                 <Link
                   href={item.href}
-                  className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all duration-200 group ${active
-                    ? "text-(--foreground) bg-(--muted)/10"
-                    : "text-(--muted) hover:text-(--foreground) hover:bg-(--muted)/5"
+                  className={`relative p-2.5 rounded-full flex items-center justify-center transition-all group ${active
+                    ? "text-(--accent) bg-(--accent)/10"
+                    : "text-(--muted) hover:text-(--foreground) hover:bg-(--muted)/10"
                     }`}
                 >
-                  <Icon className={`w-6 h-6 ${active ? "stroke-[2.5px]" : "stroke-2"}`} />
-                  {active && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-(--foreground)" />
-                  )}
+                  <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${active ? "stroke-[2.5px]" : "stroke-2"}`} />
                 </Link>
               </Tooltip>
             );
@@ -115,34 +106,34 @@ export default function Navbar() {
           {/* Messages */}
           <Tooltip content="Messages">
             <button
-              className={`p-2.5 rounded-xl transition-all duration-200 relative ${isActive('/messages')
-                ? "text-(--foreground) bg-(--muted)/10"
+              className={`p-2.5 rounded-full transition-all relative group ${isActive('/messages')
+                ? "text-(--accent) bg-(--accent)/10"
                 : "text-(--muted) hover:text-(--foreground) hover:bg-(--muted)/10"}`}
             >
-              <MessageCircle className={`w-6 h-6 ${isActive('/messages') ? "stroke-[2.5px]" : "stroke-2"}`} />
-              <span className="absolute top-0 right-0.5 text-xs text-red-500 font-extrabold flex items-center justify-center rounded-full">1</span>
+              <Send className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive('/messages') ? "stroke-[2.5px]" : "stroke-2"}`} />
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full flex items-center justify-center border-2 border-(--background)">1</span>
             </button>
           </Tooltip>
 
           {/* Notifications */}
           <Tooltip content="Notifications">
             <button
-              className={`p-2.5 rounded-xl transition-all duration-200 relative ${isActive('/notifications')
-                ? "text-(--foreground) bg-(--muted)/10"
+              className={`p-2.5 rounded-full transition-all relative group ${isActive('/notifications')
+                ? "text-(--accent) bg-(--accent)/10"
                 : "text-(--muted) hover:text-(--foreground) hover:bg-(--muted)/10"}`}
             >
-              <Bell className={`w-6 h-6 ${isActive('/notifications') ? "stroke-[2.5px]" : "stroke-2"}`} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-(--background)" />
+              <Bell className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive('/notifications') ? "stroke-[2.5px]" : "stroke-2"}`} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-(--background)" />
             </button>
           </Tooltip>
 
           {/* User Menu (Desktop) */}
-          <div className="hidden md:block relative ml-2" ref={dropdownRef}>
+          <div className="hidden md:block relative ml-1.5 pl-3 border-l border-(--border)" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 pl-2 border-l border-(--muted)/20 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity"
             >
-              <div className="w-8 h-8 rounded-full bg-(--muted)/20 flex items-center justify-center overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-(--muted)/10 border border-(--border) flex items-center justify-center overflow-hidden transition-all hover:border-(--accent)">
                 {user.Avatar ? (
                   <img src={user.Avatar} alt={user.Username} className="w-full h-full object-cover" />
                 ) : (
@@ -151,8 +142,8 @@ export default function Navbar() {
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -167,11 +158,11 @@ export default function Navbar() {
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-black/5 dark:border-white/5 bg-(--background) shadow-lg shadow-black/5 animate-in fade-in zoom-in-95 duration-200">
-                <div className="p-1">
+              <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl border border-(--border) bg-(--background) shadow-xl shadow-black/5 animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-1.5">
                   <Link
-                    href={`/profile/${user.user_id}`}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-(--muted)/10 transition-colors"
+                    href={`/profile/${user.ID}`}
+                    className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl hover:bg-(--muted)/10 transition-colors text-(--foreground)"
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     <User className="w-4 h-4 text-(--muted)" />
@@ -179,15 +170,15 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href={`/profile/${user.ID}/settings`}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg hover:bg-(--muted)/10 transition-colors"
+                    className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl hover:bg-(--muted)/10 transition-colors text-(--foreground)"
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     <Settings className="w-4 h-4 text-(--muted)" />
                     Settings
                   </Link>
-                  <div className="h-px bg-(--muted)/10 my-1" />
+                  <div className="h-px bg-(--border) my-1.5" />
                   <button
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-red-500 hover:bg-red-500/5 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl text-red-500 hover:bg-red-500/10 transition-colors text-left"
                     onClick={() => {
                       logoutClient(clearUser);
                       setIsDropdownOpen(false);
@@ -203,7 +194,7 @@ export default function Navbar() {
 
           {/* Mobile Menu Toggle */}
           <button
-            className="md:hidden p-2 text-(--foreground)"
+            className="md:hidden p-2 text-(--foreground) hover:bg-(--muted)/10 rounded-full transition-colors"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -213,8 +204,8 @@ export default function Navbar() {
 
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-black/5 dark:border-white/5 bg-(--background) animate-in slide-in-from-top-2">
-          <div className="p-4 space-y-2">
+        <div className="md:hidden border-t border-(--border) bg-(--background) animate-in slide-in-from-top-2">
+          <div className="p-4 space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -224,8 +215,8 @@ export default function Navbar() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${active
-                    ? "bg-(--muted)/10 text-(--foreground) font-medium"
-                    : "text-(--muted) hover:bg-(--muted)/5 hover:text-(--foreground)"
+                    ? "bg-(--accent)/10 text-(--accent) font-medium"
+                    : "text-(--muted) hover:bg-(--muted)/10 hover:text-(--foreground)"
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -233,11 +224,11 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            <div className="h-px bg-(--muted)/10 my-2" />
+            <div className="h-px bg-(--border) my-2" />
             <Link
               href={`/profile/${user.ID}`}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-(--muted) hover:bg-(--muted)/5 hover:text-(--foreground) transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-(--muted) hover:bg-(--muted)/10 hover:text-(--foreground) transition-colors"
             >
               <User className="w-5 h-5" />
               Profile
@@ -245,13 +236,13 @@ export default function Navbar() {
             <Link
               href={`/profile/${user.ID}/settings`}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-(--muted) hover:bg-(--muted)/5 hover:text-(--foreground) transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-(--muted) hover:bg-(--muted)/10 hover:text-(--foreground) transition-colors"
             >
               <Settings className="w-5 h-5" />
               Settings
             </Link>
             <button
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/5 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors text-left"
               onClick={() => logoutClient(clearUser)}
             >
               <LogOut className="w-5 h-5" />

@@ -3,13 +3,19 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import PostCard from "@/components/ui/post-card";
 
-export default function FeedList({ initialPosts, fetchPosts }) {
+export default function FeedList({ initialPosts, fetchPosts, onPostCreated }) {
     const [posts, setPosts] = useState(initialPosts);
     const [hasMore, setHasMore] = useState(initialPosts.length >= 5);
     const [loading, setLoading] = useState(false);
     const observer = useRef();
     const offsetRef = useRef(initialPosts.length);
     const loadingRef = useRef(false);
+
+    // Handle new post creation
+    const handlePostCreated = (newPost) => {
+        setPosts(prevPosts => [newPost, ...prevPosts]);
+        offsetRef.current += 1;
+    };
 
     const loadMorePosts = useCallback(async () => {
         if (loadingRef.current) return; // Prevent multiple simultaneous requests
@@ -48,6 +54,11 @@ export default function FeedList({ initialPosts, fetchPosts }) {
         });
         if (node) observer.current.observe(node);
     }, [hasMore, loadMorePosts]);
+
+    // Expose handlePostCreated to parent
+    if (onPostCreated && typeof onPostCreated === 'function') {
+        onPostCreated(handlePostCreated);
+    }
 
     return (
         <div className="flex flex-col gap-4">

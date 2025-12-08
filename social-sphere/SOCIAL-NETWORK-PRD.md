@@ -414,7 +414,7 @@ GET  /api/v1/follow-requests  // Get pending requests
 **Feed Layout:**
 ```
 ┌─────────────────────────┐
-│  Create Post (Sticky)   │
+│Create Post (not Sticky) │
 ├─────────────────────────┤
 │  Post Card              │
 ├─────────────────────────┤
@@ -425,7 +425,7 @@ GET  /api/v1/follow-requests  // Get pending requests
 ```
 
 #### Create Post
-**Location:** Top of feed (sticky component)
+**Location:** Top of feed (not sticky component)
 
 **Fields:**
 - Text content (required, min 1 char, max 5000 chars)

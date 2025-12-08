@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateUserProfile } from "@/actions/user/user-actions";
+import { updateUserProfile } from "@/services/user/user-actions";
 import { Camera } from "lucide-react";
 
 export default function ProfileForm({ user }) {

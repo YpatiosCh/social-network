@@ -1,4 +1,4 @@
-import { getAllGroups, getMyGroups } from "@/actions/groups/group-actions";
+import { getAllGroups, getMyGroups } from "@/services/groups/group-actions";
 import Link from "next/link";
 import GroupCard from "@/components/ui/group-card";
 

@@ -8,7 +8,7 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Password strength pattern: at least 1 lowercase, 1 uppercase, 1 number, 1 symbol
 export const STRONG_PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).+$/;
 
-// Username/nickname pattern: letters, numbers, dots, underscores, dashes
+// username pattern: letters, numbers, dots, underscores, dashes
 export const USERNAME_PATTERN = /^[A-Za-z0-9_.-]+$/;
 
 // File validation constants
@@ -52,7 +52,7 @@ export function isStrongPassword(password) {
 }
 
 /**
- * Validate username/nickname format
+ * Validate username format
  * @param {string} username - Username to validate
  * @returns {boolean} True if valid
  */
@@ -60,27 +60,6 @@ export function isValidUsername(username) {
     return username.length >= 4 && USERNAME_PATTERN.test(username);
 }
 
-/**
- * Validate avatar file
- * @param {File} file - File object to validate
- * @returns {{valid: boolean, error: string}} Validation result
- */
-export function isValidAvatarFile(file) {
-    // Avatar is optional - if no file provided, it's valid
-    if (!file || file.size === 0) {
-        return { valid: true, error: "" };
-    }
-
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        return { valid: false, error: "Avatar must be JPEG, PNG, or GIF." };
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-        return { valid: false, error: "Avatar must be less than 20MB." };
-    }
-
-    return { valid: true, error: "" };
-}
 
 /**
  * Validate registration form data (client-side)
@@ -90,7 +69,7 @@ export function isValidAvatarFile(file) {
  */
 export function validateRegistrationForm(formData, avatarFile = null) {
     // First name validation
-    const firstName = formData.get("firstName")?.trim() || "";
+    const firstName = formData.get("first_name")?.trim() || "";
     if (!firstName) {
         return { valid: false, error: "First name is required." };
     }
@@ -99,7 +78,7 @@ export function validateRegistrationForm(formData, avatarFile = null) {
     }
 
     // Last name validation
-    const lastName = formData.get("lastName")?.trim() || "";
+    const lastName = formData.get("last_name")?.trim() || "";
     if (!lastName) {
         return { valid: false, error: "Last name is required." };
     }
@@ -130,7 +109,7 @@ export function validateRegistrationForm(formData, avatarFile = null) {
     }
 
     // Date of birth validation
-    const dateOfBirth = formData.get("dateOfBirth")?.trim() || "";
+    const dateOfBirth = formData.get("date_of_birth")?.trim() || "";
     if (!dateOfBirth) {
         return { valid: false, error: "Date of birth is required." };
     }
@@ -139,8 +118,8 @@ export function validateRegistrationForm(formData, avatarFile = null) {
         return { valid: false, error: "You must be between 13 and 111 years old." };
     }
 
-    // Nickname validation (optional)
-    const username = formData.get("nickname")?.trim() || "";
+    // username validation (optional)
+    const username = formData.get("username")?.trim() || "";
     if (username) {
         if (username.length < 4) {
             return { valid: false, error: "Username must be at least 4 characters." };
@@ -158,7 +137,7 @@ export function validateRegistrationForm(formData, avatarFile = null) {
 
     // Avatar validation (optional)
     if (avatarFile) {
-        const avatarValidation = isValidAvatarFile(avatarFile);
+        const avatarValidation = isValidImage(avatarFile);
         if (!avatarValidation.valid) {
             return avatarValidation;
         }
@@ -187,3 +166,51 @@ export function validateLoginForm(formData) {
 
     return { valid: true, error: "" };
 }
+
+/**
+ * Validate post content
+ * @param {string} content - Post content to validate
+ * @param {number} minChars - Minimum character count (default: 1)
+ * @param {number} maxChars - Maximum character count (default: 5000)
+ * @returns {{valid: boolean, error: string}} Validation result
+ */
+export function validatePostContent(content, minChars = 1, maxChars = 5000) {
+    const trimmed = content?.trim() || "";
+
+    if (!trimmed) {
+        return { valid: false, error: "Post content is required." };
+    }
+
+    if (trimmed.length < minChars) {
+        return { valid: false, error: `Post must be at least ${minChars} character${minChars > 1 ? 's' : ''}.` };
+    }
+
+    if (trimmed.length > maxChars) {
+        return { valid: false, error: `Post must be at most ${maxChars} characters.` };
+    }
+
+    return { valid: true, error: "" };
+}
+
+/**
+ * Validate image file for posts
+ * @param {File} file - File object to validate
+ * @returns {{valid: boolean, error: string}} Validation result
+ */
+export function isValidImage(file) {
+    // Image is optional - if no file provided, it's valid
+    if (!file || file.size === 0) {
+        return { valid: true, error: "" };
+    }
+
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        return { valid: false, error: "Image must be JPEG, PNG, or GIF." };
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+        return { valid: false, error: "Image must be less than 20MB." };
+    }
+
+    return { valid: true, error: "" };
+}
+

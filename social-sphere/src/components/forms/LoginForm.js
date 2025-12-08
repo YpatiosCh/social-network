@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-
-import { loginClient } from "@/actions/auth/login-client";
+import { loginClient } from "@/services/auth/login-client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFormValidation } from "@/hooks/useFormValidation";
 
 export default function LoginForm() {
     const router = useRouter();
@@ -15,12 +14,12 @@ export default function LoginForm() {
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
-    // Real-time validation state
-    const [fieldErrors, setFieldErrors] = useState({});
+    // Real-time validation hook
+    const { errors: fieldErrors, validateField } = useFormValidation();
 
     async function handleSubmit(event) {
         event.preventDefault();
-        setIsLoading(true);
+        setIsLoading(true)
         setError("");
 
         const formData = new FormData(event.currentTarget);
@@ -49,34 +48,29 @@ export default function LoginForm() {
     }
 
     // Real-time validation handlers
-    function validateField(name, value) {
-        const errors = { ...fieldErrors };
-
+    function handleFieldValidation(name, value) {
         switch (name) {
             case "identifier":
-                if (!value.trim()) {
-                    errors.identifier = "Email or Username is required.";
-                } else {
-                    delete errors.identifier;
-                }
+                validateField("identifier", value, (val) => {
+                    if (!val.trim()) return "Email or Username is required.";
+                    return null;
+                });
                 break;
 
             case "password":
-                if (!value) {
-                    errors.password = "Password is required.";
-                } else {
-                    delete errors.password;
-                }
+                validateField("password", value, (val) => {
+                    if (!val) return "Password is required.";
+                    return null;
+                });
                 break;
         }
-
-        setFieldErrors(errors);
     }
 
     return (
-        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6">
-            <div className="form-group">
-                <label htmlFor="identifier" className="form-label">
+        <form onSubmit={handleSubmit} className="w-full space-y-6">
+            {/* Email/Username Field */}
+            <div>
+                <label htmlFor="identifier" className="form-label pl-4">
                     Email or Username
                 </label>
                 <input
@@ -85,59 +79,54 @@ export default function LoginForm() {
                     type="text"
                     required
                     className="form-input"
-                    placeholder="Email/Username"
-                    onChange={(e) => validateField("identifier", e.target.value)}
+                    placeholder="Enter your email or username"
+                    onChange={(e) => handleFieldValidation("identifier", e.target.value)}
                 />
                 {fieldErrors.identifier && (
-                    <div className="text-red-500 text-xs mt-1">{fieldErrors.identifier}</div>
+                    <div className="form-error">{fieldErrors.identifier}</div>
                 )}
             </div>
 
-            <div className="form-group">
-                <div className="flex items-center justify-between">
-                    <label htmlFor="password" className="form-label">
-                        Password
-                    </label>
-                    <Link
-                        href="/forgot-password"
-                        className="form-link"
-                    >
-                        Forgot?
-                    </Link>
-                </div>
+            {/* Password Field */}
+            <div>
+                <label htmlFor="password" className="form-label pl-4">
+                    Password
+                </label>
                 <div className="relative">
                     <input
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         required
-                        className="form-input pr-10"
-                        placeholder="••••••••"
-                        onChange={(e) => validateField("password", e.target.value)}
+                        className="form-input pr-12"
+                        placeholder="Enter your password"
+                        onChange={(e) => handleFieldValidation("password", e.target.value)}
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="form-toggle-btn"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700"
                     >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                 </div>
                 {fieldErrors.password && (
-                    <div className="text-red-500 text-xs mt-1">{fieldErrors.password}</div>
+                    <div className="form-error">{fieldErrors.password}</div>
                 )}
             </div>
 
+            {/* Error Message */}
             {error && (
-                <div className="text-red-500 text-sm animate-fade-in">
+                <div className="form-error-box animate-fade-in">
                     {error}
                 </div>
             )}
 
+            {/* Submit Button */}
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full btn btn-primary mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-1/2 mx-auto flex self-center justify-center btn btn-primary"
             >
                 {isLoading ? "Signing in..." : "Sign In"}
             </button>
