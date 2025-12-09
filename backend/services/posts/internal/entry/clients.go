@@ -45,7 +45,7 @@ func InitClients() *client.Clients {
 			fmt.Println(err)
 		}
 	}
-	return nil
+	return c
 }
 
 func InitUserClient(opts []grpc.DialOption, c *client.Clients) (err error) {

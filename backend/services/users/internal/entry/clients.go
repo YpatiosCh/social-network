@@ -7,7 +7,10 @@ package entry
 import (
 	"fmt"
 	"social-network/services/users/internal/client"
+	"social-network/shared/ports"
 	"time"
+
+	chatpb "social-network/shared/gen-go/chat"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
@@ -34,7 +37,7 @@ func InitClients() *client.Clients {
 
 	// List of initializer functions
 	initializers := []func(opts []grpc.DialOption, c *client.Clients) error{
-		InitClient,
+		InitChatClient,
 		// Add more here as you add more clients
 	}
 
@@ -43,14 +46,14 @@ func InitClients() *client.Clients {
 			fmt.Println(err)
 		}
 	}
-	return nil
+	return c
 }
 
-func InitClient(opts []grpc.DialOption, c *client.Clients) (err error) {
-	// conn, err := grpc.NewClient(ports.Users, opts...)
-	// if err != nil {
-	// 	err = fmt.Errorf("failed to dial user service: %v", err)
-	// }
-	// // c.UserClient = userpb.NewUserServiceClient(conn)
+func InitChatClient(opts []grpc.DialOption, c *client.Clients) (err error) {
+	conn, err := grpc.NewClient(ports.Chat, opts...)
+	if err != nil {
+		err = fmt.Errorf("failed to dial chat service: %v", err)
+	}
+	c.ChatClient = chatpb.NewChatServiceClient(conn)
 	return err
 }
