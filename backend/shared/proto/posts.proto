@@ -14,22 +14,22 @@ service PostsService {
     rpc DeletePost (GenericReq) returns (google.protobuf.Empty);
     rpc EditPost (EditPostReq) returns (google.protobuf.Empty);
     rpc GetMostPopularPostInGroup (SimpleIdReq) returns (Post);
-    // rpc GetPersonalizedFeed (GetPersonalizedFeedReq) returns (ListPosts);
-    // rpc GetPublicFeed (EntityIdPaginatedReq) returns (ListPosts);
-    // rpc GetUserPostsPaginated (GetUserPostsReq) returns (ListPosts);
-    // rpc GetGroupPostsPaginated (GetGroupPostsReq) returns (ListPosts);
-    // rpc CreateComment (CreateCommentReq) returns (google.protobuf.Empty);
-    // rpc EditComment (EditCommentReq) returns (google.protobuf.Empty);
-    // rpc DeleteComment (GenericReq) returns (google.protobuf.Empty);
-    // rpc GetCommentsByParentId (EntityIdPaginatedReq) returns (ListComments);
-    // rpc CreateEvent (CreateEventReq) returns (google.protobuf.Empty);
-    // rpc DeleteEvent (GenericReq) returns (google.protobuf.Empty);
-    // rpc EditEvent (EditEventReq) returns (google.protobuf.Empty);
-    // rpc GetEventsByGroupId (EntityIdPaginatedReq) returns (ListEvents);
-    // rpc RespondToEvent (RespondToEventReq) returns (google.protobuf.Empty);
-    // rpc RemoveEventResponse (GenericReq) returns (google.protobuf.Empty);
-    // rpc SuggestUsersByPostActivity (SimpleIdReq) returns (Int64Arr);
-    // rpc ToggleOrInsertReaction (GenericReq) returns (google.protobuf.Empty);
+    rpc GetPersonalizedFeed (GetPersonalizedFeedReq) returns (ListPosts);
+    rpc GetPublicFeed (EntityIdPaginatedReq) returns (ListPosts);
+    rpc GetUserPostsPaginated (GetUserPostsReq) returns (ListPosts);
+    rpc GetGroupPostsPaginated (GetGroupPostsReq) returns (ListPosts);
+    rpc CreateComment (CreateCommentReq) returns (google.protobuf.Empty);
+    rpc EditComment (EditCommentReq) returns (google.protobuf.Empty);
+    rpc DeleteComment (GenericReq) returns (google.protobuf.Empty);
+    rpc GetCommentsByParentId (EntityIdPaginatedReq) returns (ListComments);
+    rpc CreateEvent (CreateEventReq) returns (google.protobuf.Empty);
+    rpc DeleteEvent (GenericReq) returns (google.protobuf.Empty);
+    rpc EditEvent (EditEventReq) returns (google.protobuf.Empty);
+    rpc GetEventsByGroupId (EntityIdPaginatedReq) returns (ListEvents);
+    rpc RespondToEvent (RespondToEventReq) returns (google.protobuf.Empty);
+    rpc RemoveEventResponse (GenericReq) returns (google.protobuf.Empty);
+    rpc SuggestUsersByPostActivity (SimpleIdReq) returns (ListUsers);
+    rpc ToggleOrInsertReaction (GenericReq) returns (google.protobuf.Empty);
 }
 
 // COMMON & GENERIC
@@ -62,6 +62,10 @@ message User {
   int64 user_id = 1;
   string username = 2;
   int64 avatar = 3;
+}
+
+message ListUsers {
+  repeated User users = 1;
 }
 
 // POSTS

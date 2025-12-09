@@ -14,7 +14,7 @@ import (
 // Users who liked the same posts as you
 // Users who commented on the same posts as you
 // Actual Basic User Info will be retrieved by HANDLER from users
-func (s *Application) SuggestUsersByPostActivity(ctx context.Context, req models.SimpleIdReq) (ct.Ids, error) {
+func (s *Application) SuggestUsersByPostActivity(ctx context.Context, req models.SimpleIdReq) ([]models.User, error) {
 	if err := ct.ValidateStruct(req); err != nil {
 		return nil, err
 	}
@@ -25,5 +25,18 @@ func (s *Application) SuggestUsersByPostActivity(ctx context.Context, req models
 		}
 		return nil, err
 	}
-	return ct.FromInt64s(ids), nil
+
+	users := make([]models.User, 0, len(ids))
+	for _, id := range ids {
+		users = append(users, models.User{
+			UserId: ct.Id(id),
+		})
+	}
+
+	err = s.hydrator.HydrateUserSlice(ctx, users)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

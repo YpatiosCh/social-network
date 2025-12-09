@@ -41,6 +41,8 @@ func (s *Application) CreateEvent(ctx context.Context, req models.CreateEventReq
 		return err
 	}
 
+	//TODO CREATE NOTIFICATION EVENT
+
 	return nil
 }
 

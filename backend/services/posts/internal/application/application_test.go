@@ -74,7 +74,8 @@ func TestCreatePost_SelectedAudience_Success(t *testing.T) {
 // fake hydrator to avoid touching redis/clients during hydrate calls
 type fakeHydrator struct{}
 
-func (f *fakeHydrator) HydrateUsers(ctx context.Context, items []models.HasUser) error { return nil }
+func (f *fakeHydrator) HydrateUsers(ctx context.Context, items []models.HasUser) error  { return nil }
+func (f *fakeHydrator) HydrateUserSlice(ctx context.Context, users []models.User) error { return nil }
 
 func TestDeletePost_Success(t *testing.T) {
 	ctx := context.Background()

@@ -20,10 +20,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PostsService_CreatePost_FullMethodName                = "/posts.PostsService/CreatePost"
-	PostsService_DeletePost_FullMethodName                = "/posts.PostsService/DeletePost"
-	PostsService_EditPost_FullMethodName                  = "/posts.PostsService/EditPost"
-	PostsService_GetMostPopularPostInGroup_FullMethodName = "/posts.PostsService/GetMostPopularPostInGroup"
+	PostsService_CreatePost_FullMethodName                 = "/posts.PostsService/CreatePost"
+	PostsService_DeletePost_FullMethodName                 = "/posts.PostsService/DeletePost"
+	PostsService_EditPost_FullMethodName                   = "/posts.PostsService/EditPost"
+	PostsService_GetMostPopularPostInGroup_FullMethodName  = "/posts.PostsService/GetMostPopularPostInGroup"
+	PostsService_GetPersonalizedFeed_FullMethodName        = "/posts.PostsService/GetPersonalizedFeed"
+	PostsService_GetPublicFeed_FullMethodName              = "/posts.PostsService/GetPublicFeed"
+	PostsService_GetUserPostsPaginated_FullMethodName      = "/posts.PostsService/GetUserPostsPaginated"
+	PostsService_GetGroupPostsPaginated_FullMethodName     = "/posts.PostsService/GetGroupPostsPaginated"
+	PostsService_CreateComment_FullMethodName              = "/posts.PostsService/CreateComment"
+	PostsService_EditComment_FullMethodName                = "/posts.PostsService/EditComment"
+	PostsService_DeleteComment_FullMethodName              = "/posts.PostsService/DeleteComment"
+	PostsService_GetCommentsByParentId_FullMethodName      = "/posts.PostsService/GetCommentsByParentId"
+	PostsService_CreateEvent_FullMethodName                = "/posts.PostsService/CreateEvent"
+	PostsService_DeleteEvent_FullMethodName                = "/posts.PostsService/DeleteEvent"
+	PostsService_EditEvent_FullMethodName                  = "/posts.PostsService/EditEvent"
+	PostsService_GetEventsByGroupId_FullMethodName         = "/posts.PostsService/GetEventsByGroupId"
+	PostsService_RespondToEvent_FullMethodName             = "/posts.PostsService/RespondToEvent"
+	PostsService_RemoveEventResponse_FullMethodName        = "/posts.PostsService/RemoveEventResponse"
+	PostsService_SuggestUsersByPostActivity_FullMethodName = "/posts.PostsService/SuggestUsersByPostActivity"
+	PostsService_ToggleOrInsertReaction_FullMethodName     = "/posts.PostsService/ToggleOrInsertReaction"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -34,6 +50,22 @@ type PostsServiceClient interface {
 	DeletePost(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	EditPost(ctx context.Context, in *EditPostReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetMostPopularPostInGroup(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*Post, error)
+	GetPersonalizedFeed(ctx context.Context, in *GetPersonalizedFeedReq, opts ...grpc.CallOption) (*ListPosts, error)
+	GetPublicFeed(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListPosts, error)
+	GetUserPostsPaginated(ctx context.Context, in *GetUserPostsReq, opts ...grpc.CallOption) (*ListPosts, error)
+	GetGroupPostsPaginated(ctx context.Context, in *GetGroupPostsReq, opts ...grpc.CallOption) (*ListPosts, error)
+	CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EditComment(ctx context.Context, in *EditCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteComment(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetCommentsByParentId(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListComments, error)
+	CreateEvent(ctx context.Context, in *CreateEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteEvent(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	EditEvent(ctx context.Context, in *EditEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetEventsByGroupId(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListEvents, error)
+	RespondToEvent(ctx context.Context, in *RespondToEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveEventResponse(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SuggestUsersByPostActivity(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*ListUsers, error)
+	ToggleOrInsertReaction(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type postsServiceClient struct {
@@ -84,6 +116,166 @@ func (c *postsServiceClient) GetMostPopularPostInGroup(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *postsServiceClient) GetPersonalizedFeed(ctx context.Context, in *GetPersonalizedFeedReq, opts ...grpc.CallOption) (*ListPosts, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPosts)
+	err := c.cc.Invoke(ctx, PostsService_GetPersonalizedFeed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) GetPublicFeed(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListPosts, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPosts)
+	err := c.cc.Invoke(ctx, PostsService_GetPublicFeed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) GetUserPostsPaginated(ctx context.Context, in *GetUserPostsReq, opts ...grpc.CallOption) (*ListPosts, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPosts)
+	err := c.cc.Invoke(ctx, PostsService_GetUserPostsPaginated_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) GetGroupPostsPaginated(ctx context.Context, in *GetGroupPostsReq, opts ...grpc.CallOption) (*ListPosts, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPosts)
+	err := c.cc.Invoke(ctx, PostsService_GetGroupPostsPaginated_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_CreateComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) EditComment(ctx context.Context, in *EditCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_EditComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) DeleteComment(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_DeleteComment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) GetCommentsByParentId(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListComments, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListComments)
+	err := c.cc.Invoke(ctx, PostsService_GetCommentsByParentId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) CreateEvent(ctx context.Context, in *CreateEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_CreateEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) DeleteEvent(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_DeleteEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) EditEvent(ctx context.Context, in *EditEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_EditEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) GetEventsByGroupId(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListEvents, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListEvents)
+	err := c.cc.Invoke(ctx, PostsService_GetEventsByGroupId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) RespondToEvent(ctx context.Context, in *RespondToEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_RespondToEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) RemoveEventResponse(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_RemoveEventResponse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) SuggestUsersByPostActivity(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*ListUsers, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUsers)
+	err := c.cc.Invoke(ctx, PostsService_SuggestUsersByPostActivity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) ToggleOrInsertReaction(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PostsService_ToggleOrInsertReaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
@@ -92,6 +284,22 @@ type PostsServiceServer interface {
 	DeletePost(context.Context, *GenericReq) (*emptypb.Empty, error)
 	EditPost(context.Context, *EditPostReq) (*emptypb.Empty, error)
 	GetMostPopularPostInGroup(context.Context, *SimpleIdReq) (*Post, error)
+	GetPersonalizedFeed(context.Context, *GetPersonalizedFeedReq) (*ListPosts, error)
+	GetPublicFeed(context.Context, *EntityIdPaginatedReq) (*ListPosts, error)
+	GetUserPostsPaginated(context.Context, *GetUserPostsReq) (*ListPosts, error)
+	GetGroupPostsPaginated(context.Context, *GetGroupPostsReq) (*ListPosts, error)
+	CreateComment(context.Context, *CreateCommentReq) (*emptypb.Empty, error)
+	EditComment(context.Context, *EditCommentReq) (*emptypb.Empty, error)
+	DeleteComment(context.Context, *GenericReq) (*emptypb.Empty, error)
+	GetCommentsByParentId(context.Context, *EntityIdPaginatedReq) (*ListComments, error)
+	CreateEvent(context.Context, *CreateEventReq) (*emptypb.Empty, error)
+	DeleteEvent(context.Context, *GenericReq) (*emptypb.Empty, error)
+	EditEvent(context.Context, *EditEventReq) (*emptypb.Empty, error)
+	GetEventsByGroupId(context.Context, *EntityIdPaginatedReq) (*ListEvents, error)
+	RespondToEvent(context.Context, *RespondToEventReq) (*emptypb.Empty, error)
+	RemoveEventResponse(context.Context, *GenericReq) (*emptypb.Empty, error)
+	SuggestUsersByPostActivity(context.Context, *SimpleIdReq) (*ListUsers, error)
+	ToggleOrInsertReaction(context.Context, *GenericReq) (*emptypb.Empty, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -113,6 +321,54 @@ func (UnimplementedPostsServiceServer) EditPost(context.Context, *EditPostReq) (
 }
 func (UnimplementedPostsServiceServer) GetMostPopularPostInGroup(context.Context, *SimpleIdReq) (*Post, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMostPopularPostInGroup not implemented")
+}
+func (UnimplementedPostsServiceServer) GetPersonalizedFeed(context.Context, *GetPersonalizedFeedReq) (*ListPosts, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPersonalizedFeed not implemented")
+}
+func (UnimplementedPostsServiceServer) GetPublicFeed(context.Context, *EntityIdPaginatedReq) (*ListPosts, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPublicFeed not implemented")
+}
+func (UnimplementedPostsServiceServer) GetUserPostsPaginated(context.Context, *GetUserPostsReq) (*ListPosts, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserPostsPaginated not implemented")
+}
+func (UnimplementedPostsServiceServer) GetGroupPostsPaginated(context.Context, *GetGroupPostsReq) (*ListPosts, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGroupPostsPaginated not implemented")
+}
+func (UnimplementedPostsServiceServer) CreateComment(context.Context, *CreateCommentReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateComment not implemented")
+}
+func (UnimplementedPostsServiceServer) EditComment(context.Context, *EditCommentReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method EditComment not implemented")
+}
+func (UnimplementedPostsServiceServer) DeleteComment(context.Context, *GenericReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteComment not implemented")
+}
+func (UnimplementedPostsServiceServer) GetCommentsByParentId(context.Context, *EntityIdPaginatedReq) (*ListComments, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCommentsByParentId not implemented")
+}
+func (UnimplementedPostsServiceServer) CreateEvent(context.Context, *CreateEventReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateEvent not implemented")
+}
+func (UnimplementedPostsServiceServer) DeleteEvent(context.Context, *GenericReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteEvent not implemented")
+}
+func (UnimplementedPostsServiceServer) EditEvent(context.Context, *EditEventReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method EditEvent not implemented")
+}
+func (UnimplementedPostsServiceServer) GetEventsByGroupId(context.Context, *EntityIdPaginatedReq) (*ListEvents, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetEventsByGroupId not implemented")
+}
+func (UnimplementedPostsServiceServer) RespondToEvent(context.Context, *RespondToEventReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RespondToEvent not implemented")
+}
+func (UnimplementedPostsServiceServer) RemoveEventResponse(context.Context, *GenericReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveEventResponse not implemented")
+}
+func (UnimplementedPostsServiceServer) SuggestUsersByPostActivity(context.Context, *SimpleIdReq) (*ListUsers, error) {
+	return nil, status.Error(codes.Unimplemented, "method SuggestUsersByPostActivity not implemented")
+}
+func (UnimplementedPostsServiceServer) ToggleOrInsertReaction(context.Context, *GenericReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ToggleOrInsertReaction not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -207,6 +463,294 @@ func _PostsService_GetMostPopularPostInGroup_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_GetPersonalizedFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPersonalizedFeedReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetPersonalizedFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetPersonalizedFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetPersonalizedFeed(ctx, req.(*GetPersonalizedFeedReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_GetPublicFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EntityIdPaginatedReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetPublicFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetPublicFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetPublicFeed(ctx, req.(*EntityIdPaginatedReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_GetUserPostsPaginated_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserPostsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetUserPostsPaginated(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetUserPostsPaginated_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetUserPostsPaginated(ctx, req.(*GetUserPostsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_GetGroupPostsPaginated_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGroupPostsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetGroupPostsPaginated(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetGroupPostsPaginated_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetGroupPostsPaginated(ctx, req.(*GetGroupPostsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_CreateComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCommentReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).CreateComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_CreateComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).CreateComment(ctx, req.(*CreateCommentReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_EditComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditCommentReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).EditComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_EditComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).EditComment(ctx, req.(*EditCommentReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_DeleteComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenericReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).DeleteComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_DeleteComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).DeleteComment(ctx, req.(*GenericReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_GetCommentsByParentId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EntityIdPaginatedReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetCommentsByParentId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetCommentsByParentId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetCommentsByParentId(ctx, req.(*EntityIdPaginatedReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_CreateEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateEventReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).CreateEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_CreateEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).CreateEvent(ctx, req.(*CreateEventReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_DeleteEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenericReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).DeleteEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_DeleteEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).DeleteEvent(ctx, req.(*GenericReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_EditEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EditEventReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).EditEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_EditEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).EditEvent(ctx, req.(*EditEventReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_GetEventsByGroupId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EntityIdPaginatedReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetEventsByGroupId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetEventsByGroupId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetEventsByGroupId(ctx, req.(*EntityIdPaginatedReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_RespondToEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RespondToEventReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).RespondToEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_RespondToEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).RespondToEvent(ctx, req.(*RespondToEventReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_RemoveEventResponse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenericReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).RemoveEventResponse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_RemoveEventResponse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).RemoveEventResponse(ctx, req.(*GenericReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_SuggestUsersByPostActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SimpleIdReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).SuggestUsersByPostActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_SuggestUsersByPostActivity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).SuggestUsersByPostActivity(ctx, req.(*SimpleIdReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_ToggleOrInsertReaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenericReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).ToggleOrInsertReaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_ToggleOrInsertReaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).ToggleOrInsertReaction(ctx, req.(*GenericReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -229,6 +773,70 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMostPopularPostInGroup",
 			Handler:    _PostsService_GetMostPopularPostInGroup_Handler,
+		},
+		{
+			MethodName: "GetPersonalizedFeed",
+			Handler:    _PostsService_GetPersonalizedFeed_Handler,
+		},
+		{
+			MethodName: "GetPublicFeed",
+			Handler:    _PostsService_GetPublicFeed_Handler,
+		},
+		{
+			MethodName: "GetUserPostsPaginated",
+			Handler:    _PostsService_GetUserPostsPaginated_Handler,
+		},
+		{
+			MethodName: "GetGroupPostsPaginated",
+			Handler:    _PostsService_GetGroupPostsPaginated_Handler,
+		},
+		{
+			MethodName: "CreateComment",
+			Handler:    _PostsService_CreateComment_Handler,
+		},
+		{
+			MethodName: "EditComment",
+			Handler:    _PostsService_EditComment_Handler,
+		},
+		{
+			MethodName: "DeleteComment",
+			Handler:    _PostsService_DeleteComment_Handler,
+		},
+		{
+			MethodName: "GetCommentsByParentId",
+			Handler:    _PostsService_GetCommentsByParentId_Handler,
+		},
+		{
+			MethodName: "CreateEvent",
+			Handler:    _PostsService_CreateEvent_Handler,
+		},
+		{
+			MethodName: "DeleteEvent",
+			Handler:    _PostsService_DeleteEvent_Handler,
+		},
+		{
+			MethodName: "EditEvent",
+			Handler:    _PostsService_EditEvent_Handler,
+		},
+		{
+			MethodName: "GetEventsByGroupId",
+			Handler:    _PostsService_GetEventsByGroupId_Handler,
+		},
+		{
+			MethodName: "RespondToEvent",
+			Handler:    _PostsService_RespondToEvent_Handler,
+		},
+		{
+			MethodName: "RemoveEventResponse",
+			Handler:    _PostsService_RemoveEventResponse_Handler,
+		},
+		{
+			MethodName: "SuggestUsersByPostActivity",
+			Handler:    _PostsService_SuggestUsersByPostActivity_Handler,
+		},
+		{
+			MethodName: "ToggleOrInsertReaction",
+			Handler:    _PostsService_ToggleOrInsertReaction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

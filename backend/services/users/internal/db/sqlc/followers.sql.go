@@ -135,7 +135,7 @@ SELECT
 FROM combined c
 JOIN users u ON u.id = c.user_id
 ORDER BY c.total_score DESC, random()
-LIMIT 10
+LIMIT 5
 `
 
 type GetFollowSuggestionsRow struct {

@@ -53,6 +53,18 @@ type User struct {
 	AvatarId ct.Id `validate:"nullable"`
 }
 
+type UserHydrateAdapter struct {
+	u *User
+}
+
+func (a UserHydrateAdapter) GetUserId() int64 {
+	return a.u.UserId.Int64()
+}
+
+func (a UserHydrateAdapter) SetUser(user User) {
+	*(a.u) = user
+}
+
 type UserSearchReq struct {
 	SearchTerm ct.SearchTerm
 	Limit      ct.Limit

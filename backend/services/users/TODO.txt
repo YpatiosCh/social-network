@@ -2,3 +2,5 @@
 calls to chat (partly done) and notifications from users
 
 posts grpc handlers
+
+add validation checks for custom types, possibly connect to validator package or reuse functions

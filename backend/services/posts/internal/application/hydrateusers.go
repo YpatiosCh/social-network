@@ -8,6 +8,18 @@ import (
 	redis_connector "social-network/shared/go/redis"
 )
 
+type userHydrateAdapter struct {
+	u *models.User
+}
+
+func (a userHydrateAdapter) GetUserId() int64 {
+	return a.u.UserId.Int64()
+}
+
+func (a userHydrateAdapter) SetUser(user models.User) {
+	*(a.u) = user
+}
+
 // hydrateUsers fills in user data for all HasUser items from redis and/or user service
 func (h *UserHydrator) HydrateUsers(ctx context.Context, items []models.HasUser) error {
 	//collect unique user IDs
@@ -71,6 +83,13 @@ func (h *UserHydrator) HydrateUsers(ctx context.Context, items []models.HasUser)
 	}
 
 	return nil
+}
+func (h *UserHydrator) HydrateUserSlice(ctx context.Context, users []models.User) error {
+	adapters := make([]models.HasUser, len(users))
+	for i := range users {
+		adapters[i] = userHydrateAdapter{u: &users[i]}
+	}
+	return h.HydrateUsers(ctx, adapters)
 }
 
 func (s *Application) hydratePost(ctx context.Context, post *models.Post) error {
