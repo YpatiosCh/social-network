@@ -4,6 +4,8 @@ import (
 	"context"
 	"social-network/services/posts/internal/client"
 	"social-network/services/posts/internal/db/sqlc"
+	userpb "social-network/shared/gen-go/users"
+	"social-network/shared/go/models"
 	redis_connector "social-network/shared/go/redis"
 	"time"
 
@@ -14,13 +16,29 @@ type Application struct {
 	db       sqlc.Querier
 	txRunner TxRunner
 	clients  ClientsInterface
-	hydrator *UserHydrator
+	hydrator Hydrator
 }
 
 type UserHydrator struct {
-	clients *client.Clients
-	cache   *redis_connector.RedisClient
+	clients UsersBatchClient
+	cache   RedisCache
 	ttl     time.Duration
+}
+
+// UsersBatchClient abstracts the single RPC used by the hydrator to fetch basic user info.
+type UsersBatchClient interface {
+	GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*userpb.ListUsers, error)
+}
+
+// RedisCache defines the minimal Redis operations used by the hydrator.
+type RedisCache interface {
+	GetObj(ctx context.Context, key string, dest any) error
+	SetObj(ctx context.Context, key string, value any, exp time.Duration) error
+}
+
+// Hydrator defines the subset of behavior used by application for user hydration.
+type Hydrator interface {
+	HydrateUsers(ctx context.Context, items []models.HasUser) error
 }
 
 // ClientsInterface defines the methods that Application needs from clients.
@@ -70,6 +88,5 @@ func NewApplicationWithMocksTx(db sqlc.Querier, clients ClientsInterface, txRunn
 		db:       db,
 		clients:  clients,
 		txRunner: txRunner,
-		//hydrator: NewUserHydrator(clients.(*client.Clients)), // <- pass real type
 	}
 }
