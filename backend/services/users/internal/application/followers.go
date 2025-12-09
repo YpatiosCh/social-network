@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"social-network/services/users/internal/db/sqlc"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
@@ -60,7 +61,6 @@ func (s *Application) GetFollowingPaginated(ctx context.Context, req models.Pagi
 
 }
 
-// CHAT SERVICE EVENT should trigger event that creates conversation between two users for chat service (unless the target user was already following, so conversation exists)
 func (s *Application) FollowUser(ctx context.Context, req models.FollowUserReq) (resp models.FollowUserResp, err error) {
 	if err := ct.ValidateStruct(req); err != nil {
 		return models.FollowUserResp{}, err
@@ -79,6 +79,14 @@ func (s *Application) FollowUser(ctx context.Context, req models.FollowUserReq) 
 		resp.IsPending = false
 		resp.ViewerIsFollowing = true
 	}
+
+	//try and create conversation in chat service if none exists
+	//condition that at least one user follows the other is checked before call is made
+	err = s.createPrivateConversation(ctx, req)
+	if err != nil {
+		fmt.Println("conversation couldn't be created", err)
+	}
+
 	return resp, nil
 }
 
@@ -108,16 +116,29 @@ func (s *Application) HandleFollowRequest(ctx context.Context, req models.Handle
 			RequesterID: req.RequesterId.Int64(),
 			TargetID:    req.UserId.Int64(),
 		})
+		if err != nil {
+			return err
+		}
+
+		//try and create conversation in chat service if none exists
+		//condition that at least one user follows the other is checked before call is made
+		err = s.createPrivateConversation(ctx, models.FollowUserReq{
+			FollowerId:   req.RequesterId,
+			TargetUserId: req.UserId,
+		})
+		if err != nil {
+			fmt.Println("conversation couldn't be created", err)
+		}
 
 	} else {
 		err = s.db.RejectFollowRequest(ctx, sqlc.RejectFollowRequestParams{
 			RequesterID: req.RequesterId.Int64(),
 			TargetID:    req.UserId.Int64(),
 		})
+		if err != nil {
+			return err
+		}
 
-	}
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -135,8 +156,6 @@ func (s *Application) GetFollowingIds(ctx context.Context, userId ct.Id) ([]int6
 }
 
 // returns ten random users that people you follow follow, or are in your groups
-// TODO for extra suggestions (have liked your public posts,
-// or have commented on your public posts, or have liked posts you liked) need to ask posts service
 func (s *Application) GetFollowSuggestions(ctx context.Context, userId ct.Id) ([]models.User, error) {
 	if err := userId.Validate(); err != nil {
 		return []models.User{}, err
@@ -186,7 +205,7 @@ func (s *Application) IsFollowing(ctx context.Context, req models.FollowUserReq)
 }
 
 // SKIP GRPC FOR NOW
-func (s *Application) IsFollowingEither(ctx context.Context, req models.FollowUserReq) (bool, error) {
+func (s *Application) isFollowingEither(ctx context.Context, req models.FollowUserReq) (bool, error) {
 	if err := ct.ValidateStruct(req); err != nil {
 		return false, err
 	}
@@ -199,6 +218,20 @@ func (s *Application) IsFollowingEither(ctx context.Context, req models.FollowUs
 		return false, err
 	}
 	return atLeastOneIsFollowing, nil
+}
+
+func (s *Application) createPrivateConversation(ctx context.Context, req models.FollowUserReq) error {
+	atLeastOneIsFollowing, err := s.isFollowingEither(ctx, req)
+	if err != nil {
+		return err
+	}
+	if atLeastOneIsFollowing {
+		err := s.clients.CreatePrivateConversation(ctx, req.FollowerId.Int64(), req.TargetUserId.Int64())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ---------------------------------------------------------------------

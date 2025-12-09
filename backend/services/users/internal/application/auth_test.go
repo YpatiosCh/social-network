@@ -20,7 +20,7 @@ func TestLoginUser_InvalidCredentials(t *testing.T) {
 
 func TestUpdateUserPassword_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	oldPassword := "oldpassword"
 	newPassword := "newpassword"
@@ -47,7 +47,7 @@ func TestUpdateUserPassword_Success(t *testing.T) {
 
 func TestUpdateUserPassword_WrongOldPassword(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	correctPassword := "correctpassword"
 	hashedCorrect, _ := bcrypt.GenerateFromPassword([]byte(correctPassword), bcrypt.DefaultCost)
@@ -70,7 +70,7 @@ func TestUpdateUserPassword_WrongOldPassword(t *testing.T) {
 
 func TestUpdateUserEmail_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	req := models.UpdateEmailRequest{
 		UserId: ct.Id(1),
@@ -92,7 +92,7 @@ func TestUpdateUserEmail_Success(t *testing.T) {
 
 func TestUpdateUserEmail_Error(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	req := models.UpdateEmailRequest{
 		UserId: ct.Id(1),

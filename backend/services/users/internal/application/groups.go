@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"social-network/services/users/internal/db/sqlc"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
@@ -384,7 +385,6 @@ func (s *Application) RemoveFromGroup(ctx context.Context, req models.RemoveFrom
 	return nil
 }
 
-// CHAT SERVICE EVENT create group conversation
 func (s *Application) CreateGroup(ctx context.Context, req models.CreateGroupRequest) (models.GroupId, error) {
 	if err := ct.ValidateStruct(req); err != nil {
 		return 0, err
@@ -399,6 +399,13 @@ func (s *Application) CreateGroup(ctx context.Context, req models.CreateGroupReq
 	if err != nil {
 		return 0, err
 	}
+
+	//call to chat service to create group conversation with owner as member
+	err = s.clients.CreateGroupConversation(ctx, groupId, req.OwnerId.Int64())
+	if err != nil {
+		fmt.Println("group conversation couldn't be created", err)
+	}
+
 	return models.GroupId(groupId), nil
 }
 

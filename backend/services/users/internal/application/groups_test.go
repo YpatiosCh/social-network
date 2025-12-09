@@ -15,7 +15,7 @@ import (
 
 func TestGetAllGroupsPaginated_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.Pagination{
@@ -82,7 +82,7 @@ func TestGetAllGroupsPaginated_Success(t *testing.T) {
 
 func TestGetAllGroupsPaginated_Empty(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.Pagination{
@@ -105,7 +105,7 @@ func TestGetAllGroupsPaginated_Empty(t *testing.T) {
 
 func TestGetUserGroupsPaginated_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -162,7 +162,7 @@ func TestGetUserGroupsPaginated_Success(t *testing.T) {
 
 func TestGetGroupInfo_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	groupID := int64(1)
@@ -205,7 +205,7 @@ func TestGetGroupInfo_Success(t *testing.T) {
 
 func TestGetGroupInfo_NotFound(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	groupID := int64(999)
@@ -225,7 +225,7 @@ func TestGetGroupInfo_NotFound(t *testing.T) {
 
 func TestGetGroupMembers_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	groupID := int64(1)
@@ -281,7 +281,7 @@ func TestGetGroupMembers_Success(t *testing.T) {
 
 func TestSearchGroups_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	searchTerm := "test"
@@ -324,7 +324,7 @@ func TestSearchGroups_Success(t *testing.T) {
 
 func TestCreateGroup_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.CreateGroupRequest{
@@ -348,7 +348,7 @@ func TestCreateGroup_Success(t *testing.T) {
 
 func TestCreateGroup_Error(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.CreateGroupRequest{
@@ -371,7 +371,7 @@ func TestCreateGroup_Error(t *testing.T) {
 
 func TestLeaveGroup_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.GeneralGroupReq{
@@ -392,7 +392,7 @@ func TestLeaveGroup_Success(t *testing.T) {
 
 func TestRequestJoinGroupOrCancel_Request(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.GroupJoinRequest{
@@ -413,7 +413,7 @@ func TestRequestJoinGroupOrCancel_Request(t *testing.T) {
 
 func TestRequestJoinGroupOrCancel_Cancel(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.GroupJoinRequest{
@@ -434,7 +434,7 @@ func TestRequestJoinGroupOrCancel_Cancel(t *testing.T) {
 
 func TestRespondToGroupInvite_Accept(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.HandleGroupInviteRequest{
@@ -456,7 +456,7 @@ func TestRespondToGroupInvite_Accept(t *testing.T) {
 
 func TestRespondToGroupInvite_Decline(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil)
+	service := NewApplication(mockDB, nil, nil)
 
 	ctx := context.Background()
 	req := models.HandleGroupInviteRequest{

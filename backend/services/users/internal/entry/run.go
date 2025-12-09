@@ -28,8 +28,8 @@ func Run() error {
 	defer pool.Close()
 	log.Println("Connected to users-db database")
 
-	app := application.NewApplication(sqlc.New(pool), pool)
-
+	clients := InitClients()
+	app := application.NewApplication(sqlc.New(pool), pool, clients)
 	service := handler.NewUsersHanlder(app)
 
 	log.Println("Running gRpc service...")
