@@ -337,6 +337,9 @@ func (s *Application) HandleGroupJoinRequest(ctx context.Context, req models.Han
 			GroupID: req.GroupId.Int64(),
 			UserID:  req.RequesterId.Int64(),
 		})
+		if err != nil {
+			return err
+		}
 
 		err = s.clients.AddMembersToGroupConversation(ctx, req.GroupId.Int64(), []int64{req.RequesterId.Int64()})
 		if err != nil {
