@@ -34,6 +34,26 @@ func (c *Clients) CreateGroupConversation(ctx context.Context, groupId, ownerId 
 	return nil
 }
 
-//Function to deactivate PrivateConversation on unfollow if !isfollowingeither
+func (c *Clients) AddMembersToGroupConversation(ctx context.Context, groupId int64, userIds []int64) error {
+	_, err := c.ChatClient.AddMembersToGroupConversation(ctx, &chatpb.AddMembersToGroupConversationParams{
+		GroupId: groupId,
+		UserIds: userIds,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-//Function to add group members?
+func (c *Clients) DeleteConversationByExactMembers(ctx context.Context, userIds []int64) error {
+	_, err := c.ChatClient.DeleteConversationByExactMembers(ctx, &chatpb.UserIds{
+		UserIds: userIds,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//remove members from group conversation?
+//delete group conversation on group delete?

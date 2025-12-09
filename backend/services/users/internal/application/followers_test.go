@@ -230,6 +230,12 @@ func TestUnFollowUser_Success(t *testing.T) {
 		FollowingID: 2,
 	}).Return(nil)
 
+	// ensure AreFollowingEachOther is mocked so deletePrivateConversation doesn't trigger an unexpected call
+	mockDB.On("AreFollowingEachOther", ctx, sqlc.AreFollowingEachOtherParams{
+		FollowerID:  1,
+		FollowingID: 2,
+	}).Return(sqlc.AreFollowingEachOtherRow{User1FollowsUser2: true, User2FollowsUser1: false}, nil)
+
 	isFollowing, err := service.UnFollowUser(ctx, req)
 
 	assert.NoError(t, err)

@@ -91,7 +91,6 @@ func (s *Application) FollowUser(ctx context.Context, req models.FollowUserReq) 
 	return resp, nil
 }
 
-// CHAT SERVICE EVENT should it trigger event to delete conversation if none of the two follow each other any more? Or just make it inactive?
 func (s *Application) UnFollowUser(ctx context.Context, req models.FollowUserReq) (viewerIsFollowing bool, err error) {
 	if err := ct.ValidateStruct(req); err != nil {
 		return false, err
@@ -103,6 +102,12 @@ func (s *Application) UnFollowUser(ctx context.Context, req models.FollowUserReq
 	if err != nil {
 		return false, err
 	}
+
+	err = s.deletePrivateConversation(ctx, req)
+	if err != nil {
+		fmt.Println("conversation couldn't be deleted", err)
+	}
+
 	return true, nil
 }
 
@@ -242,6 +247,20 @@ func (s *Application) createPrivateConversation(ctx context.Context, req models.
 	}
 	if atLeastOneIsFollowing != nil && !*atLeastOneIsFollowing { //I need exactly one follower, so false
 		err := s.clients.CreatePrivateConversation(ctx, req.FollowerId.Int64(), req.TargetUserId.Int64())
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Application) deletePrivateConversation(ctx context.Context, req models.FollowUserReq) error {
+	atLeastOneIsFollowing, err := s.areFollowingEachOther(ctx, req)
+	if err != nil {
+		return err
+	}
+	if atLeastOneIsFollowing == nil { //neither follows the other
+		err := s.clients.DeleteConversationByExactMembers(ctx, []int64{req.FollowerId.Int64(), req.TargetUserId.Int64()})
 		if err != nil {
 			return err
 		}

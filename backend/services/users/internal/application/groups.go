@@ -298,6 +298,12 @@ func (s *Application) RespondToGroupInvite(ctx context.Context, req models.Handl
 			return err
 
 		}
+
+		err = s.clients.AddMembersToGroupConversation(ctx, req.GroupId.Int64(), []int64{req.InvitedId.Int64()})
+		if err != nil {
+			fmt.Println("could not add member to group conversation:", err)
+		}
+
 	} else {
 		err := s.db.DeclineGroupInvite(ctx, sqlc.DeclineGroupInviteParams{
 			GroupID:    req.GroupId.Int64(),
@@ -310,7 +316,6 @@ func (s *Application) RespondToGroupInvite(ctx context.Context, req models.Handl
 	return nil
 }
 
-// CHAT SERVICE EVENT add member to group conversation if accepted
 func (s *Application) HandleGroupJoinRequest(ctx context.Context, req models.HandleJoinRequest) error {
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
@@ -332,6 +337,12 @@ func (s *Application) HandleGroupJoinRequest(ctx context.Context, req models.Han
 			GroupID: req.GroupId.Int64(),
 			UserID:  req.RequesterId.Int64(),
 		})
+
+		err = s.clients.AddMembersToGroupConversation(ctx, req.GroupId.Int64(), []int64{req.RequesterId.Int64()})
+		if err != nil {
+			fmt.Println("could not add member to group conversation:", err)
+		}
+
 	} else {
 		err = s.db.RejectGroupJoinRequest(ctx, sqlc.RejectGroupJoinRequestParams{
 			GroupID: req.GroupId.Int64(),

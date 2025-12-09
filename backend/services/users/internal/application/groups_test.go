@@ -442,7 +442,8 @@ func TestRequestJoinGroupOrCancel_Cancel(t *testing.T) {
 
 func TestRespondToGroupInvite_Accept(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	mockClients := new(MockClients)
+	service := NewApplicationWithMocks(mockDB, mockClients)
 
 	ctx := context.Background()
 	req := models.HandleGroupInviteRequest{
@@ -455,6 +456,9 @@ func TestRespondToGroupInvite_Accept(t *testing.T) {
 		GroupID:    1,
 		ReceiverID: 2,
 	}).Return(nil)
+
+	// expect AddMembersToGroupConversation to be called
+	mockClients.On("AddMembersToGroupConversation", ctx, int64(1), []int64{2}).Return(nil)
 
 	err := service.RespondToGroupInvite(ctx, req)
 

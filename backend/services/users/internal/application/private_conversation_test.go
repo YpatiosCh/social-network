@@ -28,6 +28,16 @@ func (m *MockClients) CreatePrivateConversation(ctx context.Context, userId1, us
 	return args.Error(0)
 }
 
+func (m *MockClients) AddMembersToGroupConversation(ctx context.Context, groupId int64, userIds []int64) error {
+	args := m.Called(ctx, groupId, userIds)
+	return args.Error(0)
+}
+
+func (m *MockClients) DeleteConversationByExactMembers(ctx context.Context, userIds []int64) error {
+	args := m.Called(ctx, userIds)
+	return args.Error(0)
+}
+
 func TestCreatePrivateConversation_OneWayFollows_CallsClient(t *testing.T) {
 	mockDB := new(MockQuerier)
 	mockClients := new(MockClients)
