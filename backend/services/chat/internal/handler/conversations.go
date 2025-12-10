@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	_ "github.com/lib/pq"
 )
@@ -48,8 +47,8 @@ func (h *ChatHandler) DeleteConversationByExactMembers(ctx context.Context, user
 	return &pb.Conversation{
 		Id:        resp.ID.Int64(),
 		GroupId:   resp.GroupID.Int64(),
-		CreatedAt: timestamppb.New(resp.CreatedAt),
-		UpdatedAt: timestamppb.New(resp.UpdatedAt),
-		DeletedAt: timestamppb.New(resp.DeletedAt),
+		CreatedAt: resp.CreatedAt.ToProto(),
+		UpdatedAt: resp.UpdatedAt.ToProto(),
+		DeletedAt: resp.DeletedAt.ToProto(),
 	}, nil
 }

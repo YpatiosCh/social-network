@@ -9,9 +9,17 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const genDateTimeLayout = time.RFC3339
+
 // ------------------------------------------------------------
 // DateOfBirth
 // ------------------------------------------------------------
+
+// DateOfBirth is non nullable. If value is the zero time instant, January 1, year 1, 00:00:00 UTC validation returns error.
+// It is marshaled and unmarshaled in "2006-01-02" format.
+type DateOfBirth time.Time
+
+const dobLayout = "2006-01-02"
 
 func (d DateOfBirth) MarshalJSON() ([]byte, error) {
 	t := time.Time(d)
@@ -104,15 +112,27 @@ func ParseDateOfBirth(s string) (DateOfBirth, error) {
 }
 
 // ------------------------------------------------------------
-// EventDate
+// EventDateTime
 // ------------------------------------------------------------
 
-func (ed EventDate) MarshalJSON() ([]byte, error) {
-	t := time.Time(ed)
-	return json.Marshal(t.Format(eventDateLayout))
+// It formats a time.Time value to genDateTimeLayout format.
+// It Umarshals to time.Time type but Marshals to time.RFC3339 format.
+//
+// Null values are not allowed. If value is the zero time instant, January 1, year 1, 00:00:00 UTC validation returns error.
+//
+// Usage convert to proto type '*timestamppb.Timestamp':
+//
+//	return &pb.Event{
+//			EventDateTime: resp.CreatedAt.ToProto(),
+//	}, nil
+type EventDateTime time.Time
+
+func (edt EventDateTime) MarshalJSON() ([]byte, error) {
+	t := time.Time(edt)
+	return json.Marshal(t.UTC().Format(genDateTimeLayout))
 }
 
-func (ed *EventDate) UnmarshalJSON(data []byte) error {
+func (edt *EventDateTime) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
@@ -123,12 +143,12 @@ func (ed *EventDate) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	*ed = EventDate(t)
+	*edt = EventDateTime(t)
 	return nil
 }
 
-func (ed EventDate) IsValid() bool {
-	t := time.Time(ed)
+func (edt EventDateTime) IsValid() bool {
+	t := time.Time(edt)
 	if t.IsZero() {
 		return false
 	}
@@ -149,22 +169,88 @@ func (ed EventDate) IsValid() bool {
 	return !t.After(limit)
 }
 
-func (ed EventDate) Validate() error {
-	if !ed.IsValid() {
+func (edt EventDateTime) Validate() error {
+	if !edt.IsValid() {
 		return errors.Join(ErrValidation, errors.New("invalid event date"))
 	}
 	return nil
 }
 
 // Helper to get time.Time if needed
-func (ed EventDate) Time() time.Time {
-	return time.Time(ed)
+func (edt EventDateTime) Time() time.Time {
+	return time.Time(edt)
 }
 
 // Helper to parse time.Time value to proto *timestamppb.Timestamp
-func (ed EventDate) ToProto() *timestamppb.Timestamp {
-	if ed.Time().IsZero() {
+func (edt EventDateTime) ToProto() *timestamppb.Timestamp {
+	if edt.Time().IsZero() {
 		return nil
 	}
-	return timestamppb.New(time.Time(ed))
+	return timestamppb.New(time.Time(edt))
+}
+
+// ------------------------------------------------------------
+// Generic Date Time
+// ------------------------------------------------------------
+
+// GenDateTime (Generic) allows null values.
+// It Umarshals to time.Time type but Marshals to time.RFC3339 format.
+//
+// Usage convert to proto type '*timestamppb.Timestamp':
+//
+//	return &pb.Conversation{
+//			CreatedAt: resp.CreatedAt.ToProto(),
+//	}, nil
+type GenDateTime time.Time
+
+// Marshal to RFC3339
+func (g GenDateTime) MarshalJSON() ([]byte, error) {
+	t := time.Time(g)
+	return json.Marshal(t.UTC().Format(genDateTimeLayout))
+}
+
+// Unmarshal from RFC3339 string
+func (g *GenDateTime) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	if s == "" {
+		*g = GenDateTime(time.Time{})
+		return nil
+	}
+
+	t, err := time.Parse(genDateTimeLayout, s)
+	if err != nil {
+		return err
+	}
+
+	*g = GenDateTime(t.UTC())
+	return nil
+}
+
+func (g GenDateTime) IsValid() bool {
+	t := time.Time(g)
+	return !t.IsZero()
+}
+
+func (g GenDateTime) Validate() error {
+	if !g.IsValid() {
+		return errors.Join(ErrValidation, errors.New("invalid event date"))
+	}
+	return nil
+}
+
+// Helper to get time.Time if needed
+func (g GenDateTime) Time() time.Time {
+	return time.Time(g)
+}
+
+// Helper to parse time.Time value to proto *timestamppb.Timestamp
+func (g GenDateTime) ToProto() *timestamppb.Timestamp {
+	if g.Time().IsZero() {
+		return nil
+	}
+	return timestamppb.New(time.Time(g))
 }

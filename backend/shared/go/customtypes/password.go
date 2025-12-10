@@ -7,12 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"regexp"
 )
 
 // ------------------------------------------------------------
 // Password
-// (Hash on Unmarshal; store hashed value only)
 // ------------------------------------------------------------
+
+// Password is not nullable. The length is checked and error is returned during json unmarshall and validation methods.
+type Password string
 
 func (p Password) MarshalJSON() ([]byte, error) {
 	// No encoder required – return placeholder or omit
@@ -45,9 +48,34 @@ func (p Password) Hash() (Password, error) {
 	return p, nil
 }
 
+// one symbol, one capital letter, one number min 8 chars max 64 chars
+var (
+	uppercase = regexp.MustCompile(`[A-Z]`)
+	lowercase = regexp.MustCompile(`[a-z]`)
+	digit     = regexp.MustCompile(`[0-9]`)
+	symbol    = regexp.MustCompile(`[^A-Za-z0-9]`)
+)
+
+// Validates raw password for one symbol, one capital letter, one number, min 8 chars, max 64 chars
 func (p Password) IsValid() bool {
-	// After hashing, length always valid; check before hashing instead? Up to you.
-	return len(p) > 0
+	s := string(p)
+
+	if len(s) < 8 || len(s) > 64 {
+		return false
+	}
+	if !uppercase.MatchString(s) {
+		return false
+	}
+	if !lowercase.MatchString(s) {
+		return false
+	}
+	if !digit.MatchString(s) {
+		return false
+	}
+	if !symbol.MatchString(s) {
+		return false
+	}
+	return controlCharsFree(p.String())
 }
 
 func (p Password) Validate() error {
@@ -59,4 +87,45 @@ func (p Password) Validate() error {
 
 func (p Password) String() string {
 	return string(p)
+}
+
+// ------------------------------------------------------------
+// HashedPassword
+// ------------------------------------------------------------
+
+// Password is not nullable. The length is checked and error is returned during json unmarshall and validation methods.
+type HashedPassword string
+
+func (hp HashedPassword) MarshalJSON() ([]byte, error) {
+	// No encoder required – return placeholder or omit
+	return json.Marshal("********")
+}
+
+func (hp *HashedPassword) UnmarshalJSON(data []byte) error {
+	var raw string
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	if len(raw) == 0 {
+		return errors.Join(ErrValidation, errors.New("password is required"))
+	}
+
+	*hp = HashedPassword(raw)
+	return nil
+}
+
+func (hp HashedPassword) IsValid() bool {
+	return hp != "" && controlCharsFree(hp.String())
+}
+
+func (hp HashedPassword) Validate() error {
+	if !hp.IsValid() {
+		return errors.Join(ErrValidation, errors.New("invalid hashed password"))
+	}
+	return nil
+}
+
+func (hp HashedPassword) String() string {
+	return string(hp)
 }

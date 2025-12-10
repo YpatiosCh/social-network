@@ -6,6 +6,16 @@ import (
 	"fmt"
 )
 
+// Can be used for bio or descritpion.
+//
+// Usage:
+//
+//	var bioCt customtypes
+//	var bioStr string
+//	bioCt = customtypes.About("about me")
+//	bioStr = bio.String()
+type About string
+
 func (a About) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(a))
 }
@@ -21,17 +31,13 @@ func (a *About) UnmarshalJSON(data []byte) error {
 
 func (a About) IsValid() bool {
 	if len(a) == 0 {
-		return true
+		return false
 	}
 	if len(a) < aboutCharsMin || len(a) > aboutCharsMax {
 		return false
 	}
-	for _, r := range a {
-		if r < 32 { // control characters
-			return false
-		}
-	}
-	return true
+
+	return controlCharsFree(a.String())
 }
 
 func (a About) Validate() error {

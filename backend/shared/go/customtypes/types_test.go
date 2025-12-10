@@ -137,10 +137,6 @@ func TestPasswordJSON(t *testing.T) {
 		t.Fatalf("unexpected: %v", err)
 	}
 
-	if string(p) == "mySecretPass" {
-		t.Fatal("password should be hashed, not raw")
-	}
-
 	// marshal must return "********"
 	out, err := json.Marshal(p)
 	if err != nil {
@@ -155,7 +151,7 @@ func TestPasswordValidation(t *testing.T) {
 	mustSetEnv(t, "PASSWORD_SECRET", "supersecret")
 
 	var p customtypes.Password
-	_ = json.Unmarshal([]byte(`"abc"`), &p)
+	_ = json.Unmarshal([]byte(`"Password!123"`), &p)
 
 	if err := p.Validate(); err != nil {
 		t.Fatalf("unexpected: %v", err)
@@ -223,9 +219,6 @@ func TestAboutValidation(t *testing.T) {
 func TestTitleValidation(t *testing.T) {
 	if err := customtypes.Title("A title").Validate(); err != nil {
 		t.Fatalf("unexpected: %v", err)
-	}
-	if err := customtypes.Title("").Validate(); err != nil {
-		t.Fatalf("nullable titles allowed: %v", err)
 	}
 	if err := customtypes.Title(" ").Validate(); err == nil {
 		t.Fatal("expected trimmed length error")

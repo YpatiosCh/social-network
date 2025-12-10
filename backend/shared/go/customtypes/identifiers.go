@@ -9,6 +9,9 @@ import (
 // Email
 // ------------------------------------------------------------
 
+// Not nullable. Error upon validation is returned if string doesn't match email format or is empty.
+type Email string
+
 func (e Email) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(e))
 }
@@ -23,7 +26,7 @@ func (e *Email) UnmarshalJSON(data []byte) error {
 }
 
 func (e Email) IsValid() bool {
-	return emailRegex.MatchString(string(e))
+	return emailRegex.MatchString(string(e)) && controlCharsFree(e.String())
 }
 
 func (e Email) Validate() error {
@@ -41,6 +44,9 @@ func (e Email) String() string {
 // Username
 // ------------------------------------------------------------
 
+// Validation checks for match with usernameRegex `^[a-zA-Z0-9_]{3,32}$`
+type Username string
+
 func (u Username) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(u))
 }
@@ -56,9 +62,9 @@ func (u *Username) UnmarshalJSON(data []byte) error {
 
 func (u Username) IsValid() bool {
 	if u == "" {
-		return true
+		return false
 	}
-	return usernameRegex.MatchString(string(u))
+	return usernameRegex.MatchString(string(u)) && controlCharsFree(u.String())
 }
 
 func (u Username) Validate() error {
@@ -76,6 +82,10 @@ func (u Username) String() string {
 // Identifier (username or email)
 // ------------------------------------------------------------
 
+// Represents user name or email. Identifier is a non nullable field.
+// If the value doesn match username or email regexes then it is considered invalid.
+type Identifier string
+
 func (i Identifier) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(i))
 }
@@ -90,11 +100,8 @@ func (i *Identifier) UnmarshalJSON(data []byte) error {
 }
 
 func (i Identifier) IsValid() bool {
-	if i == "" {
-		return true
-	}
 	s := string(i)
-	return usernameRegex.MatchString(s) || emailRegex.MatchString(s)
+	return (usernameRegex.MatchString(s) || emailRegex.MatchString(s)) && controlCharsFree(i.String())
 }
 
 func (i Identifier) Validate() error {

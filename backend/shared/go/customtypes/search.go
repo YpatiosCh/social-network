@@ -10,6 +10,9 @@ import (
 // Search
 // ------------------------------------------------------------
 
+// SearchTerm represents a validated search query term
+type SearchTerm string
+
 func (s SearchTerm) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(s))
 }
@@ -33,7 +36,7 @@ func (s SearchTerm) IsValid() bool {
 	// Optional: enforce allowed characters (letters, numbers, spaces, hyphens)
 	// Adjust regex as needed.
 	re := regexp.MustCompile(`^[A-Za-z0-9\s\-]+$`)
-	return re.MatchString(string(s))
+	return re.MatchString(string(s)) && controlCharsFree(s.String())
 }
 
 // Validate returns a descriptive error if the value is invalid.

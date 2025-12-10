@@ -2,7 +2,6 @@ package models
 
 import (
 	ct "social-network/shared/go/customtypes"
-	"time"
 )
 
 type CreatePrivateConvParams struct {
@@ -18,9 +17,9 @@ type CreateGroupConvParams struct {
 type Conversation struct {
 	ID        ct.Id
 	GroupID   ct.Id
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time
+	CreatedAt ct.GenDateTime `validation:"nullable"`
+	UpdatedAt ct.GenDateTime `validation:"nullable"`
+	DeletedAt ct.GenDateTime `validation:"nullable"`
 }
 
 type AddMembersToGroupConversationParams struct {

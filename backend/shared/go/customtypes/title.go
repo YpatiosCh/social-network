@@ -11,6 +11,9 @@ import (
 // Title (group/chat title)
 // ------------------------------------------------------------
 
+// Refers to title of content (not to be confused with honorifics: mr, mrs etc). Title is a nullable field.
+type Title string
+
 func (t Title) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(t))
 }
@@ -26,7 +29,7 @@ func (t *Title) UnmarshalJSON(data []byte) error {
 
 func (t Title) IsValid() bool {
 	if t == "" {
-		return true
+		return false
 	}
 
 	s := strings.TrimSpace(string(t))
@@ -34,14 +37,7 @@ func (t Title) IsValid() bool {
 		return false
 	}
 
-	// No control chars
-	for _, r := range s {
-		if r < 32 {
-			return false
-		}
-	}
-
-	return true
+	return controlCharsFree(t.String())
 }
 
 func (t Title) Validate() error {

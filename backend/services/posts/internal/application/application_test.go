@@ -209,7 +209,7 @@ func TestCreateEvent_EditDeleteRespond_Success(t *testing.T) {
 
 	app := NewApplicationWithMocksTx(dbMock, clientMock, txMock)
 
-	createReq := models.CreateEventReq{CreatorId: ct.Id(11), GroupId: ct.Id(2), Title: ct.Title("t"), Body: ct.EventBody("event body"), EventDate: ct.EventDate(time.Now())}
+	createReq := models.CreateEventReq{CreatorId: ct.Id(11), GroupId: ct.Id(2), Title: ct.Title("t"), Body: ct.EventBody("event body"), EventDate: ct.EventDateTime(time.Now())}
 	err := app.CreateEvent(ctx, createReq)
 	assert.NoError(t, err)
 
@@ -223,7 +223,7 @@ func TestCreateEvent_EditDeleteRespond_Success(t *testing.T) {
 	dbMock.On("UpsertImage", mock.Anything, mock.Anything).Return(nil)
 	txMock.On("RunTx", mock.Anything).Return(nil)
 
-	editReq := models.EditEventReq{EventId: ct.Id(60), RequesterId: ct.Id(11), Title: ct.Title("t2"), Body: ct.EventBody("event edit"), EventDate: ct.EventDate(time.Now()), Image: ct.Id(1)}
+	editReq := models.EditEventReq{EventId: ct.Id(60), RequesterId: ct.Id(11), Title: ct.Title("t2"), Body: ct.EventBody("event edit"), EventDate: ct.EventDateTime(time.Now()), Image: ct.Id(1)}
 	err = app.EditEvent(ctx, editReq)
 	assert.NoError(t, err)
 

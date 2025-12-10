@@ -364,7 +364,7 @@ func (s *PostsHandler) CreateEvent(ctx context.Context, req *pb.CreateEventReq) 
 		CreatorId: ct.Id(req.CreatorId),
 		GroupId:   ct.Id(req.GroupId),
 		Image:     ct.Id(req.Image),
-		EventDate: ct.EventDate(req.EventDate.AsTime()),
+		EventDate: ct.EventDateTime(req.EventDate.AsTime()),
 	})
 	if err != nil {
 		fmt.Println("Error in CreateEvent:", err)
@@ -400,7 +400,7 @@ func (s *PostsHandler) EditEvent(ctx context.Context, req *pb.EditEventReq) (*em
 		Title:       ct.Title(req.Title),
 		Body:        ct.EventBody(req.Body),
 		Image:       ct.Id(req.Image),
-		EventDate:   ct.EventDate(req.EventDate.AsTime()),
+		EventDate:   ct.EventDateTime(req.EventDate.AsTime()),
 	})
 	if err != nil {
 		fmt.Println("Error in EditEvent:", err)

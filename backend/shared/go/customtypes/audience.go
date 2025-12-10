@@ -11,6 +11,9 @@ import (
 // Audience
 // ------------------------------------------------------------
 
+// Can be used for post, comment, event body.
+type Audience string
+
 func (au Audience) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(au))
 }
@@ -25,12 +28,15 @@ func (au *Audience) UnmarshalJSON(data []byte) error {
 }
 
 func (au Audience) IsValid() bool {
+	if au == "" {
+		return false
+	}
 	for _, permittedValue := range permittedAudienceValues {
 		if strings.EqualFold(au.String(), permittedValue) {
 			return true
 		}
 	}
-	return false
+	return controlCharsFree(au.String())
 }
 
 func (au Audience) Validate() error {

@@ -10,6 +10,9 @@ import (
 // PostBody
 // ------------------------------------------------------------
 
+// Can be used for post body.
+type PostBody string
+
 func (b PostBody) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(b))
 }
@@ -25,7 +28,7 @@ func (b *PostBody) UnmarshalJSON(data []byte) error {
 
 func (b PostBody) IsValid() bool {
 	if len(b) == 0 {
-		return true
+		return false
 	}
 	if len(b) < postBodyCharsMin || len(b) > postBodyCharsMax {
 		return false
@@ -57,6 +60,9 @@ func (b PostBody) String() string {
 // CommentBody
 // ------------------------------------------------------------
 
+// Can be used for comment body
+type CommentBody string
+
 func (c CommentBody) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(c))
 }
@@ -72,17 +78,13 @@ func (c *CommentBody) UnmarshalJSON(data []byte) error {
 
 func (c CommentBody) IsValid() bool {
 	if len(c) == 0 {
-		return true
+		return false
 	}
 	if len(c) < commentBodyCharsMin || len(c) > commentBodyCharsMax {
 		return false
 	}
-	for _, r := range c {
-		if r < 32 { // control characters
-			return false
-		}
-	}
-	return true
+
+	return controlCharsFree(c.String())
 }
 
 func (c CommentBody) Validate() error {
@@ -104,6 +106,9 @@ func (c CommentBody) String() string {
 // EventBody
 // ------------------------------------------------------------
 
+// Can be used for event body.
+type EventBody string
+
 func (eb EventBody) MarshalJSON() ([]byte, error) {
 	return json.Marshal(string(eb))
 }
@@ -119,17 +124,12 @@ func (eb *EventBody) UnmarshalJSON(data []byte) error {
 
 func (eb EventBody) IsValid() bool {
 	if len(eb) == 0 {
-		return true
+		return false
 	}
 	if len(eb) < eventBodyCharsMin || len(eb) > eventBodyCharsMax {
 		return false
 	}
-	for _, r := range eb {
-		if r < 32 { // control characters
-			return false
-		}
-	}
-	return true
+	return controlCharsFree(eb.String())
 }
 
 func (eb EventBody) Validate() error {

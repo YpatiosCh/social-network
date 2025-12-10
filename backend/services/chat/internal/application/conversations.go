@@ -57,12 +57,16 @@ func (c *ChatService) DeleteConversationByExactMembers(ctx context.Context, ids 
 	if err != nil {
 		return models.Conversation{}, err
 	}
+
+	if resp == (sqlc.Conversation{}) {
+		return models.Conversation{}, fmt.Errorf("conversation not found")
+	}
 	return models.Conversation{
 		ID:        ct.Id(resp.ID),
 		GroupID:   ct.Id(resp.GroupID.Int64),
-		CreatedAt: resp.CreatedAt.Time,
-		UpdatedAt: resp.UpdatedAt.Time,
-		DeletedAt: resp.DeletedAt.Time,
+		CreatedAt: ct.GenDateTime(resp.CreatedAt.Time),
+		UpdatedAt: ct.GenDateTime(resp.UpdatedAt.Time),
+		DeletedAt: ct.GenDateTime(resp.DeletedAt.Time),
 	}, nil
 }
 

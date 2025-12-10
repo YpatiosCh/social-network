@@ -10,7 +10,7 @@ import (
 //   - If a field does not have `validate:"nullable"` tag, zero values are flagged as errors.
 //   - Nullable fields if empty return nil error.
 //   - All primitives are excluded except slices containing custom types.
-//   - If a field is a slice and has tag `ellements:"nullable"` the custom types inside the slice are allowed to be null if that type allows it.
+//   - If a field is a slice of a custom type null values are considered invalid.
 //
 // Example:
 //
@@ -42,27 +42,26 @@ func ValidateStruct(s any) error {
 
 		val := fieldVal.Interface()
 		validator, implementsValidator := val.(Validator)
-
-		validateTag := fieldType.Tag.Get("validate")
-
-		nullable := validateTag == "nullable"
-
 		if !implementsValidator {
 			continue
 		}
 
-		_, zeroOk := allowedZeroVal[fieldVal.Type().Name()]
+		validateTag := fieldType.Tag.Get("validate")
+		nullable := validateTag == "nullable"
+		_, zeroOk := alwaysAllowZero[fieldVal.Type().Name()]
 
-		if !nullable && !zeroOk {
-			if isZeroValue(fieldVal) {
+		// Handle custom types with zero (null) value
+		if isZeroValue(fieldVal) {
+			// Check for null fields that are not allowed to be null
+			if !nullable && !zeroOk {
 				allErrors = append(allErrors, fmt.Sprintf("%s: required field missing", fieldType.Name))
 				continue
 			}
-		}
 
-		// Skip validation for nullable fields that are empty
-		if nullable && isZeroValue(fieldVal) {
-			continue
+			// Skip validation for nullable fields that are empty
+			if nullable {
+				continue
+			}
 		}
 
 		if implementsValidator {

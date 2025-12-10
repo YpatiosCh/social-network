@@ -10,6 +10,11 @@ import (
 	"github.com/speps/go-hashids/v2"
 )
 
+// Allows null values.
+// When Umarshaled to JSON format the int64 value is encrypted using "github.com/speps/go-hashids/v2".
+// Relies on enviromental variable "ENC_KEY" to be present.
+type EncryptedId int64
+
 var salt string = os.Getenv("ENC_KEY")
 
 var hd = func() *hashids.HashID {
@@ -74,6 +79,9 @@ func (e EncryptedId) Int64() int64 {
 // Id
 // ------------------------------------------------------------
 
+// Validation requires for the int64 value to be above zero.
+type Id int64
+
 func (i Id) MarshalJSON() ([]byte, error) {
 	return json.Marshal(int64(i))
 }
@@ -106,6 +114,9 @@ func (i Id) Int64() int64 {
 // Ids
 // ------------------------------------------------------------
 
+// Validation does not allow zero len slices or indexes with null values.
+type Ids []Id
+
 func (ids Ids) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ids.Int64())
 }
@@ -126,6 +137,9 @@ func (ids *Ids) UnmarshalJSON(data []byte) error {
 }
 
 func (ids Ids) IsValid() bool {
+	if len(ids) == 0 {
+		return false
+	}
 	for _, i := range ids {
 		if !i.IsValid() {
 			return false

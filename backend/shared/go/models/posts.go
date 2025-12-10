@@ -134,7 +134,7 @@ type Event struct {
 	Body          ct.EventBody
 	User          User
 	GroupId       ct.Id
-	EventDate     ct.EventDate
+	EventDate     ct.EventDateTime
 	GoingCount    int
 	NotGoingCount int
 	Image         ct.Id `validate:"nullable"`
@@ -152,7 +152,7 @@ type CreateEventReq struct {
 	CreatorId ct.Id
 	GroupId   ct.Id
 	Image     ct.Id `validate:"nullable"`
-	EventDate ct.EventDate
+	EventDate ct.EventDateTime
 }
 
 type EditEventReq struct {
@@ -161,7 +161,7 @@ type EditEventReq struct {
 	Title       ct.Title
 	Body        ct.EventBody
 	Image       ct.Id `validate:"nullable"`
-	EventDate   ct.EventDate
+	EventDate   ct.EventDateTime
 }
 
 type RespondToEventReq struct {

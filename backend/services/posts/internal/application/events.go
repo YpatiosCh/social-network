@@ -177,7 +177,7 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 				UserId: ct.Id(r.EventCreatorID),
 			},
 			GroupId:       ct.Id(r.GroupID),
-			EventDate:     ct.EventDate(r.EventDate.Time),
+			EventDate:     ct.EventDateTime(r.EventDate.Time),
 			GoingCount:    int(r.GoingCount),
 			NotGoingCount: int(r.NotGoingCount),
 			Image:         ct.Id(r.Image),

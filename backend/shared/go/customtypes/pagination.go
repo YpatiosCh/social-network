@@ -10,6 +10,9 @@ import (
 // Limit
 // ------------------------------------------------------------
 
+// Non zero type. Validation returns error if zero or above limit
+type Limit int32
+
 func (l Limit) MarshalJSON() ([]byte, error) {
 	return json.Marshal(int32(l))
 }
@@ -41,6 +44,9 @@ func (l Limit) Int32() int32 {
 // ------------------------------------------------------------
 // Offset
 // ------------------------------------------------------------
+
+// Non negative type. Validation returns error if below zero or above limit
+type Offset int32
 
 func (o Offset) MarshalJSON() ([]byte, error) {
 	return json.Marshal(int32(o))
