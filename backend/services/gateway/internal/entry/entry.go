@@ -17,7 +17,6 @@ import (
 	"social-network/shared/go/gorpc"
 
 	redis_connector "social-network/shared/go/redis"
-	tele "social-network/shared/go/telemetry"
 	"syscall"
 	"time"
 
@@ -32,11 +31,7 @@ func Start() {
 
 	gatewayApplication := application.GatewayApp{}
 
-	defer setupOpenTelemetry(ctx)
-
-	/* ==============================
-	          REDIS SETUP
-	==============================*/
+	// REDIS
 	gatewayApplication.Redis = redis_connector.NewRedisClient("redis:6379", "", 0)
 	err := gatewayApplication.Redis.TestRedisConnection()
 	if err != nil {
@@ -44,9 +39,7 @@ func Start() {
 	}
 	fmt.Println("redis connection started correctly")
 
-	/*==============================
-	      REMOTE gRPC SERVICES
-	==============================*/
+	// GRPC CLIENTS
 	gatewayApplication.Users, err = gorpc.GetGRpcClient(users.NewUserServiceClient, "users:50051", []ct.CtxKey{ct.UserId, ct.ReqID, ct.TraceId})
 	if err != nil {
 		log.Fatalf("failed to connect to users service: %v", err)
@@ -56,24 +49,7 @@ func Start() {
 		log.Fatalf("failed to connect to chat service: %v", err)
 	}
 
-	/*
-
-		==============================
-		         PROMETHEUS EXPORTER SERVER
-		==============================
-	*/
-	// TODO finish setting up promethius exporting endpoint
-	// metricsServer := &http.Server{
-	// 	Addr:    ":2222",
-	// 	Handler: nil, // Will be set below
-	// }
-
-	/*
-
-		==============================
-		        HANDLER + ROUTER
-		==============================
-	*/
+	// HANDLER
 	fmt.Println(gatewayApplication)
 	apiHandlers, err := handlers.NewHandlers(gatewayApplication)
 	if err != nil {
@@ -81,11 +57,7 @@ func Start() {
 	}
 	apiMux := apiHandlers.BuildMux("gateway")
 
-	/*
-		==============================
-		         API GATEWAY HTTP SERVER
-		==============================
-	*/
+	// SERVER
 	var server = &http.Server{
 		Handler:     apiMux,
 		Addr:        "0.0.0.0:8081",
@@ -98,12 +70,7 @@ func Start() {
 		srvErr <- server.ListenAndServe()
 	}()
 
-	/*
-
-		==============================
-		         SHUTDOWN LOGIC
-		==============================
-	*/
+	// SHUTDOWN
 	select {
 	case err = <-srvErr:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -122,21 +89,4 @@ func Start() {
 	}
 
 	log.Println("Server stopped")
-}
-
-func setupOpenTelemetry(ctx context.Context) func() {
-	otelShutdown, err := tele.SetupOTelSDK(ctx)
-	if err != nil {
-		log.Fatal("open telemetry sdk failed, ERROR:", err.Error())
-	}
-	fmt.Println("open telemetry ready")
-
-	return func() {
-		err := otelShutdown(context.Background())
-		if err != nil {
-			log.Println("otel shutdown ungracefully! ERROR: " + err.Error())
-		} else {
-			log.Println("otel shutdown gracefully")
-		}
-	}
 }

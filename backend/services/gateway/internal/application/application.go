@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type RedisClient interface {
+type CacheService interface {
 	IncrEx(ctx context.Context, key string, expSeconds int64) (int, error)
 	SetStr(ctx context.Context, key string, value string, exp time.Duration) error
 	GetStr(ctx context.Context, key string) (any, error)
@@ -17,9 +17,10 @@ type RedisClient interface {
 	TestRedisConnection() error
 }
 
+// GatewayApp is what holds all the tools that this server needs
 type GatewayApp struct {
 	//telemetry
-	Redis RedisClient
+	Redis CacheService
 	Users users.UserServiceClient
 	Chat  chat.ChatServiceClient
 }
