@@ -25,13 +25,23 @@ export default function GroupsSections({ myGroups, availableGroups }) {
 
     const canLoadMoreMy = myLimit < myGroups.length;
     const canLoadMoreAvailable = availableLimit < availableGroups.length;
+    const canShowLessMy = myLimit > PAGE_SIZE;
+    const canShowLessAvailable = availableLimit > PAGE_SIZE;
 
     const handleLoadMoreMy = () => {
         setMyLimit((prev) => Math.min(prev + PAGE_SIZE, myGroups.length));
     };
 
+    const handleShowLessMy = () => {
+        setMyLimit(Math.min(PAGE_SIZE, myGroups.length));
+    };
+
     const handleLoadMoreAvailable = () => {
         setAvailableLimit((prev) => Math.min(prev + PAGE_SIZE, availableGroups.length));
+    };
+
+    const handleShowLessAvailable = () => {
+        setAvailableLimit(Math.min(PAGE_SIZE, availableGroups.length));
     };
 
     return (
@@ -49,15 +59,26 @@ export default function GroupsSections({ myGroups, availableGroups }) {
                         ))}
                     </div>
 
-                    {canLoadMoreMy && (
-                        <div className="flex justify-center mt-6">
-                            <button
-                                type="button"
-                                onClick={handleLoadMoreMy}
-                                className="px-5 py-2 rounded-full border border-(--muted)/30 text-sm font-medium hover:border-(--foreground) transition-colors"
-                            >
-                                Load more
-                            </button>
+                    {(canLoadMoreMy || canShowLessMy) && (
+                        <div className="flex justify-center mt-6 gap-3">
+                            {canLoadMoreMy && (
+                                <button
+                                    type="button"
+                                    onClick={handleLoadMoreMy}
+                                    className="px-5 py-2 rounded-full border border-(--muted)/30 text-sm font-medium hover:border-(--foreground) transition-colors"
+                                >
+                                    Load more
+                                </button>
+                            )}
+                            {canShowLessMy && (
+                                <button
+                                    type="button"
+                                    onClick={handleShowLessMy}
+                                    className="px-5 py-2 rounded-full border border-(--muted)/30 text-sm font-medium hover:border-(--foreground) transition-colors"
+                                >
+                                    Show less
+                                </button>
+                            )}
                         </div>
                     )}
                 </section>
@@ -88,15 +109,26 @@ export default function GroupsSections({ myGroups, availableGroups }) {
                         ))}
                     </div>
 
-                    {canLoadMoreAvailable && (
-                        <div className="flex justify-center mt-6">
-                            <button
-                                type="button"
-                                onClick={handleLoadMoreAvailable}
-                                className="px-5 py-2 rounded-full border border-(--muted)/30 text-sm font-medium hover:border-(--foreground) transition-colors"
-                            >
-                                Load more
-                            </button>
+                    {(canLoadMoreAvailable || canShowLessAvailable) && (
+                        <div className="flex justify-center mt-6 gap-3">
+                            {canLoadMoreAvailable && (
+                                <button
+                                    type="button"
+                                    onClick={handleLoadMoreAvailable}
+                                    className="px-5 py-2 rounded-full border border-(--muted)/30 text-sm font-medium hover:border-(--foreground) transition-colors"
+                                >
+                                    Load more
+                                </button>
+                            )}
+                            {canShowLessAvailable && (
+                                <button
+                                    type="button"
+                                    onClick={handleShowLessAvailable}
+                                    className="px-5 py-2 rounded-full border border-(--muted)/30 text-sm font-medium hover:border-(--foreground) transition-colors"
+                                >
+                                    Show less
+                                </button>
+                            )}
                         </div>
                     )}
                 </section>
