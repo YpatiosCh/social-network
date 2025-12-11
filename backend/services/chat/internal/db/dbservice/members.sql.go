@@ -6,16 +6,6 @@ import (
 	md "social-network/shared/go/models"
 )
 
-const addConversationMembers = `-- name: AddConversationMembers :exec
-INSERT INTO conversation_members (conversation_id, user_id, last_read_message_id)
-SELECT $1, UNNEST($2::bigint[]), NULL
-`
-
-func (q *Queries) AddConversationMembers(ctx context.Context, arg md.AddConversationMembersParams) error {
-	_, err := q.db.Exec(ctx, addConversationMembers, arg.ConversationId, arg.UserIds)
-	return err
-}
-
 const getConversationMembers = `-- name: GetConversationMembers :many
 SELECT cm2.user_id
 FROM conversation_members cm1
@@ -27,8 +17,14 @@ WHERE cm1.user_id = $2
   AND cm2.deleted_at IS NULL
 `
 
-func (q *Queries) GetConversationMembers(ctx context.Context, arg md.GetConversationMembersParams) (members ct.Ids, err error) {
-	rows, err := q.db.Query(ctx, getConversationMembers, arg.ConversationID, arg.UserID)
+// Returns memebers of a conversation that user is a member.
+// OK!
+func (q *Queries) GetConversationMembers(ctx context.Context,
+	arg md.GetConversationMembersParams) (members ct.Ids, err error) {
+	rows, err := q.db.Query(ctx,
+		getConversationMembers,
+		arg.ConversationID,
+		arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,30 +44,34 @@ func (q *Queries) GetConversationMembers(ctx context.Context, arg md.GetConversa
 	return members, nil
 }
 
-const softDeleteConversationMember = `
-UPDATE conversation_members cm_target
+const deleteConversationMember = `
+UPDATE conversation_members to_delete
 SET deleted_at = NOW()
-FROM conversation_members cm_actor
-WHERE cm_target.conversation_id = $1
-  AND cm_target.user_id = $2
-  AND cm_target.deleted_at IS NULL
-  AND cm_actor.conversation_id = $1
-  AND cm_actor.user_id = $3
-  AND cm_actor.deleted_at IS NULL
-RETURNING cm_target.conversation_id, cm_target.user_id, cm_target.last_read_message_id, cm_target.joined_at, cm_target.deleted_at
+FROM conversation_members owner
+WHERE to_delete.conversation_id = $1
+  AND to_delete.user_id = $2
+  AND to_delete.deleted_at IS NULL
+  AND owner.conversation_id = $1
+  AND owner.user_id = $3
+  AND owner.deleted_at IS NULL
+RETURNING to_delete.conversation_id, to_delete.user_id, to_delete.last_read_message_id, cm_target.joined_at, cm_target.deleted_at
 `
 
-func (q *Queries) SoftDeleteConversationMember(ctx context.Context,
-	arg md.SoftDeleteConversationMemberParams,
-) (md.ConversationMember, error) {
-	row := q.db.QueryRow(ctx, softDeleteConversationMember, arg.ConversationID, arg.UserId, arg.UserId_2)
-	var i md.ConversationMember
-	err := row.Scan(
-		&i.ConversationID,
-		&i.UserID,
-		&i.LastReadMessageID,
-		&i.JoinedAt,
-		&i.DeletedAt,
+// Deletes conversation member from conversation where user tagged as owner is a part of.
+// Returnes user deleted details.
+// Can be used for self deletation if owner and toDelete are that same id.
+// OK!
+func (q *Queries) DeleteConversationMember(ctx context.Context,
+	arg md.DeleteConversationMemberParams,
+) (dltMember md.ConversationMemberDeleted, err error) {
+	row := q.db.QueryRow(ctx, deleteConversationMember,
+		arg.ConversationID, arg.ToDelete, arg.Owner)
+	err = row.Scan(
+		&dltMember.ConversationID,
+		&dltMember.UserID,
+		&dltMember.LastReadMessageID,
+		&dltMember.JoinedAt,
+		&dltMember.DeletedAt,
 	)
-	return i, err
+	return dltMember, err
 }

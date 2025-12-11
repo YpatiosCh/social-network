@@ -5,7 +5,7 @@ import (
 	md "social-network/shared/go/models"
 )
 
-const createMessage = `-- name: CreateMessage :one
+const createMessage = `
 INSERT INTO messages (conversation_id, sender_id, message_text)
 SELECT $1, $2, $3
 FROM conversation_members
@@ -15,22 +15,25 @@ WHERE conversation_id = $1
 RETURNING id, conversation_id, sender_id, message_text, created_at, updated_at, deleted_at
 `
 
-func (q *Queries) CreateMessage(ctx context.Context, arg md.CreateMessageParams) (md.MessageResp, error) {
+// Creates a message row with conversation id if user is a memeber.
+// If user match of conversation id and user id fails no rows are returned.
+func (q *Queries) CreateMessage(ctx context.Context,
+	arg md.CreateMessageParams) (msg md.MessageResp, err error) {
 	row := q.db.QueryRow(ctx, createMessage, arg.ConversationId, arg.SenderId, arg.MessageText)
-	var i md.MessageResp
-	err := row.Scan(
-		&i.Id,
-		&i.ConversationID,
-		&i.SenderID,
-		&i.MessageText,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
+	err = row.Scan(
+		&msg.Id,
+		&msg.ConversationID,
+		&msg.SenderID,
+		&msg.MessageText,
+		&msg.CreatedAt,
+		&msg.UpdatedAt,
+		&msg.DeletedAt,
 	)
-	return i, err
+	return msg, err
 }
 
-const getMessages = `-- name: GetMessages :many
+// Check this for efficiency
+const getMessages = `
 SELECT m.id, m.conversation_id, m.sender_id, m.message_text, m.created_at, m.updated_at, m.deleted_at
 FROM messages m
 JOIN conversation_members cm 
@@ -42,7 +45,8 @@ ORDER BY m.created_at ASC
 LIMIT $3 OFFSET $4
 `
 
-func (q *Queries) GetMessages(ctx context.Context, arg md.GetMessagesParams) (messages []md.MessageResp, err error) {
+func (q *Queries) GetMessages(ctx context.Context,
+	arg md.GetMessagesParams) (messages []md.MessageResp, err error) {
 	rows, err := q.db.Query(ctx, getMessages,
 		arg.ConversationId,
 		arg.UserId,
@@ -86,15 +90,14 @@ RETURNING conversation_id, user_id, last_read_message_id, joined_at, deleted_at
 
 func (q *Queries) UpdateLastReadMessage(ctx context.Context,
 	arg md.UpdateLastReadMessageParams,
-) (md.ConversationMember, error) {
+) (member md.ConversationMember, err error) {
 	row := q.db.QueryRow(ctx, updateLastReadMessage, arg.ConversationId, arg.UserID, arg.LastReadMessageId)
-	var i md.ConversationMember
-	err := row.Scan(
-		&i.ConversationID,
-		&i.UserID,
-		&i.LastReadMessageID,
-		&i.JoinedAt,
-		&i.DeletedAt,
+	err = row.Scan(
+		&member.ConversationID,
+		&member.UserID,
+		&member.LastReadMessageID,
+		&member.JoinedAt,
+		&member.DeletedAt,
 	)
-	return i, err
+	return member, err
 }

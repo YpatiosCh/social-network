@@ -4,8 +4,6 @@ import (
 	"context"
 	ct "social-network/shared/go/customtypes"
 	md "social-network/shared/go/models"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addMembersToGroupConversation = `-- name: AddMembersToGroupConversation :one
@@ -23,11 +21,6 @@ insert_members AS (
 )
 SELECT id FROM convo
 `
-
-type AddMembersToGroupConversationParams struct {
-	GroupID pgtype.Int8
-	UserIds []int64
-}
 
 // Find a conversation by group_id and insert the given user_ids into conversation_members.
 // existing members are ignored, new members are added.

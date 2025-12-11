@@ -25,6 +25,19 @@ func (q *Queries) CreateGroupConv(ctx context.Context,
 	return convId, err
 }
 
+const addConversationMembers = `-- name: AddConversationMembers :exec
+INSERT INTO conversation_members (conversation_id, user_id, last_read_message_id)
+SELECT $1, UNNEST($2::bigint[]), NULL
+`
+
+// Add UserIDs to ConvID
+// OK!
+func (q *Queries) AddConversationMembers(ctx context.Context,
+	arg md.AddConversationMembersParams) error {
+	_, err := q.db.Exec(ctx, addConversationMembers, arg.ConversationId, arg.UserIds)
+	return err
+}
+
 const createPrivateConv = `
 WITH existing AS (
     SELECT c.id
@@ -41,6 +54,7 @@ RETURNING id
 
 // Creates a Conversation if and only if a conversation between the same 2 users does not exist.
 // Returns NULL if a duplicate DM exists (sql will error if RETURNING finds no rows).
+// OK!
 func (q *Queries) CreatePrivateConv(ctx context.Context,
 	arg md.CreatePrivateConvParams,
 ) (convId ct.Id, err error) {
@@ -79,7 +93,8 @@ RETURNING id, group_id, created_at, updated_at, deleted_at
 // Delete a conversation only if its members exactly match the provided list.
 // Returns 0 rows if conversation doesn't exist, members don’t match exactly, conversation has extra or missing members.
 // OK!
-func (q *Queries) DeleteConversationByExactMembers(ctx context.Context, memberIds ct.Ids) (md.ConversationDeleteResp, error) {
+func (q *Queries) DeleteConversationByExactMembers(ctx context.Context,
+	memberIds ct.Ids) (md.ConversationDeleteResp, error) {
 	row := q.db.QueryRow(ctx, deleteConversationByExactMembers, memberIds)
 	var i md.ConversationDeleteResp
 	err := row.Scan(
@@ -92,7 +107,7 @@ func (q *Queries) DeleteConversationByExactMembers(ctx context.Context, memberId
 	return i, err
 }
 
-const getUserPrivateConversations = `
+const getUserConversations = `
 WITH user_conversations AS (
     SELECT c.id AS conversation_id,
 		   c.created_at,
@@ -149,10 +164,10 @@ ORDER BY uc.last_message_id DESC;
 func (q *Queries) GetUserConversations(
 	ctx context.Context,
 	arg md.GetUserConversationsParams,
-) ([]md.GetUserConversationsRow, error) {
+) (conversations []md.GetUserConversationsRow, err error) {
 
 	rows, err := q.db.Query(ctx,
-		getUserPrivateConversations,
+		getUserConversations,
 		arg.UserId,
 		arg.Limit,
 		arg.Offset,
@@ -162,8 +177,6 @@ func (q *Queries) GetUserConversations(
 		return nil, err
 	}
 	defer rows.Close()
-
-	var items []md.GetUserConversationsRow
 
 	for rows.Next() {
 		var i md.GetUserConversationsRow
@@ -180,12 +193,12 @@ func (q *Queries) GetUserConversations(
 			return nil, err
 		}
 
-		items = append(items, i)
+		conversations = append(conversations, i)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return items, nil
+	return conversations, nil
 }

@@ -56,9 +56,17 @@ type ConversationResponse struct {
 type ConversationMember struct {
 	ConversationID    ct.Id
 	UserID            ct.Id
-	LastReadMessageID ct.Id
+	LastReadMessageID ct.Id `validation:"nullable"`
 	JoinedAt          ct.GenDateTime
 	DeletedAt         ct.GenDateTime `validation:"nullable"`
+}
+
+type ConversationMemberDeleted struct {
+	ConversationID    ct.Id
+	UserID            ct.Id
+	LastReadMessageID ct.Id `validation:"nullable"`
+	JoinedAt          ct.GenDateTime
+	DeletedAt         ct.GenDateTime
 }
 
 type GetConversationMembersParams struct {
@@ -92,10 +100,10 @@ type MessageResp struct {
 	DeletedAt      ct.GenDateTime `validation:"nullable"`
 }
 
-type SoftDeleteConversationMemberParams struct {
+type DeleteConversationMemberParams struct {
 	ConversationID ct.Id
-	UserId         ct.Id
-	UserId_2       ct.Id
+	Owner          ct.Id
+	ToDelete       ct.Id
 }
 
 type UpdateLastReadMessageParams struct {

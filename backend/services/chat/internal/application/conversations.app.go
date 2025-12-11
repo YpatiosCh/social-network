@@ -9,6 +9,8 @@ import (
 	md "social-network/shared/go/models"
 )
 
+// Creates a Conversation if and only if a conversation between the same 2 users does not exist.
+// Returns NULL if a duplicate DM exists (sql will error if RETURNING finds no rows).
 func (c *ChatService) CreatePrivateConversation(ctx context.Context,
 	params md.CreatePrivateConvParams) (convId ct.Id, err error) {
 	if err := ct.ValidateStruct(params); err != nil {
@@ -62,18 +64,11 @@ func (c *ChatService) DeleteConversationByExactMembers(ctx context.Context,
 	return conv, err
 }
 
-// Find a conversation by group_id and insert the given user_ids into conversation_members.
-// existing members are ignored, new members are added.
-func (c *ChatService) AddMembersToGroupConversation(ctx context.Context,
-	params md.AddMembersToGroupConversationParams) (convId ct.Id, err error) {
-	if err := ct.ValidateStruct(params); err != nil {
-		return 0, err
-	}
-	return c.Queries.AddMembersToGroupConversation(ctx, params)
-}
-
+// Fetches paginated conversation details, conversation members Ids and unread messages count for a user and a group
+// To get DMS group Id parameter must be zero.
 func (c *ChatService) GetUserConversations(ctx context.Context,
-	arg md.GetUserConversationsParams) ([]md.GetUserConversationsRow, error) {
+	arg md.GetUserConversationsParams,
+) (conversations []md.GetUserConversationsRow, err error) {
 	if err := ct.ValidateStruct(arg); err != nil {
 		return nil, err
 	}
