@@ -14,7 +14,7 @@ import (
 // Existing members are ignored, new members are added.
 func (h *ChatHandler) AddMembersToGroupConversation(ctx context.Context, params *chat.AddMembersToGroupConversationParams) (*chat.ConvId, error) {
 	resp, err := h.Application.AddMembersToGroupConversation(ctx, models.AddMembersToGroupConversationParams{
-		GroupID: customtypes.Id(params.GroupId),
+		GroupId: customtypes.Id(params.GroupId),
 		UserIds: customtypes.FromInt64s(params.UserIds),
 	})
 	if err != nil {

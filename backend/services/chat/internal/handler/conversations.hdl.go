@@ -23,7 +23,7 @@ func (h *ChatHandler) CreatePrivateConversation(ctx context.Context, params *pb.
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create private conversation %v", err)
 	}
-	return &pb.ConvId{ConvId: convId}, nil
+	return &pb.ConvId{ConvId: convId.Int64()}, nil
 }
 
 func (h *ChatHandler) CreateGroupConversation(ctx context.Context, params *pb.CreateGroupConvParams) (*pb.ConvId, error) {
@@ -34,7 +34,7 @@ func (h *ChatHandler) CreateGroupConversation(ctx context.Context, params *pb.Cr
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create private conversation %v", err)
 	}
-	return &pb.ConvId{ConvId: convId}, nil
+	return &pb.ConvId{ConvId: convId.Int64()}, nil
 }
 
 // Delete a conversation only if its members exactly match the provided list.
@@ -45,10 +45,12 @@ func (h *ChatHandler) DeleteConversationByExactMembers(ctx context.Context, user
 		return nil, status.Errorf(codes.Internal, "failed to delete conversation %v", err)
 	}
 	return &pb.Conversation{
-		Id:        resp.ID.Int64(),
-		GroupId:   resp.GroupID.Int64(),
+		Id:        resp.Id.Int64(),
+		GroupId:   resp.GroupId.Int64(),
 		CreatedAt: resp.CreatedAt.ToProto(),
 		UpdatedAt: resp.UpdatedAt.ToProto(),
 		DeletedAt: resp.DeletedAt.ToProto(),
 	}, nil
 }
+
+// GetUserConversations

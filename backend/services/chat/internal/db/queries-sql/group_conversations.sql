@@ -16,3 +16,6 @@ insert_members AS (
     RETURNING conversation_id
 )
 SELECT id FROM convo;
+
+-- GetConversationAndMessagesByGroupId
+

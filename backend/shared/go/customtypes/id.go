@@ -136,7 +136,7 @@ func (i Id) Value() (driver.Value, error) {
 	if !i.IsValid() {
 		return nil, nil
 	}
-	return i.Int64, nil
+	return i.Int64(), nil
 }
 
 func (i Id) Int64() int64 {

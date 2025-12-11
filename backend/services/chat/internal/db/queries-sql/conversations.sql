@@ -19,30 +19,34 @@ INSERT INTO conversations (group_id)
 VALUES ($1)
 RETURNING id;
 
--- name: GetUserConversations :many
--- Get all conversations paginated by user id excluding group conversations.
+
+
+-- name: GetUserPrivateConversations :many
+-- param: UserID int8
+-- param: GroupID int8?
+-- param: Limit int4
+-- param: Offset int4
 SELECT 
     c.id AS conversation_id,
     c.group_id,
     c.created_at,
-    c.updated_at,
-    cm2.user_id AS member_id
+    c.updated_at
 FROM conversations c
-JOIN conversation_members cm1
-    ON cm1.conversation_id = c.id
-    AND cm1.user_id = $1
-    AND cm1.deleted_at IS NULL
-JOIN conversation_members cm2
-    ON cm2.conversation_id = c.id
-    AND cm2.user_id <> $1
-    AND cm2.deleted_at IS NULL
+JOIN conversation_members cm
+    ON cm.conversation_id = c.id
+    AND cm.user_id = $1
+    AND cm.deleted_at IS NULL
 WHERE c.deleted_at IS NULL
 AND (
-    ($2 IS NULL AND c.group_id IS NULL)
-    OR ($2 IS NOT NULL AND c.group_id = $2)
+    c.group_id IS NULL
+   
 )
+GROUP BY c.id, c.group_id, c.created_at, c.updated_at
 ORDER BY c.updated_at DESC
-LIMIT $3 OFFSET $4;
+LIMIT $2 OFFSET $3;
+
+
+
 
 -- name: DeleteConversationByExactMembers :one
 -- Delete a conversation only if its members exactly match the provided list.

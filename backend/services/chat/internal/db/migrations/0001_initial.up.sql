@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS conversations (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     group_id BIGINT, -- In users service; NULL => DM
+    last_message_id BIGINT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ
@@ -31,6 +32,21 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX idx_messages_conversation ON messages(conversation_id);
 CREATE INDEX idx_messages_sender ON messages(sender_id);
 CREATE INDEX idx_messages_created_at ON messages(created_at);
+CREATE INDEX idx_messages_conversation_id_id
+    ON messages(conversation_id, id);
+
+
+--------------------------------------------------------------
+-- 2.1 ALTER CONVERSATIONS
+--------------------------------------------------------------
+
+ALTER TABLE conversations
+ADD CONSTRAINT conversations_last_message_id_fkey
+    FOREIGN KEY (last_message_id)
+    REFERENCES messages(id)
+    ON DELETE SET NULL;
+
+
 
 
 ------------------------------------------------------------
@@ -49,9 +65,11 @@ CREATE INDEX idx_conversation_members_user ON conversation_members(user_id);
 CREATE INDEX idx_conversation_members_last_read ON conversation_members(last_read_message_id);
 
 
+
 ------------------------------------------------------------
 -- 5. Triggers: Auto-update updated_at
 ------------------------------------------------------------
+-- UPDATE TIMESTAMP
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -72,61 +90,20 @@ CREATE TRIGGER trg_update_conversation_members_modtime
 BEFORE UPDATE ON conversation_members
 FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
+-- UPDATE CONVERSATION LAST MESSAGE
 
-------------------------------------------------------------
--- 6. Soft Delete Logic
-------------------------------------------------------------
-CREATE OR REPLACE FUNCTION soft_delete_conversation()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION update_conversation_last_message()
+RETURNS trigger AS $$
 BEGIN
-    NEW.deleted_at := CURRENT_TIMESTAMP;
-
-    UPDATE messages 
-    SET deleted_at = CURRENT_TIMESTAMP
-    WHERE conversation_id = OLD.id;
-
-    UPDATE conversation_members
-    SET deleted_at = CURRENT_TIMESTAMP
-    WHERE conversation_id = OLD.id;
-
+    UPDATE conversations
+       SET last_message_id = NEW.id,
+           updated_at = NEW.created_at
+     WHERE id = NEW.conversation_id;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_soft_delete_conversation
-BEFORE UPDATE ON conversations
+CREATE TRIGGER trg_update_conversation_last_message
+AFTER INSERT ON messages
 FOR EACH ROW
-WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL)
-EXECUTE FUNCTION soft_delete_conversation();
-
-
--- Soft delete message
-CREATE OR REPLACE FUNCTION soft_delete_message()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.deleted_at := CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_soft_delete_message
-BEFORE UPDATE ON messages
-FOR EACH ROW
-WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL)
-EXECUTE FUNCTION soft_delete_message();
-
-
--- Soft delete conversation member
-CREATE OR REPLACE FUNCTION soft_delete_conversation_member()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.deleted_at := CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_soft_delete_conversation_member
-BEFORE UPDATE ON conversation_members
-FOR EACH ROW
-WHEN (OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL)
-EXECUTE FUNCTION soft_delete_conversation_member();
+EXECUTE FUNCTION update_conversation_last_message();

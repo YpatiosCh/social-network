@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"social-network/services/chat/internal/application"
-	"social-network/services/chat/internal/db/sqlc"
+	database "social-network/services/chat/internal/db/dbservice"
 	"social-network/services/chat/internal/handler"
 	"social-network/shared/gen-go/chat"
 	ct "social-network/shared/go/customtypes"
@@ -40,7 +40,7 @@ func Run() error {
 	app := application.NewChatService(
 		pool,
 		InitClients(),
-		sqlc.New(pool),
+		database.New(pool),
 	)
 
 	service := &handler.ChatHandler{

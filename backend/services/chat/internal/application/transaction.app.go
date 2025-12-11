@@ -2,24 +2,24 @@ package application
 
 import (
 	"context"
-	"social-network/services/chat/internal/db/sqlc"
+	"social-network/services/chat/internal/db/dbservice"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TxRunner defines the interface for running database transactions
 type TxRunner interface {
-	RunTx(ctx context.Context, fn func(sqlc.Querier) error) error
+	RunTx(ctx context.Context, fn func(dbservice.Querier) error) error
 }
 
 // PgxTxRunner is the production implementation using pgxpool
 type PgxTxRunner struct {
 	pool *pgxpool.Pool
-	db   *sqlc.Queries
+	db   *dbservice.Queries
 }
 
 // NewPgxTxRunner creates a new transaction runner
-func NewPgxTxRunner(pool *pgxpool.Pool, db *sqlc.Queries) *PgxTxRunner {
+func NewPgxTxRunner(pool *pgxpool.Pool, db *dbservice.Queries) *PgxTxRunner {
 	return &PgxTxRunner{
 		pool: pool,
 		db:   db,
@@ -27,8 +27,8 @@ func NewPgxTxRunner(pool *pgxpool.Pool, db *sqlc.Queries) *PgxTxRunner {
 }
 
 // RunTx runs a function inside a database transaction
-// The function receives a sqlc.Querier interface, not *sqlc.Queries
-func (r *PgxTxRunner) RunTx(ctx context.Context, fn func(sqlc.Querier) error) error {
+// The function receives a dbservice.Querier interface, not *dbservice.Queries
+func (r *PgxTxRunner) RunTx(ctx context.Context, fn func(dbservice.Querier) error) error {
 	// start tx
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -36,10 +36,10 @@ func (r *PgxTxRunner) RunTx(ctx context.Context, fn func(sqlc.Querier) error) er
 	}
 	defer tx.Rollback(ctx)
 
-	// create queries with transaction - returns *sqlc.Queries
+	// create queries with transaction - returns *dbservice.Queries
 	qtx := r.db.WithTx(tx)
 
-	// run the function, passing qtx as sqlc.Querier interface
+	// run the function, passing qtx as dbservice.Querier interface
 	if err := fn(qtx); err != nil {
 		return err
 	}
