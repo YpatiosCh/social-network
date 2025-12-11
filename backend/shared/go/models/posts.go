@@ -27,11 +27,6 @@ type GenericPaginatedReq struct {
 	Offset      ct.Offset
 }
 
-type HasUser interface {
-	GetUserId() int64
-	SetUser(User)
-}
-
 // -------------------------------------------
 // Posts
 // -------------------------------------------

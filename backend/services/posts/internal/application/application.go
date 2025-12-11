@@ -5,6 +5,7 @@ import (
 	"social-network/services/posts/internal/client"
 	"social-network/services/posts/internal/db/sqlc"
 	userpb "social-network/shared/gen-go/users"
+	userhydrate "social-network/shared/go/hydrateusers"
 	"social-network/shared/go/models"
 	redis_connector "social-network/shared/go/redis"
 	"time"
@@ -74,7 +75,7 @@ func NewApplication(db sqlc.Querier, pool *pgxpool.Pool, clients *client.Clients
 		db:       db,
 		txRunner: txRunner,
 		clients:  clients,
-		hydrator: NewUserHydrator(clients, cache, 3*time.Minute),
+		hydrator: userhydrate.NewUserHydrator(clients, cache, 3*time.Minute),
 	}
 }
 
