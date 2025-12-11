@@ -10,7 +10,16 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// GetGRpcClient creates a gRPC client of type T. Pass it the grpc generated constructor that creates the client service, the full address of the service, and the context keys to propagate.
+// GetGRPCClient creates a gRPC client of type T with interceptors for the specified context keys.
+//
+// Usage:
+//
+//	usersServiceClient, err = gorpc.GetGRpcClient(users.NewUserServiceClient, "users:50051", []customtypes.CtxKey{customtypes.Key1, customtypes.Key2})
+//
+// Parameters:
+//   - constructor: gRPC-generated constructor function for the client service.
+//   - fullAddress: Full address of the service (host:port).
+//   - contextKeys: Keys to propagate from outgoing context into the gRPC metadata.
 func GetGRpcClient[T any](constructor func(grpc.ClientConnInterface) T, fullAddress string, contextKeys []ct.CtxKey) (T, error) {
 	customUnaryInterceptor, err := UnaryClientInterceptorWithContextKeys(contextKeys...)
 	if err != nil {

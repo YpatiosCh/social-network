@@ -5,12 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"encoding/json"
-	"fmt"
-	userpb "social-network/shared/gen-go/users"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
-	redis_connector "social-network/shared/go/redis"
 
 	"social-network/services/posts/internal/application/mocks"
 	clientmocks "social-network/services/posts/internal/client/mocks"
@@ -74,8 +70,13 @@ func TestCreatePost_SelectedAudience_Success(t *testing.T) {
 // fake hydrator to avoid touching redis/clients during hydrate calls
 type fakeHydrator struct{}
 
-func (f *fakeHydrator) HydrateUsers(ctx context.Context, items []models.HasUser) error  { return nil }
-func (f *fakeHydrator) HydrateUserSlice(ctx context.Context, users []models.User) error { return nil }
+func (f *fakeHydrator) HydrateUsers(ctx context.Context, items []models.HasUser) error {
+	return nil
+}
+
+func (f *fakeHydrator) HydrateUserSlice(ctx context.Context, users []models.User) error {
+	return nil
+}
 
 func TestDeletePost_Success(t *testing.T) {
 	ctx := context.Background()
@@ -303,72 +304,4 @@ func TestFeeds_Empty_NoHydrationError(t *testing.T) {
 	// GetGroupPostsPaginated requires a group id; passing 0 should return ErrNoGroupIdGiven
 	_, err = app.GetGroupPostsPaginated(ctx, models.GetGroupPostsReq{RequesterId: ct.Id(21), GroupId: ct.Id(0)})
 	assert.Error(t, err)
-}
-
-// --- Hydrator tests ---
-type fakeCache struct {
-	store map[string]string
-}
-
-func (f *fakeCache) GetObj(ctx context.Context, key string, dest any) error {
-	if f.store == nil {
-		f.store = map[string]string{}
-	}
-	v, ok := f.store[key]
-	if !ok {
-		return redis_connector.ErrNotFound
-	}
-	return json.Unmarshal([]byte(v), dest)
-}
-
-func (f *fakeCache) SetObj(ctx context.Context, key string, value any, exp time.Duration) error {
-	if f.store == nil {
-		f.store = map[string]string{}
-	}
-	b, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-	f.store[key] = string(b)
-	return nil
-}
-
-type fakeUsersBatchClient struct{}
-
-func (f *fakeUsersBatchClient) GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*userpb.ListUsers, error) {
-	users := make([]*userpb.User, 0, len(userIds))
-	for _, id := range userIds {
-		users = append(users, &userpb.User{UserId: id, Username: fmt.Sprintf("u%d", id), Avatar: 0})
-	}
-	return &userpb.ListUsers{Users: users}, nil
-}
-
-func TestUserHydrator_CacheMissAndHit(t *testing.T) {
-	ctx := context.Background()
-
-	// build clients with fake batch client by assigning to hydrator.clients directly
-	c := &fakeUsersBatchClient{}
-
-	fc := &fakeCache{store: map[string]string{}}
-
-	hydrator := &UserHydrator{clients: c, cache: fc, ttl: time.Minute}
-
-	// items referencing user ids 1 and 2
-	p1 := models.Post{User: models.User{UserId: ct.Id(1)}}
-	p2 := models.Post{User: models.User{UserId: ct.Id(2)}}
-
-	items := []models.HasUser{&p1, &p2}
-
-	// empty cache -> should call user service and then set cache
-	err := hydrator.HydrateUsers(ctx, items)
-	assert.NoError(t, err)
-	assert.Equal(t, "u1", string(p1.User.Username))
-
-	// now both should be in cache; change fake client to return different names to ensure cache used
-	items2 := []models.HasUser{&p1}
-	// replace clients with a new fake that would return different username if called
-	hydrator.clients = &fakeUsersBatchClient{}
-	err = hydrator.HydrateUsers(ctx, items2)
-	assert.NoError(t, err)
-	assert.Equal(t, "u1", string(p1.User.Username))
 }

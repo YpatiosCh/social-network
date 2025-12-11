@@ -2,12 +2,12 @@ package handler
 
 import (
 	"social-network/services/users/internal/application"
-	pb "social-network/shared/gen-go/users"
+	"social-network/shared/gen-go/users"
 )
 
 // Holds Client conns, services and handler funcs
 type UsersHandler struct {
-	pb.UserServiceServer
+	users.UnimplementedUserServiceServer
 	Application *application.Application
 }
 
