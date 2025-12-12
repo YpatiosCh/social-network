@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { login } from "@/services/auth/login";
+import { useStore } from "@/store/store";
+import { useRouter } from "next/router";
 
 export default function LoginForm() {
-    const router = useRouter();
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const loadUserProfile = useStore((state) => state.loadUserProfile);
 
     // Real-time validation hook
     const { errors: fieldErrors, validateField } = useFormValidation();
@@ -25,40 +27,30 @@ export default function LoginForm() {
         const password = formData.get("password");
 
         try {
-            console.log("Step 1: Calling backend to set cookie...");
+            // call API to login
+            const resp = await login({identifier, password});
             
-            // Step 1: Call backend directly to get and set the cookie
-            const loginResult = await loginClient({ identifier, password });
-
-            if (!loginResult.success) {
-                setError(loginResult.error || "Invalid credentials");
+            // chceck err
+            if (!resp.success || resp.error) {
+                setError(resp.error || "Invalid credentials");
                 setIsLoading(false);
                 return;
             }
 
-            console.log("Step 2: Backend login successful, now signing into NextAuth...");
-            
-            // Step 2: Now sign into NextAuth (cookie is already set)
-            const signInResult = await signIn("credentials", {
-                redirect: false,
-                userId: loginResult.user.UserId || loginResult.user.user_id,
-                callbackUrl: "/feed/public"
-            });
+            // get user id from response, get user profile and store in localStorage
+            const user = await loadUserProfile(resp.user_id);
 
-            console.log("Step 3: NextAuth sign in result:", signInResult);
-
-            if (signInResult?.error) {
-                console.error("NextAuth sign in error:", signInResult.error);
-                setError("Session creation failed. Please try again.");
+            // check err
+            if (!user.success) {
+                setError("Login successful but failed to load profile");
                 setIsLoading(false);
-            } else if (signInResult?.ok) {
-                console.log("Step 4: Success! Redirecting...");
-                window.location.href = "/feed/public";
-            } else {
-                setError("An unexpected error occurred");
-                setIsLoading(false);
+                return;
             }
-        } catch (err) {
+
+            // all good
+            window.location.href = "/feed/public";
+
+        } catch (error) {
             console.error("Login exception:", err);
             setError("An unexpected error occurred");
             setIsLoading(false);
@@ -88,7 +80,7 @@ export default function LoginForm() {
         <form onSubmit={handleSubmit} className="w-full space-y-6">
             {/* Email/Username Field */}
             <div>
-                <label htmlFor="identifier" className="form-label pl-4">
+                <label htmlFor="identifier" className="form-label pl-4 text-(--accent)">
                     Email or Username
                 </label>
                 <input
@@ -102,7 +94,7 @@ export default function LoginForm() {
                     disabled={isLoading}
                 />
                 {fieldErrors.identifier && (
-                    <div className="form-error">{fieldErrors.identifier}</div>
+                    <div className="form-error pl-4">{fieldErrors.identifier}</div>
                 )}
             </div>
 
@@ -125,7 +117,7 @@ export default function LoginForm() {
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full text-(--muted) group-focus-within:text-(--accent) hover:text-(--accent) transition-colors"
+                        className="form-toggle-btn p-3 hover:text-(--accent)"
                         disabled={isLoading}
                     >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -138,7 +130,7 @@ export default function LoginForm() {
 
             {/* Error Message */}
             {error && (
-                <div className="form-error-box animate-fade-in">
+                <div className="form-error animate-fade-in mt-6 text-center pt-5">
                     {error}
                 </div>
             )}
@@ -147,7 +139,7 @@ export default function LoginForm() {
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-1/2 mx-auto flex self-center justify-center btn btn-primary"
+                className="w-1/2 mx-auto flex justify-center btn btn-primary pt-12"
             >
                 {isLoading ? "Signing in..." : "Sign In"}
             </button>

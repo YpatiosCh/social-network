@@ -1,6 +1,32 @@
 @import "tailwindcss";
 
 :root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+@import "tailwindcss";
+
+:root {
   --accent: #a855f7;
   /* Electric purple */
   --accent-hover: #9333ea;
@@ -23,7 +49,7 @@ body {
    ====================== */
 
 .form-input {
-  @apply px-4 rounded-3xl border border-(--border) hover:border-(--foreground) focus:border-(--accent) py-3 w-full bg-(--muted)/7 text-(--foreground) placeholder:text-(--muted)/50 focus:outline-none transition-colors;
+  @apply text-sm px-4 rounded-3xl border border-(--border) hover:border-foreground focus:border-(--accent) py-3 w-full bg-(--muted)/7 text-foreground placeholder:text-(--muted)/50 focus:outline-none transition-colors;
 }
 
 .form-input:focus {
@@ -31,7 +57,7 @@ body {
 }
 
 .form-label {
-  @apply block text-sm font-medium text-(--foreground) mb-2;
+  @apply block text-base font-light text-(--muted) mb-2;
 }
 
 .form-error {
@@ -44,12 +70,11 @@ body {
 
 .form-toggle-btn {
   @apply absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-(--accent) focus:text-(--accent) focus:outline-none;
-  color: var(--muted);
 }
 
 .form-toggle-btn:hover {
-  color: var(--foreground);
-}
+  color: var(--accent);
+}   
 
 /* Avatar Upload */
 .avatar-container {
@@ -59,7 +84,7 @@ body {
 }
 
 .avatar-container:hover {
-  border-color: var(--accent);
+  border-color: var(--foreground);
 }
 
 .avatar-image {
@@ -88,11 +113,11 @@ body {
 }
 
 .btn-primary {
-  @apply bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full;
+  @apply bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full focus:outline-none focus:bg-(--accent-hover);
 }
 
 .btn-secondary {
-  @apply bg-white text-(--foreground) border-2 border-(--foreground) hover:bg-(--foreground) hover:text-white;
+  @apply bg-white text-foreground border-2 border-foreground hover:bg-foreground hover:text-white;
 }
 
 /* ======================
@@ -100,11 +125,11 @@ body {
    ====================== */
 
 .link-primary {
-  @apply font-medium text-(--accent) hover:text-(--accent-hover) transition-colors;
+  @apply font-medium text-foreground hover:underline underline-offset-4 focus:underline focus:outline-none;
 }
 
 .link-muted {
-  @apply text-(--muted) hover:text-(--foreground) transition-colors;
+  @apply text-(--muted) hover:text-foreground transition-colors;
 }
 
 /* ======================
@@ -112,19 +137,19 @@ body {
    ====================== */
 
 .heading-xl {
-  @apply text-7xl md:text-9xl font-bold tracking-tighter leading-[0.9] text-(--foreground);
+  @apply text-7xl md:text-9xl font-bold tracking-tighter leading-[0.9] text-foreground;
 }
 
 .heading-lg {
-  @apply text-5xl md:text-6xl font-bold tracking-tight text-(--foreground);
+  @apply text-5xl md:text-6xl font-bold tracking-tight text-foreground;
 }
 
 .heading-md {
-  @apply text-4xl font-bold tracking-tight text-(--foreground);
+  @apply text-4xl font-bold tracking-tight text-foreground;
 }
 
 .heading-sm {
-  @apply text-3xl font-bold text-(--foreground);
+  @apply text-3xl font-bold text-foreground;
 }
 
 .text-accent {
@@ -177,7 +202,7 @@ body {
    ====================== */
 
 .page-container {
-  @apply bg-(--background);
+  @apply bg-background;
 }
 
 .section-border {
@@ -236,17 +261,9 @@ body {
   @apply space-y-2;
 }
 
-.form-label {
-  @apply text-sm font-medium text-(--muted);
-}
-
 
 .form-link {
-  @apply text-xs text-(--muted) hover:text-(--foreground) transition-colors;
-}
-
-.form-toggle-btn {
-  @apply absolute right-0 top-1/2 -translate-y-1/2 text-(--muted) hover:text-(--foreground) transition-colors;
+  @apply text-xs text-(--muted) hover:text-foreground transition-colors;
 }
 
 /* Auth Pages */
@@ -267,9 +284,6 @@ body {
   @apply mt-8 text-center text-sm text-(--muted);
 }
 
-.link-primary {
-  @apply font-medium text-(--foreground) hover:underline underline-offset-4;
-}
 
 /* Avatar Upload */
 .avatar-container {
@@ -280,12 +294,12 @@ body {
   @apply w-full h-full object-cover rounded-full;
 }
 
-.avatar-input {
+/* .avatar-input {
   @apply absolute inset-0 opacity-0 cursor-pointer z-10;
-}
+} */
 
 .avatar-remove-btn {
-  @apply absolute -top-1 -right-1 bg-(--background) text-(--muted) hover:text-red-500 rounded-full p-1 border border-(--muted)/20 shadow-sm z-20 transition-colors;
+  @apply absolute -top-1 -right-1 bg-background text-(--muted) hover:text-red-500 rounded-full p-1 border border-(--muted)/20 shadow-sm z-20 transition-colors;
 }
 
 .avatar-label {
@@ -330,7 +344,7 @@ body {
 }
 
 .post-username {
-  @apply font-semibold text-(--foreground) hover:underline decoration-2 underline-offset-2;
+  @apply font-semibold text-foreground hover:underline decoration-2 underline-offset-2;
 }
 
 .post-timestamp {
@@ -354,7 +368,7 @@ body {
 }
 
 .action-btn-comment {
-  @apply hover:text-(--foreground);
+  @apply hover:text-foreground;
 }
 
 .icon-heart {

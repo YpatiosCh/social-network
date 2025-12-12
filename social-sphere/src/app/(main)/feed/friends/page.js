@@ -1,8 +1,14 @@
-import { fetchFeedPosts } from "@/services/posts/posts";
-import FriendsFeedClient from "./client";
+import {LogoutButton} from "@/components/LogoutButton";
 
-export default async function FriendsFeedPage() {
-    const initialPosts = await fetchFeedPosts(0, 5);
+export const metadata = {
+    title: "Friends Feed",
+}
 
-    return <FriendsFeedClient initialPosts={initialPosts} />;
+export default function PublicFeedPage() {
+    
+    return (
+        <div>
+            <LogoutButton/>
+        </div>
+    );
 }

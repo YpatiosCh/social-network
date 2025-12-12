@@ -1,5 +1,5 @@
 import Link from "next/link";
-import RegisterFormSplit from "@/components/forms/RegisterFormSplit";
+import RegisterForm from "@/components/forms/RegisterForm";
 
 export default function RegisterPage() {
     return (
@@ -16,7 +16,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Form - Split into two columns */}
-                <RegisterFormSplit />
+                <RegisterForm />
 
                 {/* Footer */}
                 <p className="mt-8 text-sm text-center text-muted">

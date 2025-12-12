@@ -30,13 +30,13 @@ export default function LandingPage() {
 
             {/* Hero Section */}
             <section className="section-border">
-                <div className="max-w-7xl mx-auto px-6 py-32 md:py-48">
+                <div className="max-w-7xl mx-auto px-6 py-32 md:py-26">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 xl:gap-20 items-center">
                         {/* Left side - Content */}
                         <div className="relative max-w-2xl">
-                            <div className="text-label mb-8">
+                            {/* <div className="text-label mb-8">
                                 Beta / 2025
-                            </div>
+                            </div> */}
 
                             <h1 className="heading-xl mb-12">
                                 Connect<br />

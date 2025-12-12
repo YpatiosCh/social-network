@@ -1,8 +1,14 @@
-import { fetchPublicPosts } from "@/services/posts/posts";
-import PublicFeedClient from "./client";
+import {LogoutButton} from "@/components/LogoutButton";
 
-export default async function PublicFeedPage() {
-    const initialPosts = await fetchPublicPosts(0, 5);
+export const metadata = {
+    title: "Public Feed",
+}
 
-    return <PublicFeedClient initialPosts={initialPosts} />;
+export default function PublicFeedPage() {
+    
+    return (
+        <div>
+            <LogoutButton/>
+        </div>
+    );
 }
