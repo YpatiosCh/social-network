@@ -23,7 +23,7 @@ func (q *Queries) GetConversationMembers(ctx context.Context,
 	arg md.GetConversationMembersParams) (members ct.Ids, err error) {
 	rows, err := q.db.Query(ctx,
 		getConversationMembers,
-		arg.ConversationID,
+		arg.ConversationId,
 		arg.UserID)
 	if err != nil {
 		return nil, err
@@ -58,18 +58,17 @@ RETURNING to_delete.conversation_id, to_delete.user_id, to_delete.last_read_mess
 `
 
 // Deletes conversation member from conversation where user tagged as owner is a part of.
-// Returnes user deleted details.
+// Returnes user deleted details. If no rows returned means no deletation occured.
 // Can be used for self deletation if owner and toDelete are that same id.
-// OK!
 func (q *Queries) DeleteConversationMember(ctx context.Context,
 	arg md.DeleteConversationMemberParams,
 ) (dltMember md.ConversationMemberDeleted, err error) {
 	row := q.db.QueryRow(ctx, deleteConversationMember,
 		arg.ConversationID, arg.ToDelete, arg.Owner)
 	err = row.Scan(
-		&dltMember.ConversationID,
-		&dltMember.UserID,
-		&dltMember.LastReadMessageID,
+		&dltMember.ConversationId,
+		&dltMember.UserId,
+		&dltMember.LastReadMessageId,
 		&dltMember.JoinedAt,
 		&dltMember.DeletedAt,
 	)

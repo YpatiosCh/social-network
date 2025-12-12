@@ -30,7 +30,8 @@ type CreateMessageParams struct {
 	MessageText    ct.MsgBody
 }
 
-type GetMessagesParams struct {
+type GetNextMessageParams struct {
+	FirstMessageId ct.Id
 	ConversationId ct.Id
 	UserId         ct.Id
 	Limit          ct.Limit
@@ -46,32 +47,49 @@ type ConversationDeleteResp struct {
 }
 
 type ConversationResponse struct {
-	Id        ct.Id
-	GroupId   ct.Id
-	CreatedAt ct.GenDateTime
-	UpdatedAt ct.GenDateTime `validation:"nullable"`
-	DeletedAt ct.GenDateTime `validation:"nullable"`
+	Id             ct.Id
+	GroupId        ct.Id
+	LastMessageId  ct.Id
+	FirstMessageId ct.Id
+	CreatedAt      ct.GenDateTime
+	UpdatedAt      ct.GenDateTime `validation:"nullable"`
+	DeletedAt      ct.GenDateTime `validation:"nullable"`
 }
 
 type ConversationMember struct {
-	ConversationID    ct.Id
-	UserID            ct.Id
-	LastReadMessageID ct.Id `validation:"nullable"`
+	ConversationId    ct.Id
+	UserId            ct.Id
+	LastReadMessageId ct.Id `validation:"nullable"`
 	JoinedAt          ct.GenDateTime
 	DeletedAt         ct.GenDateTime `validation:"nullable"`
 }
 
+// All fields are required except LastReadMessgeId
 type ConversationMemberDeleted struct {
-	ConversationID    ct.Id
-	UserID            ct.Id
-	LastReadMessageID ct.Id `validation:"nullable"`
+	ConversationId    ct.Id
+	UserId            ct.Id
+	LastReadMessageId ct.Id `validation:"nullable"`
 	JoinedAt          ct.GenDateTime
 	DeletedAt         ct.GenDateTime
 }
 
 type GetConversationMembersParams struct {
-	ConversationID ct.Id
+	ConversationId ct.Id
 	UserID         ct.Id
+}
+
+type GetPrevMessagesParams struct {
+	UserId            ct.Id
+	ConversationId    ct.Id
+	LastReadMessageId ct.Id `validation:"nullable"`
+	Limit             ct.Limit
+	Offset            ct.Offset
+}
+
+type GetPrevMessagesResp struct {
+	FirstMessageId ct.Id
+	HaveMore       bool
+	Messages       []MessageResp
 }
 
 type GetUserConversationsParams struct {
@@ -90,6 +108,7 @@ type GetUserConversationsRow struct {
 	FirstUnreadMessageId *int64
 }
 
+// All fields are required except deleted at which in most cases is null.
 type MessageResp struct {
 	Id             ct.Id
 	ConversationID ct.Id
@@ -106,8 +125,9 @@ type DeleteConversationMemberParams struct {
 	ToDelete       ct.Id
 }
 
+// Last Read message is not nullable. If it is null then request is invalid.
 type UpdateLastReadMessageParams struct {
 	ConversationId    ct.Id
 	UserID            ct.Id
-	LastReadMessageId ct.Id `validation:"nullable"`
+	LastReadMessageId ct.Id
 }

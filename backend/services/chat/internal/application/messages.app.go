@@ -9,6 +9,8 @@ import (
 
 // Creates a message row with conversation id if user is a memeber.
 // If user match of conversation_id and user_id fails returns error.
+//
+// TODO: Hydrate and return full response
 func (c *ChatService) CreateMessage(ctx context.Context,
 	params md.CreateMessageParams) (msg md.MessageResp, err error) {
 	if err := customtypes.ValidateStruct(params); err != nil {
@@ -17,15 +19,12 @@ func (c *ChatService) CreateMessage(ctx context.Context,
 	if (msg == md.MessageResp{}) {
 		return msg, fmt.Errorf("user is not a member of conversation id: %v", params.ConversationId)
 	}
-	return c.Queries.CreateMessage(ctx, params)
-}
 
-func (c *ChatService) GetMessages(ctx context.Context,
-	params md.GetMessagesParams) (messages []md.MessageResp, err error) {
-	if err := customtypes.ValidateStruct(params); err != nil {
-		return messages, err
+	_, err = c.Queries.CreateMessage(ctx, params)
+	if err != nil {
+		return msg, err
 	}
-	return c.Queries.GetMessages(ctx, params)
+	return msg, err
 }
 
 func (c *ChatService) UpdateLastReadMessage(ctx context.Context,

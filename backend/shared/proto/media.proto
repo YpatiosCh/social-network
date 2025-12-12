@@ -6,22 +6,30 @@ option go_package = "social-network/shared/gen/media;media";
 
 // Upload request
 message UploadImageRequest {
-  bytes file_content = 1;   // Raw file bytes
-  string filename = 2;      // Original file name
+  // Raw file bytes
+  bytes file_content = 1;
+  // Original file name
+  string filename = 2;      
 }
 
 // Upload response
 message UploadImageResponse {
-  int64 id = 1;            
-  string mime_type = 2;     // Detected MIME type
-  int64 size_bytes = 3;     // File size
-  string bucket = 4;        // MinIO bucket
-  string object_key = 5;    // MinIO object key
+  int64 id = 1;
+  // Detected MIME type            
+  string mime_type = 2;
+  // File size
+  int64 size_bytes = 3;
+  // MinIO bucket
+  string bucket = 4;
+  // MinIO object key
+  string object_key = 5;
 }
 
 // Service definition
 service MediaService {
+  // Uploads and image to minIO and returns image Meta and storage info
   rpc UploadImage(UploadImageRequest) returns (UploadImageResponse);
+  // Returns image meta and file in a chunked response
   rpc RetrieveImage(RetrieveImageRequest) returns (stream RetrieveImageResponse);
 }
 
@@ -42,7 +50,8 @@ message ImageMeta {
 
 // File chunk
 message ImageChunk {
-  bytes data = 1; // raw bytes
+  // raw bytes
+  bytes data = 1;
 }
 
 // The streamed response
