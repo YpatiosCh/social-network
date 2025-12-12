@@ -9,26 +9,88 @@ import "google/protobuf/empty.proto";
 
 option go_package = "social-network/shared/gen/posts;posts";
 
+// PostsService handles post, comment, event, and reaction workflows.
+// Current behavior: handlers return INVALID_ARGUMENT for nil/validation issues and INTERNAL for all other errors.
+// Desired (not yet implemented): map domain errors to NOT_FOUND, PERMISSION_DENIED, FAILED_PRECONDITION, ALREADY_EXISTS, etc., per RPC.
 service PostsService {
+    // Creates a post in a user feed or group.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
     rpc CreatePost (CreatePostReq) returns (google.protobuf.Empty);
+
+    // Deletes a post authored by requester or permitted moderator.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED if not owner/moderator.
     rpc DeletePost (GenericReq) returns (google.protobuf.Empty);
+
+    // Updates post body/visibility for the requester-owned post.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
     rpc EditPost (EditPostReq) returns (google.protobuf.Empty);
+
+    // Returns the most popular post in the given group.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if none/hidden; PERMISSION_DENIED if group not visible.
     rpc GetMostPopularPostInGroup (SimpleIdReq) returns (Post);
+
+    // Returns a personalized feed for the requester.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: UNAUTHENTICATED for anonymous callers.
     rpc GetPersonalizedFeed (GetPersonalizedFeedReq) returns (ListPosts);
+
+    // Returns a public feed limited by pagination.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise.
     rpc GetPublicFeed (GenericPaginatedReq) returns (ListPosts);
+
+    // Returns a user's posts visible to the requester.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if user missing; PERMISSION_DENIED for private feeds.
     rpc GetUserPostsPaginated (GetUserPostsReq) returns (ListPosts);
+
+    // Returns posts within a group visible to the requester.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED if access denied.
     rpc GetGroupPostsPaginated (GetGroupPostsReq) returns (ListPosts);
+
+    // Creates a comment on a post or another comment.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND parent; PERMISSION_DENIED when commenting not allowed.
     rpc CreateComment (CreateCommentReq) returns (google.protobuf.Empty);
+
+    // Updates an existing comment by the creator.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
     rpc EditComment (EditCommentReq) returns (google.protobuf.Empty);
+
+    // Deletes a comment by the creator or moderator.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED when not allowed.
     rpc DeleteComment (GenericReq) returns (google.protobuf.Empty);
+
+    // Returns comments for a parent entity with pagination.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing parent; PERMISSION_DENIED if thread hidden.
     rpc GetCommentsByParentId (EntityIdPaginatedReq) returns (ListComments);
+
+    // Creates a group event.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED for non-member.
     rpc CreateEvent (CreateEventReq) returns (google.protobuf.Empty);
+
+    // Deletes an event by creator or moderator.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED when not owner/moderator.
     rpc DeleteEvent (GenericReq) returns (google.protobuf.Empty);
+
+    // Updates an event's details.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED/FAILED_PRECONDITION when locked/past.
     rpc EditEvent (EditEventReq) returns (google.protobuf.Empty);
+
+    // Returns events for a group with pagination.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing group; PERMISSION_DENIED if access denied.
     rpc GetEventsByGroupId (EntityIdPaginatedReq) returns (ListEvents);
+
+    // Records a response (going/not going) to an event.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED/FAILED_PRECONDITION if responses closed.
     rpc RespondToEvent (RespondToEventReq) returns (google.protobuf.Empty);
+
+    // Removes the requester's response to an event.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: same as RespondToEvent.
     rpc RemoveEventResponse (GenericReq) returns (google.protobuf.Empty);
+
+    // Suggests users who interacted with the given post.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing post; PERMISSION_DENIED if not visible.
     rpc SuggestUsersByPostActivity (SimpleIdReq) returns (ListUsers);
+
+    // Toggles or inserts a reaction for the requester on a post/comment.
+    // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing entity; PERMISSION_DENIED if reactions blocked.
     rpc ToggleOrInsertReaction (GenericReq) returns (google.protobuf.Empty);
 }
 
