@@ -97,6 +97,7 @@ CREATE TRIGGER trg_update_conversation_members_modtime
 BEFORE UPDATE ON conversation_members
 FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
+
 -- UPDATE CONVERSATION FIRST AND LAST MESSAGE
 
 CREATE OR REPLACE FUNCTION update_conversation_first_message()

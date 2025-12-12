@@ -30,14 +30,6 @@ type CreateMessageParams struct {
 	MessageText    ct.MsgBody
 }
 
-type GetNextMessageParams struct {
-	FirstMessageId ct.Id
-	ConversationId ct.Id
-	UserId         ct.Id
-	Limit          ct.Limit
-	Offset         ct.Offset
-}
-
 type ConversationDeleteResp struct {
 	Id        ct.Id
 	GroupId   ct.Id
@@ -81,15 +73,27 @@ type GetConversationMembersParams struct {
 type GetPrevMessagesParams struct {
 	UserId            ct.Id
 	ConversationId    ct.Id
-	LastReadMessageId ct.Id `validation:"nullable"`
+	BoundaryMessageId ct.Id `validation:"nullable"`
 	Limit             ct.Limit
-	Offset            ct.Offset
 }
 
 type GetPrevMessagesResp struct {
 	FirstMessageId ct.Id
-	HaveMore       bool
+	HaveMoreBefore bool
 	Messages       []MessageResp
+}
+
+type GetNextMessageParams struct {
+	BoundaryMessageId ct.Id
+	ConversationId    ct.Id
+	UserId            ct.Id
+	Limit             ct.Limit
+}
+
+type GetNextMessagesResp struct {
+	LastMessageId ct.Id
+	HaveMoreAfter bool
+	Messages      []MessageResp
 }
 
 type GetUserConversationsParams struct {
@@ -99,20 +103,20 @@ type GetUserConversationsParams struct {
 	Offset  ct.Offset
 }
 
-type GetUserConversationsRow struct {
+type GetUserConversationsResp struct {
 	ConversationId       ct.Id
 	CreatedAt            ct.GenDateTime
 	UpdatedAt            ct.GenDateTime
-	MemberIds            []int64
+	Members              []User
 	UnreadCount          int64
-	FirstUnreadMessageId *int64
+	FirstUnreadMessageId ct.Id `validation:"nullable"`
 }
 
 // All fields are required except deleted at which in most cases is null.
 type MessageResp struct {
 	Id             ct.Id
 	ConversationID ct.Id
-	SenderID       ct.Id
+	Sender         User
 	MessageText    ct.MsgBody
 	CreatedAt      ct.GenDateTime
 	UpdatedAt      ct.GenDateTime
