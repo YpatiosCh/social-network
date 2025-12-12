@@ -20,8 +20,20 @@ message UploadImageResponse {
 }
 
 // Service definition
+// Current behavior:
+// - UploadImage: returns UNKNOWN on storage errors (fmt.Errorf), no explicit validation errors.
+// - RetrieveImage: NOT_FOUND when image lookup fails; INTERNAL for stream/meta errors.
+// Desired (not yet implemented):
+// - INVALID_ARGUMENT for missing bytes/filename or unsupported mime type.
+// - UNAUTHENTICATED/PERMISSION_DENIED when authz is enforced.
+// - RESOURCE_EXHAUSTED for oversized files.
 service MediaService {
+  // Uploads an image and returns stored metadata.
+  // Returns Error: UNKNOWN on storage errors. Desired: INVALID_ARGUMENT/RESOURCE_EXHAUSTED and authz codes as applicable.
   rpc UploadImage(UploadImageRequest) returns (UploadImageResponse);
+
+  // Streams image metadata first, followed by file chunks.
+  // Returns Error: NOT_FOUND if image_id is unknown; INTERNAL for streaming failures. Desired: PERMISSION_DENIED when access is restricted.
   rpc RetrieveImage(RetrieveImageRequest) returns (stream RetrieveImageResponse);
 }
 
