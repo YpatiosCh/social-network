@@ -441,7 +441,7 @@ const file_chat_proto_rawDesc = "" +
 	"\x19CreatePrivateConversation\x12\x1d.chat.CreatePrivateConvParams\x1a\f.chat.ConvId\x12D\n" +
 	"\x17CreateGroupConversation\x12\x1b.chat.CreateGroupConvParams\x1a\f.chat.ConvId\x12X\n" +
 	"\x1dAddMembersToGroupConversation\x12).chat.AddMembersToGroupConversationParams\x1a\f.chat.ConvId\x12E\n" +
-	" DeleteConversationByExactMembers\x12\r.chat.UserIds\x1a\x12.chat.ConversationB%Z#social-network/shared/gen/chat;chatb\x06proto3"
+	" DeleteConversationByExactMembers\x12\r.chat.UserIds\x1a\x12.chat.ConversationB(Z&social-network/shared/gen-go/chat;chatb\x06proto3"
 
 var (
 	file_chat_proto_rawDescOnce sync.Once

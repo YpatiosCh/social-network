@@ -12,6 +12,7 @@ import (
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	common "social-network/shared/gen-go/common"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -20,6 +21,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	PostsService_GetPostById_FullMethodName                = "/posts.PostsService/GetPostById"
 	PostsService_CreatePost_FullMethodName                 = "/posts.PostsService/CreatePost"
 	PostsService_DeletePost_FullMethodName                 = "/posts.PostsService/DeletePost"
 	PostsService_EditPost_FullMethodName                   = "/posts.PostsService/EditPost"
@@ -50,6 +52,9 @@ const (
 // Current behavior: handlers return INVALID_ARGUMENT for nil/validation issues and INTERNAL for all other errors.
 // Desired (not yet implemented): map domain errors to NOT_FOUND, PERMISSION_DENIED, FAILED_PRECONDITION, ALREADY_EXISTS, etc., per RPC.
 type PostsServiceClient interface {
+	// Returns a post by id
+	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if requester has no right to view.
+	GetPostById(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*Post, error)
 	// Creates a post in a user feed or group.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
 	CreatePost(ctx context.Context, in *CreatePostReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -106,7 +111,7 @@ type PostsServiceClient interface {
 	RemoveEventResponse(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Suggests users who interacted with the given post.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing post; PERMISSION_DENIED if not visible.
-	SuggestUsersByPostActivity(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*ListUsers, error)
+	SuggestUsersByPostActivity(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*common.ListUsers, error)
 	// Toggles or inserts a reaction for the requester on a post/comment.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing entity; PERMISSION_DENIED if reactions blocked.
 	ToggleOrInsertReaction(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -118,6 +123,16 @@ type postsServiceClient struct {
 
 func NewPostsServiceClient(cc grpc.ClientConnInterface) PostsServiceClient {
 	return &postsServiceClient{cc}
+}
+
+func (c *postsServiceClient) GetPostById(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*Post, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Post)
+	err := c.cc.Invoke(ctx, PostsService_GetPostById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *postsServiceClient) CreatePost(ctx context.Context, in *CreatePostReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
@@ -300,9 +315,9 @@ func (c *postsServiceClient) RemoveEventResponse(ctx context.Context, in *Generi
 	return out, nil
 }
 
-func (c *postsServiceClient) SuggestUsersByPostActivity(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*ListUsers, error) {
+func (c *postsServiceClient) SuggestUsersByPostActivity(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*common.ListUsers, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListUsers)
+	out := new(common.ListUsers)
 	err := c.cc.Invoke(ctx, PostsService_SuggestUsersByPostActivity_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -328,6 +343,9 @@ func (c *postsServiceClient) ToggleOrInsertReaction(ctx context.Context, in *Gen
 // Current behavior: handlers return INVALID_ARGUMENT for nil/validation issues and INTERNAL for all other errors.
 // Desired (not yet implemented): map domain errors to NOT_FOUND, PERMISSION_DENIED, FAILED_PRECONDITION, ALREADY_EXISTS, etc., per RPC.
 type PostsServiceServer interface {
+	// Returns a post by id
+	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if requester has no right to view.
+	GetPostById(context.Context, *GenericReq) (*Post, error)
 	// Creates a post in a user feed or group.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
 	CreatePost(context.Context, *CreatePostReq) (*emptypb.Empty, error)
@@ -384,7 +402,7 @@ type PostsServiceServer interface {
 	RemoveEventResponse(context.Context, *GenericReq) (*emptypb.Empty, error)
 	// Suggests users who interacted with the given post.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing post; PERMISSION_DENIED if not visible.
-	SuggestUsersByPostActivity(context.Context, *SimpleIdReq) (*ListUsers, error)
+	SuggestUsersByPostActivity(context.Context, *SimpleIdReq) (*common.ListUsers, error)
 	// Toggles or inserts a reaction for the requester on a post/comment.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing entity; PERMISSION_DENIED if reactions blocked.
 	ToggleOrInsertReaction(context.Context, *GenericReq) (*emptypb.Empty, error)
@@ -398,6 +416,9 @@ type PostsServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPostsServiceServer struct{}
 
+func (UnimplementedPostsServiceServer) GetPostById(context.Context, *GenericReq) (*Post, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPostById not implemented")
+}
 func (UnimplementedPostsServiceServer) CreatePost(context.Context, *CreatePostReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
 }
@@ -452,7 +473,7 @@ func (UnimplementedPostsServiceServer) RespondToEvent(context.Context, *RespondT
 func (UnimplementedPostsServiceServer) RemoveEventResponse(context.Context, *GenericReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveEventResponse not implemented")
 }
-func (UnimplementedPostsServiceServer) SuggestUsersByPostActivity(context.Context, *SimpleIdReq) (*ListUsers, error) {
+func (UnimplementedPostsServiceServer) SuggestUsersByPostActivity(context.Context, *SimpleIdReq) (*common.ListUsers, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SuggestUsersByPostActivity not implemented")
 }
 func (UnimplementedPostsServiceServer) ToggleOrInsertReaction(context.Context, *GenericReq) (*emptypb.Empty, error) {
@@ -477,6 +498,24 @@ func RegisterPostsServiceServer(s grpc.ServiceRegistrar, srv PostsServiceServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&PostsService_ServiceDesc, srv)
+}
+
+func _PostsService_GetPostById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenericReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetPostById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetPostById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetPostById(ctx, req.(*GenericReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _PostsService_CreatePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -846,6 +885,10 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "posts.PostsService",
 	HandlerType: (*PostsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetPostById",
+			Handler:    _PostsService_GetPostById_Handler,
+		},
 		{
 			MethodName: "CreatePost",
 			Handler:    _PostsService_CreatePost_Handler,

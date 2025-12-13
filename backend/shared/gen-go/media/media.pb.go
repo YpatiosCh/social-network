@@ -452,7 +452,7 @@ const file_media_proto_rawDesc = "" +
 	"\apayload2\xa2\x01\n" +
 	"\fMediaService\x12D\n" +
 	"\vUploadImage\x12\x19.media.UploadImageRequest\x1a\x1a.media.UploadImageResponse\x12L\n" +
-	"\rRetrieveImage\x12\x1b.media.RetrieveImageRequest\x1a\x1c.media.RetrieveImageResponse0\x01B'Z%social-network/shared/gen/media;mediab\x06proto3"
+	"\rRetrieveImage\x12\x1b.media.RetrieveImageRequest\x1a\x1c.media.RetrieveImageResponse0\x01B*Z(social-network/shared/gen-go/media;mediab\x06proto3"
 
 var (
 	file_media_proto_rawDescOnce sync.Once

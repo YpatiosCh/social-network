@@ -54,9 +54,35 @@ func WriteJSON(w http.ResponseWriter, code int, v any) error {
 	if code == http.StatusNoContent {
 		return nil
 	}
-	fmt.Println("sending this:", v)
-	return json.NewEncoder(w).Encode(v)
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("sending this:", string(b))
+
+	_, err = w.Write(b)
+	return err
 }
+
+// func WriteJSON(w http.ResponseWriter, code int, v any) error {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(code)
+
+// 	if code == http.StatusNoContent {
+// 		return nil
+// 	}
+
+// 	b, err := json.Marshal(v)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	fmt.Println("sending this:", string(b))
+
+// 	_, err = w.Write(b)
+// 	return err
+// }
 
 func ErrorJSON(w http.ResponseWriter, code int, msg string) {
 	err := WriteJSON(w, code, map[string]string{"error": msg})
