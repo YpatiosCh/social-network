@@ -150,7 +150,7 @@ message CreatePostReq {
     string body = 2;
     int64 group_id = 3;
     string audience = 4;
-    common.Int64Arr audience_ids = 5;
+    common.UserIds audience_ids = 5;
     int64 image = 6;
 }
 
@@ -160,7 +160,7 @@ message EditPostReq {
     string body = 3;
     int64 image = 4;
     string audience = 5;
-    common.Int64Arr audience_ids = 6;
+    common.UserIds audience_ids = 6;
 }
 
 message GetUserPostsReq {

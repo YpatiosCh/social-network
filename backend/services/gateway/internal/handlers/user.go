@@ -146,7 +146,7 @@ func (s *Handlers) GetBatchBasicUserInfo() http.HandlerFunc {
 			return
 		}
 
-		req := cm.Int64Arr{Values: body.Values}
+		req := cm.UserIds{Values: body.Values}
 
 		out, err := s.App.Users.GetBatchBasicUserInfo(ctx, &req)
 		if err != nil {

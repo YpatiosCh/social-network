@@ -27,7 +27,7 @@ func (c *Clients) UserIdsToMap(ctx context.Context,
 	// Call redis first
 
 	// gRPC request
-	req := &cm.Int64Arr{Values: cleaned}
+	req := &cm.UserIds{Values: cleaned}
 	resp, err := c.UserClient.GetBatchBasicUserInfo(ctx, req)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (c *Clients) UserIdsToMap(ctx context.Context,
 // Converts a slice of ct.Ids representing users to models.User slice.
 func (c *Clients) UserIdsToUsers(ctx context.Context,
 	ids ct.Ids) (userInfo []md.User, err error) {
-	req := &cm.Int64Arr{Values: ids.Int64()}
+	req := &cm.UserIds{Values: ids.Int64()}
 	resp, err := c.UserClient.GetBatchBasicUserInfo(ctx, req)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (c *Clients) UserIdsToUsers(ctx context.Context,
 
 // Function to implemeted by Hydrator
 func (c *Clients) GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*cm.ListUsers, error) {
-	req := &cm.Int64Arr{
+	req := &cm.UserIds{
 		Values: userIds,
 	}
 	resp, err := c.UserClient.GetBatchBasicUserInfo(ctx, req)

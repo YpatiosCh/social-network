@@ -47,7 +47,7 @@ service UserService {
   rpc HandleFollowRequest (HandleFollowRequestRequest) returns (google.protobuf.Empty);
 
   // Returns ids that the user is following.
-  rpc GetFollowingIds (google.protobuf.Int64Value) returns (common.Int64Arr);
+  rpc GetFollowingIds (google.protobuf.Int64Value) returns (common.UserIds);
 
   // Suggests users to follow based on the caller's network.
   rpc GetFollowSuggestions (google.protobuf.Int64Value) returns (common.ListUsers);
@@ -98,7 +98,7 @@ service UserService {
   rpc GetBasicUserInfo (google.protobuf.Int64Value) returns (common.User);
 
   // Retrieves basic info for multiple users.
-  rpc GetBatchBasicUserInfo (common.Int64Arr) returns (common.ListUsers);
+  rpc GetBatchBasicUserInfo (common.UserIds) returns (common.ListUsers);
 
   // Returns the full profile visible to the requester.
   rpc GetUserProfile (GetUserProfileRequest) returns (UserProfileResponse);

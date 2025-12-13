@@ -59,9 +59,9 @@ func WriteJSON(w http.ResponseWriter, code int, v any) error {
 	}
 
 	fmt.Println("sending this:", string(b))
-	// fmt.Println("sending this:", v) // This is misleading beacause some types change during Encode
 
-	return json.NewEncoder(w).Encode(v)
+	_, err = w.Write(b)
+	return err
 }
 
 // func WriteJSON(w http.ResponseWriter, code int, v any) error {
