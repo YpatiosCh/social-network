@@ -39,8 +39,9 @@ type RedisCache interface {
 
 // Hydrator defines the subset of behavior used by application for user hydration.
 type Hydrator interface {
-	HydrateUsers(ctx context.Context, items []models.HasUser) error
-	HydrateUserSlice(ctx context.Context, users []models.User) error
+	GetUsers(ctx context.Context, userIDs []int64) (map[int64]models.User, error)
+	// HydrateUsers(ctx context.Context, items []models.HasUser) error
+	// HydrateUserSlice(ctx context.Context, users []models.User) error
 }
 
 // ClientsInterface defines the methods that Application needs from clients.

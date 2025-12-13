@@ -221,12 +221,15 @@ func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req models.
 		return models.Post{}, err
 	}
 
+	userMap, err := s.hydrator.GetUsers(ctx, []int64{p.CreatorID})
+	if err != nil {
+		return models.Post{}, err
+	}
+
 	post := models.Post{
-		PostId: ct.Id(p.ID),
-		Body:   ct.PostBody(p.PostBody),
-		User: models.User{
-			UserId: ct.Id(p.CreatorID),
-		},
+		PostId:          ct.Id(p.ID),
+		Body:            ct.PostBody(p.PostBody),
+		User:            userMap[p.CreatorID],
 		GroupId:         ct.Id(req.Id.Int64()),
 		Audience:        ct.Audience(p.Audience),
 		CommentsCount:   int(p.CommentsCount),
@@ -235,12 +238,11 @@ func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req models.
 		CreatedAt:       ct.GenDateTime(p.CreatedAt.Time),
 		UpdatedAt:       ct.GenDateTime(p.UpdatedAt.Time),
 		Image:           ct.Id(p.Image),
-		//no latest comment or liked by user needed here
 	}
 
-	if err := s.hydratePost(ctx, &post); err != nil {
-		return models.Post{}, err
-	}
+	// if err := s.hydratePost(ctx, &post); err != nil {
+	// 	return models.Post{}, err
+	// }
 
 	return post, nil
 }
@@ -268,15 +270,18 @@ func (s *Application) GetPostById(ctx context.Context, req models.GenericReq) (m
 		return models.Post{}, err
 	}
 
+	userMap, err := s.hydrator.GetUsers(ctx, []int64{p.CreatorID})
+	if err != nil {
+		return models.Post{}, err
+	}
+
 	var groupId pgtype.Int8
 	groupId.Int64 = p.GroupID.Int64
 	groupId.Valid = true
 	post := models.Post{
-		PostId: ct.Id(p.ID),
-		Body:   ct.PostBody(p.PostBody),
-		User: models.User{
-			UserId: ct.Id(p.CreatorID),
-		},
+		PostId:          ct.Id(p.ID),
+		Body:            ct.PostBody(p.PostBody),
+		User:            userMap[p.CreatorID],
 		GroupId:         ct.Id(groupId.Int64),
 		Audience:        ct.Audience(p.Audience),
 		CommentsCount:   int(p.CommentsCount),
@@ -287,9 +292,9 @@ func (s *Application) GetPostById(ctx context.Context, req models.GenericReq) (m
 		Image:           ct.Id(p.Image),
 	}
 
-	if err := s.hydratePost(ctx, &post); err != nil {
-		return models.Post{}, err
-	}
+	// if err := s.hydratePost(ctx, &post); err != nil {
+	// 	return models.Post{}, err
+	// }
 
 	return post, nil
 }
