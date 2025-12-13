@@ -1130,7 +1130,7 @@ func (x *GroupUserArr) GetGroupUserArr() []*GroupUser {
 
 type GroupSearchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	SearchTerm    string                 `protobuf:"bytes,1,opt,name=SearchTerm,proto3" json:"SearchTerm,omitempty"`
+	SearchTerm    string                 `protobuf:"bytes,1,opt,name=search_term,json=searchTerm,proto3" json:"search_term,omitempty"`
 	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
@@ -1567,7 +1567,7 @@ func (x *CreateGroupRequest) GetGroupImage() string {
 // BASIC USER INFO
 type UserBasicInfoResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int64                  `protobuf:"varint,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	UserName      string                 `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	Avatar        int64                  `protobuf:"varint,3,opt,name=avatar,proto3" json:"avatar,omitempty"`
 	PublicProfile bool                   `protobuf:"varint,4,opt,name=public_profile,json=publicProfile,proto3" json:"public_profile,omitempty"`
@@ -1949,7 +1949,7 @@ const file_users_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12!\n" +
 	"\frequester_id\x18\x02 \x01(\x03R\vrequesterId\x12\x16\n" +
 	"\x06accept\x18\x03 \x01(\bR\x06accept\"[\n" +
-	"\x12isFollowingRequest\x12\x1f\n" +
+	"\x12IsFollowingRequest\x12\x1f\n" +
 	"\vfollower_id\x18\x01 \x01(\x03R\n" +
 	"followerId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\x03R\ftargetUserId\"\xb3\x02\n" +
@@ -1983,11 +1983,10 @@ const file_users_proto_rawDesc = "" +
 	"\n" +
 	"group_role\x18\x04 \x01(\tR\tgroupRole\"F\n" +
 	"\fGroupUserArr\x126\n" +
-	"\x0egroup_user_arr\x18\x01 \x03(\v2\x10.users.GroupUserR\fgroupUserArr\"{\n" +
-	"\x12GroupSearchRequest\x12\x1e\n" +
-	"\n" +
-	"SearchTerm\x18\x01 \x01(\tR\n" +
-	"SearchTerm\x12\x17\n" +
+	"\x0egroup_user_arr\x18\x01 \x03(\v2\x10.users.GroupUserR\fgroupUserArr\"|\n" +
+	"\x12GroupSearchRequest\x12\x1f\n" +
+	"\vsearch_term\x18\x01 \x01(\tR\n" +
+	"searchTerm\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x04 \x01(\x05R\x06offset\"o\n" +
@@ -2020,9 +2019,9 @@ const file_users_proto_rawDesc = "" +
 	"groupTitle\x12+\n" +
 	"\x11group_description\x18\x03 \x01(\tR\x10groupDescription\x12\x1f\n" +
 	"\vgroup_image\x18\x04 \x01(\tR\n" +
-	"groupImage\"\x8b\x01\n" +
-	"\x15UserBasicInfoResponse\x12\x16\n" +
-	"\x06userId\x18\x01 \x01(\x03R\x06userId\x12\x1b\n" +
+	"groupImage\"\x8c\x01\n" +
+	"\x15UserBasicInfoResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1b\n" +
 	"\tuser_name\x18\x02 \x01(\tR\buserName\x12\x16\n" +
 	"\x06avatar\x18\x03 \x01(\x03R\x06avatar\x12%\n" +
 	"\x0epublic_profile\x18\x04 \x01(\bR\rpublicProfile\"S\n" +
@@ -2103,7 +2102,7 @@ var file_users_proto_goTypes = []any{
 	(*FollowUserRequest)(nil),           // 6: users.FollowUserRequest
 	(*FollowUserResponse)(nil),          // 7: users.FollowUserResponse
 	(*HandleFollowRequestRequest)(nil),  // 8: users.HandleFollowRequestRequest
-	(*IsFollowingRequest)(nil),          // 9: users.isFollowingRequest
+	(*IsFollowingRequest)(nil),          // 9: users.IsFollowingRequest
 	(*Group)(nil),                       // 10: users.Group
 	(*GroupArr)(nil),                    // 11: users.GroupArr
 	(*GeneralGroupRequest)(nil),         // 12: users.GeneralGroupRequest
