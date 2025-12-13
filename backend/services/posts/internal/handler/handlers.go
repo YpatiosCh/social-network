@@ -7,6 +7,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	cm "social-network/shared/gen-go/common"
 	pb "social-network/shared/gen-go/posts"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
@@ -91,7 +92,7 @@ func (s *PostsHandler) GetMostPopularPostInGroup(ctx context.Context, req *pb.Si
 	return &pb.Post{
 		PostId:   int64(post.PostId),
 		PostBody: string(post.Body),
-		User: &pb.User{
+		User: &cm.User{
 			UserId:   post.User.UserId.Int64(),
 			Username: post.User.Username.String(),
 			Avatar:   post.User.AvatarId.Int64(),
@@ -127,7 +128,7 @@ func (s *PostsHandler) GetPersonalizedFeed(ctx context.Context, req *pb.GetPerso
 		pbPosts = append(pbPosts, &pb.Post{
 			PostId:   int64(p.PostId),
 			PostBody: string(p.Body),
-			User: &pb.User{
+			User: &cm.User{
 				UserId:   p.User.UserId.Int64(),
 				Username: p.User.Username.String(),
 				Avatar:   p.User.AvatarId.Int64(),
@@ -165,7 +166,7 @@ func (s *PostsHandler) GetPublicFeed(ctx context.Context, req *pb.GenericPaginat
 		pbPosts = append(pbPosts, &pb.Post{
 			PostId:   int64(p.PostId),
 			PostBody: string(p.Body),
-			User: &pb.User{
+			User: &cm.User{
 				UserId:   p.User.UserId.Int64(),
 				Username: p.User.Username.String(),
 				Avatar:   p.User.AvatarId.Int64(),
@@ -204,7 +205,7 @@ func (s *PostsHandler) GetUserPostsPaginated(ctx context.Context, req *pb.GetUse
 		pbPosts = append(pbPosts, &pb.Post{
 			PostId:   int64(p.PostId),
 			PostBody: string(p.Body),
-			User: &pb.User{
+			User: &cm.User{
 				UserId:   p.User.UserId.Int64(),
 				Username: p.User.Username.String(),
 				Avatar:   p.User.AvatarId.Int64(),
@@ -243,7 +244,7 @@ func (s *PostsHandler) GetGroupPostsPaginated(ctx context.Context, req *pb.GetGr
 		pbPosts = append(pbPosts, &pb.Post{
 			PostId:   int64(p.PostId),
 			PostBody: string(p.Body),
-			User: &pb.User{
+			User: &cm.User{
 				UserId:   p.User.UserId.Int64(),
 				Username: p.User.Username.String(),
 				Avatar:   p.User.AvatarId.Int64(),
@@ -335,7 +336,7 @@ func (s *PostsHandler) GetCommentsByParentId(ctx context.Context, req *pb.Entity
 			CommentId: int64(c.CommentId),
 			ParentId:  int64(c.ParentId),
 			Body:      string(c.Body),
-			User: &pb.User{
+			User: &cm.User{
 				UserId:   c.User.UserId.Int64(),
 				Username: c.User.Username.String(),
 				Avatar:   c.User.AvatarId.Int64(),
@@ -432,7 +433,7 @@ func (s *PostsHandler) GetEventsByGroupId(ctx context.Context, req *pb.EntityIdP
 			EventId: int64(e.EventId),
 			Title:   string(e.Title),
 			Body:    string(e.Body),
-			User: &pb.User{
+			User: &cm.User{
 				UserId:   e.User.UserId.Int64(),
 				Username: e.User.Username.String(),
 				Avatar:   e.User.AvatarId.Int64(),
@@ -485,7 +486,7 @@ func (s *PostsHandler) RemoveEventResponse(ctx context.Context, req *pb.GenericR
 	return &emptypb.Empty{}, nil
 }
 
-func (s *PostsHandler) SuggestUsersByPostActivity(ctx context.Context, req *pb.SimpleIdReq) (*pb.ListUsers, error) {
+func (s *PostsHandler) SuggestUsersByPostActivity(ctx context.Context, req *pb.SimpleIdReq) (*cm.ListUsers, error) {
 	fmt.Println("SuggestUsersByPostActivity gRPC method called")
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
@@ -497,15 +498,15 @@ func (s *PostsHandler) SuggestUsersByPostActivity(ctx context.Context, req *pb.S
 		fmt.Println("Error in SuggestUsersByPostActivity:", err)
 		return nil, status.Errorf(codes.Internal, "failed to suggest users: %v", err)
 	}
-	pbUsers := make([]*pb.User, 0, len(users))
+	pbUsers := make([]*cm.User, 0, len(users))
 	for _, u := range users {
-		pbUsers = append(pbUsers, &pb.User{
+		pbUsers = append(pbUsers, &cm.User{
 			UserId:   u.UserId.Int64(),
 			Username: u.Username.String(),
 			Avatar:   u.AvatarId.Int64(),
 		})
 	}
-	return &pb.ListUsers{Users: pbUsers}, nil
+	return &cm.ListUsers{Users: pbUsers}, nil
 }
 
 func (s *PostsHandler) ToggleOrInsertReaction(ctx context.Context, req *pb.GenericReq) (*emptypb.Empty, error) {

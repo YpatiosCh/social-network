@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"social-network/shared/gen-go/users"
+	cm "social-network/shared/gen-go/common"
 	ct "social-network/shared/go/customtypes"
 	md "social-network/shared/go/models"
 )
@@ -25,7 +25,7 @@ func (c *Clients) UserIdsToMap(ctx context.Context,
 	}
 
 	// gRPC request
-	req := &users.Int64Arr{Values: cleaned}
+	req := &cm.Int64Arr{Values: cleaned}
 	resp, err := c.UserClient.GetBatchBasicUserInfo(ctx, req)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (c *Clients) UserIdsToMap(ctx context.Context,
 // Converts a slice of ct.Ids representing users to models.User slice.
 func (c *Clients) UserIdsToUsers(ctx context.Context,
 	ids ct.Ids) (userInfo []md.User, err error) {
-	req := &users.Int64Arr{Values: ids.Int64()}
+	req := &cm.Int64Arr{Values: ids.Int64()}
 	resp, err := c.UserClient.GetBatchBasicUserInfo(ctx, req)
 	if err != nil {
 		return nil, err

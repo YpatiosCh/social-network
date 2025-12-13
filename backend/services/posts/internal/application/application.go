@@ -4,7 +4,7 @@ import (
 	"context"
 	"social-network/services/posts/internal/client"
 	"social-network/services/posts/internal/db/sqlc"
-	userpb "social-network/shared/gen-go/users"
+	cm "social-network/shared/gen-go/common"
 	userhydrate "social-network/shared/go/hydrateusers"
 	"social-network/shared/go/models"
 	redis_connector "social-network/shared/go/redis"
@@ -28,7 +28,7 @@ type UserHydrator struct {
 
 // UsersBatchClient abstracts the single RPC used by the hydrator to fetch basic user info.
 type UsersBatchClient interface {
-	GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*userpb.ListUsers, error)
+	GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*cm.ListUsers, error)
 }
 
 // RedisCache defines the minimal Redis operations used by the hydrator.
