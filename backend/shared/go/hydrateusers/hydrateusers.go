@@ -2,6 +2,7 @@ package userhydrate
 
 import (
 	"context"
+	"fmt"
 
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
@@ -35,15 +36,14 @@ func (h *UserHydrator) GetUsers(ctx context.Context, userIDs []int64) (map[int64
 	var missing []int64
 
 	// Redis lookup
-	// for _, id := range ids {
-	// 	var u models.User
-	// 	if err := h.cache.GetObj(ctx, fmt.Sprintf("basic_user_info:%d", id), &u); err == nil {
-	// 		users[id] = u
-	// 	} else {
-	// 		missing = append(missing, id)
-	// 	}
-	// }
-	missing = ids
+	for _, id := range ids {
+		var u models.User
+		if err := h.cache.GetObj(ctx, fmt.Sprintf("basic_user_info:%d", id), &u); err == nil {
+			users[id] = u
+		} else {
+			missing = append(missing, id)
+		}
+	}
 
 	// Batch RPC for missing users
 	if len(missing) > 0 {
@@ -59,11 +59,11 @@ func (h *UserHydrator) GetUsers(ctx context.Context, userIDs []int64) (map[int64
 				AvatarId: ct.Id(u.Avatar),
 			}
 			users[u.UserId] = user
-			// _ = h.cache.SetObj(ctx,
-			// 	fmt.Sprintf("basic_user_info:%d", u.UserId),
-			// 	user,
-			// 	h.ttl,
-			// )
+			_ = h.cache.SetObj(ctx,
+				fmt.Sprintf("basic_user_info:%d", u.UserId),
+				user,
+				h.ttl,
+			)
 		}
 	}
 

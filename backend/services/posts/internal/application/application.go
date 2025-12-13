@@ -62,7 +62,7 @@ func NewApplication(db sqlc.Querier, pool *pgxpool.Pool, clients *client.Clients
 		txRunner = NewPgxTxRunner(pool, queries)
 	}
 
-	cache := redis_connector.NewRedisClient("localhost:6379", "", 0)
+	cache := redis_connector.NewRedisClient("redis:6379", "", 0)
 
 	return &Application{
 		db:       db,
