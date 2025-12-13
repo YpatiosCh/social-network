@@ -75,6 +75,7 @@ type GetPrevMessagesParams struct {
 	ConversationId    ct.Id
 	BoundaryMessageId ct.Id `validation:"nullable"`
 	Limit             ct.Limit
+	HydrateUsers      bool
 }
 
 type GetPrevMessagesResp struct {
@@ -88,6 +89,7 @@ type GetNextMessageParams struct {
 	ConversationId    ct.Id
 	UserId            ct.Id
 	Limit             ct.Limit
+	HydrateUsers      bool
 }
 
 type GetNextMessagesResp struct {
@@ -97,10 +99,11 @@ type GetNextMessagesResp struct {
 }
 
 type GetUserConversationsParams struct {
-	UserId  ct.Id
-	GroupId ct.Id
-	Limit   ct.Limit
-	Offset  ct.Offset
+	UserId       ct.Id
+	GroupId      ct.Id
+	Limit        ct.Limit
+	Offset       ct.Offset
+	HydrateUsers bool
 }
 
 type GetUserConversationsResp struct {
