@@ -5,7 +5,7 @@ import { Calendar, Link as Lock, Globe, UserPlus, UserCheck, UserMinus, Clock } 
 import Image from "next/image";
 import ProfileStats from "./ProfileStats";
 import Modal from "@/components/ui/Modal";
-import { follow, unfollow } from "@/services/profile/follow";
+import { handleFollowRequest, unfollowUser } from "@/services/requests/followRequest";
 
 export function ProfileHeader({ user }) {
     const [isFollowing, setIsFollowing] = useState(user.viewer_is_following);
@@ -23,7 +23,7 @@ export function ProfileHeader({ user }) {
         try {
             if (isFollowing) {
                 // Handle Unfollow
-                const response = await unfollow(user.user_id);
+                const response = await unfollowUser(user.user_id);
                 if (response.success) {
                     setIsFollowing(false);
                     setIsPending(false);
@@ -42,7 +42,7 @@ export function ProfileHeader({ user }) {
                 }
             } else {
                 // Handle Follow
-                const response = await follow(user.user_id);
+                const response = await handleFollowRequest({ requesterId: user.user_id, accept: true });
                 if (response.success) {
                     if (isPublic) {
                         setIsFollowing(true);
