@@ -6,127 +6,19 @@ import (
 	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/users"
 	ct "social-network/shared/go/customtypes"
-
-	"google.golang.org/protobuf/types/known/wrapperspb"
+	"social-network/shared/go/models"
 )
 
-// func (s *Handlers) GetAllGroupsPaginated() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		ctx := r.Context()
-// 		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
-// 		if !ok {
-// 			panic(1)
-// 		}
+// unfollowUser
+// updateProfileInfo
+// updateEmail
+// updatePassword
+// updatePrivacy
+// searchUsers
+// getUserGroupsPaginated -> if i could get the total num of my groups as a first response that would be nice
+// searchGroups
 
-// 		type reqBody struct {
-// 			Limit  int32 `json:"limit"`
-// 			Offset int32 `json:"offset"`
-// 		}
-
-// 		body, err := utils.JSON2Struct(&reqBody{}, r)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
-// 			return
-// 		}
-
-// 		req := users.Pagination{
-// 			UserId: claims.UserId,
-// 			Limit:  body.Limit,
-// 			Offset: body.Offset,
-// 		}
-
-// 		out, err := s.App.Users.GetAllGroupsPaginated(ctx, &req)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not fetch groups: "+err.Error())
-// 			return
-// 		}
-
-// 		utils.WriteJSON(w, http.StatusOK, out)
-// 	}
-// }
-
-// func (s *Handlers) GetBatchBasicUserInfo() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		ctx := r.Context()
-// 		// claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
-// 		// if !ok {
-// 		// 	panic(1)
-// 		// }
-
-// 		type reqBody struct {
-// 			Values []int64 `json:"values"`
-// 		}
-
-// 		body, err := utils.JSON2Struct(&reqBody{}, r)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
-// 			return
-// 		}
-
-// 		req := cm.UserIds{Values: body.Values}
-
-// 		out, err := s.App.Users.GetBatchBasicUserInfo(ctx, &req)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not fetch users: "+err.Error())
-// 			return
-// 		}
-
-// 		utils.WriteJSON(w, http.StatusOK, out)
-// 	}
-// }
-
-// func (s *Handlers) FollowUser() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		ctx := r.Context()
-// 		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
-// 		if !ok {
-// 			panic(1)
-// 		}
-
-// 		type reqBody struct {
-// 			TargetUserId int64 `json:"target_user_id"`
-// 		}
-
-// 		body, err := utils.JSON2Struct(&reqBody{}, r)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
-// 			return
-// 		}
-
-// 		req := users.FollowUserRequest{
-// 			FollowerId:   claims.UserId,
-// 			TargetUserId: body.TargetUserId,
-// 		}
-
-// 		resp, err := s.App.Users.FollowUser(ctx, &req)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not follow user: "+err.Error())
-// 			return
-// 		}
-
-// 		utils.WriteJSON(w, http.StatusOK, resp) //TODO check if returned values need to be removed
-// 	}
-// }
-
-func (s *Handlers) GetFollowingIds() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
-		if !ok {
-			panic(1)
-		}
-
-		req := &wrapperspb.Int64Value{Value: claims.UserId}
-		resp, err := s.App.Users.GetFollowingIds(ctx, req)
-		if err != nil {
-			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not fetch following ids: "+err.Error())
-			return
-		}
-
-		utils.WriteJSON(w, http.StatusOK, resp)
-	}
-}
-
+// OK...?
 func (s *Handlers) GetFollowingPaginated() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -152,16 +44,28 @@ func (s *Handlers) GetFollowingPaginated() http.HandlerFunc {
 			Offset: body.Offset,
 		}
 
-		resp, err := s.App.Users.GetFollowingPaginated(ctx, req)
+		grpcResp, err := s.App.Users.GetFollowingPaginated(ctx, req)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not fetch following users: "+err.Error())
 			return
+		}
+
+		resp := &models.Users{}
+
+		for _, grpcUser := range grpcResp.Users {
+			user := models.User{
+				UserId:   ct.Id(grpcUser.UserId),
+				Username: ct.Username(grpcUser.Username),
+				AvatarId: ct.Id(grpcUser.Avatar),
+			}
+			resp.Users = append(resp.Users, user)
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 
+// OK?
 func (s *Handlers) GetGroupInfo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -185,16 +89,29 @@ func (s *Handlers) GetGroupInfo() http.HandlerFunc {
 			UserId:  claims.UserId,
 		}
 
-		resp, err := s.App.Users.GetGroupInfo(ctx, req)
+		grpcResp, err := s.App.Users.GetGroupInfo(ctx, req)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not fetch group info: "+err.Error())
 			return
+		}
+
+		resp := models.Group{
+			GroupId:          ct.Id(grpcResp.GroupId),
+			GroupOwnerId:     ct.Id(grpcResp.GroupOwnerId),
+			GroupTitle:       ct.Title(grpcResp.GroupTitle),
+			GroupDescription: ct.About(grpcResp.GroupDescription),
+			GroupImage:       grpcResp.GroupImage,
+			MembersCount:     grpcResp.MembersCount,
+			IsMember:         grpcResp.IsMember,
+			IsOwner:          grpcResp.IsOwner,
+			IsPending:        grpcResp.IsPending,
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 
+// OK?
 func (s *Handlers) GetGroupMembers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -222,16 +139,29 @@ func (s *Handlers) GetGroupMembers() http.HandlerFunc {
 			Offset:  body.Offset,
 		}
 
-		resp, err := s.App.Users.GetGroupMembers(ctx, req)
+		grpcResp, err := s.App.Users.GetGroupMembers(ctx, req)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not fetch group members: "+err.Error())
 			return
+		}
+
+		resp := models.GroupUsers{}
+
+		for _, group := range grpcResp.GroupUserArr {
+			newGroup := models.GroupUser{
+				UserId:    ct.Id(group.UserId),
+				Username:  ct.Username(group.Username),
+				AvatarId:  ct.Id(group.Avatar),
+				GroupRole: group.GroupRole,
+			}
+			resp.GroupUsers = append(resp.GroupUsers, newGroup)
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 
+// OK?
 func (s *Handlers) GetUserGroupsPaginated() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -257,16 +187,33 @@ func (s *Handlers) GetUserGroupsPaginated() http.HandlerFunc {
 			Offset: body.Offset,
 		}
 
-		resp, err := s.App.Users.GetUserGroupsPaginated(ctx, req)
+		grpcResp, err := s.App.Users.GetUserGroupsPaginated(ctx, req)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not fetch user groups: "+err.Error())
 			return
+		}
+
+		resp := GroupsT{}
+		for _, group := range grpcResp.GroupArr {
+			newGroup := GroupT{
+				GroupId:          ct.Id(group.GroupId),
+				GroupOwnerId:     ct.Id(group.GroupOwnerId),
+				GroupTitle:       group.GroupTitle,
+				GroupDescription: group.GroupDescription,
+				GroupImage:       group.GroupImage,
+				MembersCount:     group.MembersCount,
+				IsMember:         group.IsMember,
+				IsOwner:          group.IsOwner,
+				IsPending:        group.IsPending,
+			}
+			resp.groups = append(resp.groups, newGroup)
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 
+// OK?
 func (s *Handlers) HandleFollowRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -292,51 +239,49 @@ func (s *Handlers) HandleFollowRequest() http.HandlerFunc {
 			Accept:      body.Accept,
 		}
 
-		resp, err := s.App.Users.HandleFollowRequest(ctx, req)
-		if err != nil {
+		_, err = s.App.Users.HandleFollowRequest(ctx, req)
+		if err != nil { //soft TODO better error?
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not handle follow request: "+err.Error())
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, resp)
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
-//@kv unsure what to do here in regard to what data the endpoint wants/needs
+// OK?
+func (s *Handlers) HandleGroupJoinRequest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
 
-// func (s *Handlers) HandleGroupJoinRequest() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		ctx := r.Context()
-// 		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
-// 		if !ok {
-// 			panic(1)
-// 		}
+		body, err := utils.JSON2Struct(&models.HandleJoinRequest{}, r)
+		if err != nil {
+			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
+			return
+		}
 
-// 		body, err := utils.JSON2Struct(&models.GroupJoinRequest{}, r)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
-// 			return
-// 		}
+		req := &users.HandleJoinRequest{
+			OwnerId:     claims.UserId,
+			GroupId:     body.GroupId.Int64(),
+			RequesterId: body.RequesterId.Int64(),
+			Accepted:    body.Accepted,
+		}
 
-// 		models.GroupJoinRequest
+		_, err = s.App.Users.HandleGroupJoinRequest(ctx, req)
+		if err != nil {
+			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not handle group join request: "+err.Error())
+			return
+		}
 
-// 		req := &users.HandleJoinRequest{
-// 			OwnerId:     claims.UserId,
-// 			GroupId:     body.GroupId.Int64(),
-// 			RequesterId: claims.UserId,
-// 			Accepted:    body.Accept,
-// 		}
+		utils.WriteJSON(w, http.StatusOK, nil)
+	}
+}
 
-// 		_, err = s.App.Users.HandleGroupJoinRequest(ctx, req)
-// 		if err != nil {
-// 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not handle group join request: "+err.Error())
-// 			return
-// 		}
-
-// 		utils.WriteJSON(w, http.StatusOK, struct{}{})
-// 	}
-// }
-
+// OK?
 func (s *Handlers) InviteToGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -345,12 +290,7 @@ func (s *Handlers) InviteToGroup() http.HandlerFunc {
 			panic(1)
 		}
 
-		type reqBody struct {
-			GroupId int64 `json:"group_id"`
-			UserId  int64 `json:"user_id"`
-		}
-
-		body, err := utils.JSON2Struct(&reqBody{}, r)
+		body, err := utils.JSON2Struct(&models.InviteToGroupReq{}, r)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
 			return
@@ -358,9 +298,8 @@ func (s *Handlers) InviteToGroup() http.HandlerFunc {
 
 		req := &users.InviteToGroupRequest{
 			InviterId: claims.UserId,
-			// InvitedId: claims.UserId,
-			GroupId: body.GroupId,
-			// UserId:    body.UserId,
+			InvitedId: body.InvitedId.Int64(),
+			GroupId:   body.GroupId.Int64(),
 		}
 
 		_, err = s.App.Users.InviteToGroup(ctx, req)
@@ -369,81 +308,11 @@ func (s *Handlers) InviteToGroup() http.HandlerFunc {
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, struct{}{})
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
-func (s *Handlers) IsFollowing() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
-		if !ok {
-			panic(1)
-		}
-
-		type reqBody struct {
-			TargetUserId int64 `json:"target_user_id"`
-		}
-
-		body, err := utils.JSON2Struct(&reqBody{}, r)
-		if err != nil {
-			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
-			return
-		}
-
-		// req := &users.IsFollowingRequest{
-		// 	FollowerId:   claims.UserId,
-		// 	TargetUserId: body.TargetUserId,
-		// }
-
-		req := &users.FollowUserRequest{
-			FollowerId:   claims.UserId,
-			TargetUserId: body.TargetUserId,
-		}
-
-		resp, err := s.App.Users.IsFollowing(ctx, req)
-		if err != nil {
-			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not check following status: "+err.Error())
-			return
-		}
-
-		utils.WriteJSON(w, http.StatusOK, resp)
-	}
-}
-
-func (s *Handlers) IsGroupMember() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
-		if !ok {
-			panic(1)
-		}
-
-		type reqBody struct {
-			GroupId int64 `json:"group_id"`
-		}
-
-		body, err := utils.JSON2Struct(&reqBody{}, r)
-		if err != nil {
-			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
-			return
-		}
-
-		req := &users.GeneralGroupRequest{
-			UserId:  claims.UserId,
-			GroupId: body.GroupId,
-		}
-
-		resp, err := s.App.Users.IsGroupMember(ctx, req)
-		if err != nil {
-			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not check group membership: "+err.Error())
-			return
-		}
-
-		utils.WriteJSON(w, http.StatusOK, resp)
-	}
-}
-
+// OK?
 func (s *Handlers) LeaveGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -452,11 +321,7 @@ func (s *Handlers) LeaveGroup() http.HandlerFunc {
 			panic(1)
 		}
 
-		type reqBody struct {
-			GroupId int64 `json:"group_id"`
-		}
-
-		body, err := utils.JSON2Struct(&reqBody{}, r)
+		body, err := utils.JSON2Struct(&models.GeneralGroupReq{}, r)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
 			return
@@ -464,7 +329,7 @@ func (s *Handlers) LeaveGroup() http.HandlerFunc {
 
 		req := &users.GeneralGroupRequest{
 			UserId:  claims.UserId,
-			GroupId: body.GroupId,
+			GroupId: body.GroupId.Int64(),
 		}
 
 		_, err = s.App.Users.LeaveGroup(ctx, req)
@@ -473,10 +338,11 @@ func (s *Handlers) LeaveGroup() http.HandlerFunc {
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, struct{}{})
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
+// OK?
 func (s *Handlers) RequestJoinGroupOrCancel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -485,11 +351,7 @@ func (s *Handlers) RequestJoinGroupOrCancel() http.HandlerFunc {
 			panic(1)
 		}
 
-		type reqBody struct {
-			GroupId int64 `json:"group_id"`
-		}
-
-		body, err := utils.JSON2Struct(&reqBody{}, r)
+		body, err := utils.JSON2Struct(&models.GroupJoinRequest{}, r)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
 			return
@@ -497,7 +359,7 @@ func (s *Handlers) RequestJoinGroupOrCancel() http.HandlerFunc {
 
 		req := &users.GroupJoinRequest{
 			RequesterId: claims.UserId,
-			GroupId:     body.GroupId,
+			GroupId:     body.GroupId.Int64(),
 		}
 
 		_, err = s.App.Users.RequestJoinGroupOrCancel(ctx, req)
@@ -506,10 +368,11 @@ func (s *Handlers) RequestJoinGroupOrCancel() http.HandlerFunc {
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, struct{}{})
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
+// OK?
 func (s *Handlers) RespondToGroupInvite() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -532,7 +395,7 @@ func (s *Handlers) RespondToGroupInvite() http.HandlerFunc {
 		req := &users.HandleGroupInviteRequest{
 			InvitedId: claims.UserId,
 			GroupId:   body.GroupId,
-			// Accept:  body.Accept,
+			Accepted:  body.Accept,
 		}
 
 		_, err = s.App.Users.RespondToGroupInvite(ctx, req)
@@ -541,13 +404,18 @@ func (s *Handlers) RespondToGroupInvite() http.HandlerFunc {
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, struct{}{})
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
+// OK?
 func (s *Handlers) SearchGroups() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
 
 		type reqBody struct {
 			Query  string `json:"query"`
@@ -565,26 +433,46 @@ func (s *Handlers) SearchGroups() http.HandlerFunc {
 			SearchTerm: body.Query,
 			Limit:      body.Limit,
 			Offset:     body.Offset,
+			UserId:     claims.UserId,
 		}
 
-		resp, err := s.App.Users.SearchGroups(ctx, req)
+		grpcResp, err := s.App.Users.SearchGroups(ctx, req)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not search groups: "+err.Error())
 			return
+		}
+
+		resp := models.Groups{
+			Groups: make([]models.Group, 0, len(grpcResp.GroupArr)),
+		}
+		for _, group := range grpcResp.GroupArr {
+			newGroup := models.Group{
+				GroupId:          ct.Id(group.GroupId),
+				GroupOwnerId:     ct.Id(group.GroupOwnerId),
+				GroupTitle:       ct.Title(group.GroupTitle),
+				GroupDescription: ct.About(group.GroupDescription),
+				GroupImage:       group.GroupImage,
+				MembersCount:     group.MembersCount,
+				IsMember:         group.IsMember,
+				IsOwner:          group.IsOwner,
+				IsPending:        group.IsPending,
+			}
+
+			resp.Groups = append(resp.Groups, newGroup)
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 
+// OK?
 func (s *Handlers) SearchUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		type reqBody struct {
-			Query  string `json:"query"`
-			Limit  int32  `json:"limit"`
-			Offset int32  `json:"offset"`
+			Query string `json:"query"`
+			Limit int32  `json:"limit"`
 		}
 
 		body, err := utils.JSON2Struct(&reqBody{}, r)
@@ -596,19 +484,33 @@ func (s *Handlers) SearchUsers() http.HandlerFunc {
 		req := &users.UserSearchRequest{
 			SearchTerm: body.Query,
 			Limit:      body.Limit,
-			// Offset: body.Offset,
 		}
 
-		resp, err := s.App.Users.SearchUsers(ctx, req)
+		grpcResp, err := s.App.Users.SearchUsers(ctx, req)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not search users: "+err.Error())
 			return
+		}
+
+		resp := models.Users{
+			Users: make([]models.User, 0, len(grpcResp.Users)),
+		}
+
+		for _, user := range grpcResp.Users {
+			newUser := models.User{
+				UserId:   ct.Id(user.UserId),
+				Username: ct.Username(user.Username),
+				AvatarId: ct.Id(user.Avatar),
+			}
+
+			resp.Users = append(resp.Users, newUser)
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 
+// OK
 func (s *Handlers) UnFollowUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -618,7 +520,7 @@ func (s *Handlers) UnFollowUser() http.HandlerFunc {
 		}
 
 		type reqBody struct {
-			TargetUserId int64 `json:"target_user_id"`
+			UserId int64 `json:"user_id"`
 		}
 
 		body, err := utils.JSON2Struct(&reqBody{}, r)
@@ -629,7 +531,7 @@ func (s *Handlers) UnFollowUser() http.HandlerFunc {
 
 		req := &users.FollowUserRequest{
 			FollowerId:   claims.UserId,
-			TargetUserId: body.TargetUserId,
+			TargetUserId: body.UserId,
 		}
 
 		resp, err := s.App.Users.UnFollowUser(ctx, req)
@@ -642,6 +544,7 @@ func (s *Handlers) UnFollowUser() http.HandlerFunc {
 	}
 }
 
+// OK
 func (s *Handlers) UpdateProfilePrivacy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -651,7 +554,7 @@ func (s *Handlers) UpdateProfilePrivacy() http.HandlerFunc {
 		}
 
 		type reqBody struct {
-			Private bool `json:"private"`
+			Public bool `json:"public"`
 		}
 
 		body, err := utils.JSON2Struct(&reqBody{}, r)
@@ -662,7 +565,7 @@ func (s *Handlers) UpdateProfilePrivacy() http.HandlerFunc {
 
 		req := &users.UpdateProfilePrivacyRequest{
 			UserId: claims.UserId,
-			Public: !body.Private,
+			Public: body.Public,
 		}
 
 		_, err = s.App.Users.UpdateProfilePrivacy(ctx, req)
@@ -671,10 +574,11 @@ func (s *Handlers) UpdateProfilePrivacy() http.HandlerFunc {
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, struct{}{})
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
+// OK
 func (s *Handlers) UpdateUserEmail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -704,10 +608,11 @@ func (s *Handlers) UpdateUserEmail() http.HandlerFunc {
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, struct{}{})
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
+// TODO should probably be done using a specific link / needs extra validation
 func (s *Handlers) UpdateUserPassword() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -739,7 +644,7 @@ func (s *Handlers) UpdateUserPassword() http.HandlerFunc {
 			return
 		}
 
-		utils.WriteJSON(w, http.StatusOK, struct{}{})
+		utils.WriteJSON(w, http.StatusOK, nil)
 	}
 }
 
@@ -751,18 +656,45 @@ func (s *Handlers) UpdateUserProfile() http.HandlerFunc {
 			panic(1)
 		}
 
-		body, err := utils.JSON2Struct(&users.UpdateProfileRequest{}, r)
+		type UpdateProfileJSONRequest struct {
+			Username    ct.Username    `json:"username"`
+			FirstName   ct.Name        `json:"first_name"`
+			LastName    ct.Name        `json:"last_name"`
+			DateOfBirth ct.DateOfBirth `json:"date_of_birth"`
+			AvatarId    ct.Id          `json:"avatar_id" validate:"nullable"`
+			About       ct.About       `json:"about" validate:"nullable"`
+		}
+
+		body, err := utils.JSON2Struct(&UpdateProfileJSONRequest{}, r)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
 			return
 		}
 
-		body.UserId = claims.UserId
+		grpcRequest := &users.UpdateProfileRequest{
+			UserId:      claims.UserId,
+			Username:    body.Username.String(),
+			FirstName:   body.FirstName.String(),
+			LastName:    body.LastName.String(),
+			DateOfBirth: body.DateOfBirth.ToProto(),
+			Avatar:      body.AvatarId.Int64(),
+		}
 
-		resp, err := s.App.Users.UpdateUserProfile(ctx, body)
+		grpcResp, err := s.App.Users.UpdateUserProfile(ctx, grpcRequest)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not update profile: "+err.Error())
 			return
+		}
+
+		resp := models.UserProfileResponse{
+			UserId:      ct.Id(grpcResp.UserId),
+			Username:    ct.Username(grpcResp.Username),
+			FirstName:   ct.Name(grpcResp.FirstName),
+			LastName:    ct.Name(grpcResp.LastName),
+			DateOfBirth: ct.DateOfBirth(grpcResp.DateOfBirth.AsTime()), //TODO @vag lmao, is this correct?
+			AvatarId:    ct.Id(grpcResp.Avatar),
+			About:       ct.About(grpcResp.About),
+			Public:      grpcResp.Public,
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)

@@ -85,9 +85,10 @@ func (h *Handlers) loginHandler() http.HandlerFunc {
 		})
 
 		type httpResponse struct {
-			UserId ct.EncryptedId
+			UserId ct.Id
 		}
-		httpResp := httpResponse{UserId: ct.EncryptedId(resp.UserId)}
+
+		httpResp := httpResponse{UserId: ct.Id(resp.UserId)}
 
 		//SEND RESPONSE
 		err = utils.WriteJSON(w, http.StatusCreated, httpResp)
@@ -233,9 +234,9 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 		})
 
 		type httpResponse struct {
-			UserId ct.EncryptedId
+			UserId ct.Id
 		}
-		httpResp := httpResponse{UserId: ct.EncryptedId(resp.UserId)}
+		httpResp := httpResponse{UserId: ct.Id(resp.UserId)}
 
 		//SEND RESPONSE
 		if err := utils.WriteJSON(w, http.StatusCreated, httpResp); err != nil {

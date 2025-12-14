@@ -8,6 +8,7 @@ import (
 	"social-network/shared/gen-go/posts"
 	"social-network/shared/gen-go/users"
 	ct "social-network/shared/go/customtypes"
+	"social-network/shared/go/models"
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -20,16 +21,6 @@ func (s *Handlers) GetFollowSuggestions() http.HandlerFunc {
 			panic(1)
 		}
 		requesterId := int64(claims.UserId)
-
-		// type reqBody struct {
-		// 	Value int64 `json:"value"`
-		// }
-
-		// body, err := utils.JSON2Struct(&reqBody{}, r)
-		// if err != nil {
-		// 	utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
-		// 	return
-		// }
 
 		req := wrapperspb.Int64Value{Value: requesterId}
 
@@ -45,14 +36,26 @@ func (s *Handlers) GetFollowSuggestions() http.HandlerFunc {
 			return
 		}
 
-		//TODO deduplicate suggestions from part1 and part2
-		// As it is no id hashing happpens, FIX
-
-		out := &common.ListUsers{
-			Users: append(part1.Users, part2.Users...),
+		myMap := make(map[int64]*common.User)
+		for _, user := range part1.Users {
+			myMap[user.UserId] = user
 		}
-
-		utils.WriteJSON(w, http.StatusOK, out)
+		for _, user := range part2.Users {
+			myMap[user.UserId] = user
+		}
+		dedupedUsers := make([]models.User, 0, len(part1.Users)+len(part2.Users))
+		for _, user := range myMap {
+			newUser := models.User{
+				UserId:   ct.Id(user.UserId),
+				Username: ct.Username(user.Username),
+				AvatarId: ct.Id(user.Avatar),
+			}
+			dedupedUsers = append(dedupedUsers, newUser)
+		}
+		resp := models.Users{
+			Users: dedupedUsers,
+		}
+		utils.WriteJSON(w, http.StatusOK, resp)
 	}
 }
 

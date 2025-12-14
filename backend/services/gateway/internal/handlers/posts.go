@@ -35,35 +35,35 @@ func (h *Handlers) getPublicFeed() http.HandlerFunc {
 		fmt.Println("retrieved public feed: ", grpcResp)
 
 		type Post struct {
-			PostId          ct.EncryptedId `json:"post_id"`
-			Body            ct.PostBody    `json:"post_body"`
-			CreatorId       ct.EncryptedId `json:"post_creator_id"`
-			CreatorUsername ct.Username    `json:"post_creator_username"`
-			CreatorAvater   ct.EncryptedId `json:"post_creator_avatar,omitempty"`
-			CommentsCount   int            `json:"comments_count"`
-			ReactionsCount  int            `json:"reactions_count"`
-			LastCommentedAt time.Time      `json:"last_created_at"`
-			CreatedAt       time.Time      `json:"created_at"`
-			UpdatedAt       time.Time      `json:"updated_at,omitempty"`
-			LikedByUser     bool           `json:"liked_by_user"`
-			Image           ct.EncryptedId `json:"image,omitempty"`
+			PostId          ct.Id       `json:"post_id"`
+			Body            ct.PostBody `json:"post_body"`
+			CreatorId       ct.Id       `json:"post_creator_id"`
+			CreatorUsername ct.Username `json:"post_creator_username"`
+			CreatorAvater   ct.Id       `json:"post_creator_avatar,omitempty"`
+			CommentsCount   int         `json:"comments_count"`
+			ReactionsCount  int         `json:"reactions_count"`
+			LastCommentedAt time.Time   `json:"last_created_at"`
+			CreatedAt       time.Time   `json:"created_at"`
+			UpdatedAt       time.Time   `json:"updated_at,omitempty"`
+			LikedByUser     bool        `json:"liked_by_user"`
+			Image           ct.Id       `json:"image,omitempty"`
 		}
 
 		var postsResponse []Post
 		for _, p := range grpcResp.Posts {
 			post := Post{
-				PostId:          ct.EncryptedId(p.PostId),
+				PostId:          ct.Id(p.PostId),
 				Body:            ct.PostBody(p.PostBody),
-				CreatorId:       ct.EncryptedId(p.User.UserId),
+				CreatorId:       ct.Id(p.User.UserId),
 				CreatorUsername: ct.Username(p.User.Username),
-				CreatorAvater:   ct.EncryptedId(p.User.Avatar),
+				CreatorAvater:   ct.Id(p.User.Avatar),
 				CommentsCount:   int(p.CommentsCount),
 				ReactionsCount:  int(p.ReactionsCount),
 				LastCommentedAt: p.LastCommentedAt.AsTime(),
 				CreatedAt:       p.CreatedAt.AsTime(),
 				UpdatedAt:       p.UpdatedAt.AsTime(),
 				LikedByUser:     p.LikedByUser,
-				Image:           ct.EncryptedId(p.Image),
+				Image:           ct.Id(p.Image),
 			}
 			postsResponse = append(postsResponse, post)
 		}
