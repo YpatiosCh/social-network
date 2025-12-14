@@ -22,66 +22,67 @@ func NewHandlers(app application.GatewayApp) (*Handlers, error) {
 func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 	mux := http.NewServeMux()
 	ratelimiter := ratelimit.NewRateLimiter(serviceName+":", h.App.Redis)
-	middleware := middleware.NewMiddleware(ratelimiter)
-	Chain := middleware.Chain
+	middlewareObj := middleware.NewMiddleware(ratelimiter, "gateway")
+	Chain := middlewareObj.Chain
+
+	IP := middleware.GlobalLimit
+	USERID := middleware.UserLimit
 
 	mux.HandleFunc("/test",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(5, 5).
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
 			EnrichContext().
 			Finalize(h.testHandler()))
 
 	mux.HandleFunc("/profile/",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(40, 20).
+			AllowedMethod("POST").
+			RateLimit(IP, 40, 20).
 			Auth().
-			RateLimitUser(40, 20).
 			EnrichContext().
+			RateLimit(USERID, 40, 20).
 			Finalize(h.getUserProfile()))
 
 	mux.HandleFunc("/login",
 		Chain().
 			AllowedMethod("POST").
-			RateLimitIP(5, 5).
-			RateLimitUser(5, 5).
+			RateLimit(IP, 5, 5).
 			EnrichContext().
 			Finalize(h.loginHandler()))
 
 	mux.HandleFunc("/register",
 		Chain().
 			AllowedMethod("POST").
-			RateLimitIP(5, 5).
-			RateLimitUser(5, 5).
+			RateLimit(IP, 5, 5).
 			EnrichContext().
 			Finalize(h.registerHandler()))
 
 	mux.HandleFunc("/logout",
 		Chain().
 			AllowedMethod("POST").
-			RateLimitIP(5, 5).
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.logoutHandler()))
 
 	mux.HandleFunc("/auth-status",
 		Chain().
 			AllowedMethod("POST").
-			RateLimitIP(5, 5).
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.authStatus()))
 
 	mux.HandleFunc("/public-feed",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(5, 5).
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.getPublicFeed()))
 
 	//NEW ENDPOINTS BELOW:
@@ -90,229 +91,201 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 	mux.HandleFunc("/groups/create",
 		Chain().
 			AllowedMethod("POST").
-			RateLimitIP(5, 5).
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.CreateGroup()))
 
 	mux.HandleFunc("/groups/paginated",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(5, 5).
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.GetAllGroupsPaginated()))
 
 	// Follow actions
-	mux.HandleFunc("/users/follow",
+	mux.HandleFunc("/user/follow",
 		Chain().
 			AllowedMethod("POST").
-			RateLimitIP(5, 5).
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.FollowUser()))
 
 	mux.HandleFunc("/users/followers/paginated",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(5, 5).
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.GetFollowersPaginated()))
 
 	mux.HandleFunc("/users/follow-suggestions",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(5, 5).
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
+			RateLimit(USERID, 5, 5).
 			Finalize(h.GetFollowSuggestions()))
 
-	// Basic user info
-	mux.HandleFunc("/users/basic-info",
+	mux.HandleFunc("/following",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(5, 5).
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
-			Finalize(h.GetBasicUserInfo()))
+			RateLimit(USERID, 5, 5).
+			Finalize(h.GetFollowingPaginated()))
 
-	mux.HandleFunc("/users/basic-info/batch",
+	mux.HandleFunc("/group/",
 		Chain().
-			AllowedMethod("GET").
-			RateLimitIP(5, 5).
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
 			Auth().
-			RateLimitUser(5, 5).
 			EnrichContext().
-			Finalize(h.GetBatchBasicUserInfo()))
+			RateLimit(USERID, 5, 5).
+			Finalize(h.GetGroupInfo()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.GetFollowingIds()))
+	mux.HandleFunc("/group/members",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.GetGroupMembers()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.GetFollowingPaginated()))
+	mux.HandleFunc("/groups/user/",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.GetUserGroupsPaginated()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.GetGroupInfo()))
+	mux.HandleFunc("/follow/response",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.HandleFollowRequest()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.GetGroupMembers()))
+	mux.HandleFunc("/group/handle-request",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.HandleGroupJoinRequest()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.GetUserGroupsPaginated()))
+	mux.HandleFunc("/group/invite/user",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.InviteToGroup()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.HandleFollowRequest()))
+	mux.HandleFunc("/group/leave",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.LeaveGroup()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.HandleGroupJoinRequest()))
+	mux.HandleFunc("/group/join",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.RequestJoinGroupOrCancel()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.InviteToGroup()))
+	mux.HandleFunc("/group/invite/response",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.RespondToGroupInvite()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.LeaveGroup()))
+	mux.HandleFunc("/search/group",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.SearchGroups()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.RequestJoinGroupOrCancel()))
+	mux.HandleFunc("/users/search",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.SearchUsers()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.RespondToGroupInvite()))
+	mux.HandleFunc("/user/unfollow",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.UnFollowUser()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.SearchGroups()))
+	mux.HandleFunc("/account/update/public",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.UpdateProfilePrivacy()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.SearchUsers()))
+	mux.HandleFunc("/account/update/email",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.UpdateUserEmail()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.UnFollowUser()))
+	mux.HandleFunc("/account/update/password",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.UpdateUserPassword()))
 
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.UpdateProfilePrivacy()))
-
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.UpdateUserEmail()))
-
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.UpdateUserPassword()))
-
-	// mux.HandleFunc("/public-feed",
-	// 	Chain().
-	// 		AllowedMethod("GET").
-	// 		RateLimitIP(5, 5).
-	// 		Auth().
-	// 		RateLimitUser(5, 5).
-	// 		EnrichContext().
-	// 		Finalize(h.UpdateUserProfile()))
+	mux.HandleFunc("/profile/update",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.UpdateUserProfile()))
 
 	return mux
 }
