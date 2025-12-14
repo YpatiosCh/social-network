@@ -249,7 +249,7 @@ func (s *Application) CancelInviteToGroup(ctx context.Context, req models.Invite
 	return nil
 }
 
-func (s *Application) RequestJoinGroupOrCancel(ctx context.Context, req models.GroupJoinRequest) error {
+func (s *Application) RequestJoinGroup(ctx context.Context, req models.GroupJoinRequest) error {
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
 	}

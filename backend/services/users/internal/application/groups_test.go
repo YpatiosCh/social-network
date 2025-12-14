@@ -413,7 +413,7 @@ func TestRequestJoinGroupOrCancel_Request(t *testing.T) {
 		UserID:  2,
 	}).Return(nil)
 
-	err := service.RequestJoinGroupOrCancel(ctx, req)
+	err := service.RequestJoinGroup(ctx, req)
 
 	assert.NoError(t, err)
 	mockDB.AssertExpectations(t)
