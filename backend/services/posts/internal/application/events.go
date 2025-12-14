@@ -195,7 +195,7 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 		return events, nil
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, userIDs)
+	userMap, err := s.userRetriever.GetUsers(ctx, userIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -206,10 +206,6 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 			events[i].User = u
 		}
 	}
-
-	// if err := s.hydrateEvents(ctx, events); err != nil {
-	// 	return nil, err
-	// }
 
 	return events, nil
 }
