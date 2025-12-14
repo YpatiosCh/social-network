@@ -63,3 +63,12 @@ GET {{baseUrl}}/public-feed
 
 ### 5) FOLLOW SUGGESTIONS
 GET {{baseUrl}}/users/follow-suggestions
+
+### 6) USER GROUPS
+POST {{baseUrl}}/groups/user/
+Content-Type: application/json
+
+{
+  "limit": 10,
+  "offset": 0
+}

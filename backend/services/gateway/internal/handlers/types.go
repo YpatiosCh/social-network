@@ -15,7 +15,7 @@ type GroupT struct {
 }
 
 type GroupsT struct {
-	groups []GroupT
+	Groups []GroupT
 }
 
 type UserT struct {

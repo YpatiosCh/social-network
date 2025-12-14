@@ -206,7 +206,7 @@ func (s *Handlers) GetUserGroupsPaginated() http.HandlerFunc {
 				IsOwner:          group.IsOwner,
 				IsPending:        group.IsPending,
 			}
-			resp.groups = append(resp.groups, newGroup)
+			resp.Groups = append(resp.Groups, newGroup)
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)
