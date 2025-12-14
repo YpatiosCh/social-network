@@ -64,6 +64,7 @@ enum NotificationType {
   NOTIFICATION_TYPE_POST_LIKE = 6;
   NOTIFICATION_TYPE_POST_COMMENT = 7;
   NOTIFICATION_TYPE_MENTION = 8;
+  NOTIFICATION_TYPE_NEW_MESSAGE = 9;
 }
 
 // Notification status
@@ -85,10 +86,11 @@ message Notification {
   int64 source_entity_id = 7; // id of the entity that triggered the notification
   bool needs_action = 8; // whether user needs to take action (e.g., accept/decline)
   bool acted = 9; // whether user has taken action
-  map<string, string> payload = 10; // additional data in key-value pairs
-  google.protobuf.Timestamp created_at = 11;
-  google.protobuf.Timestamp expires_at = 12;
-  NotificationStatus status = 13;
+  int32 count = 10; // aggregation count
+  map<string, string> payload = 11; // additional data in key-value pairs
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp expires_at = 13;
+  NotificationStatus status = 14;
 }
 
 // Request to create a single notification
@@ -101,6 +103,7 @@ message CreateNotificationRequest {
   int64 source_entity_id = 6;
   bool needs_action = 7;
   map<string, string> payload = 8;
+  bool aggregate = 9; // whether to aggregate this notification with existing ones
 }
 
 // Request to create multiple notifications

@@ -13,18 +13,19 @@ import (
 
 const createNotification = `-- name: CreateNotification :one
 INSERT INTO notifications (
-    user_id, 
-    notif_type, 
-    source_service, 
-    source_entity_id, 
-    needs_action, 
-    acted, 
-    payload, 
-    created_at, 
-    expires_at
+    user_id,
+    notif_type,
+    source_service,
+    source_entity_id,
+    needs_action,
+    acted,
+    payload,
+    created_at,
+    expires_at,
+    count
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, NOW(), $8
-) RETURNING id, user_id, notif_type, source_service, source_entity_id, seen, needs_action, acted, payload, created_at, expires_at, deleted_at
+    $1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9
+) RETURNING id, user_id, notif_type, source_service, source_entity_id, seen, needs_action, acted, payload, created_at, expires_at, deleted_at, count
 `
 
 type CreateNotificationParams struct {
@@ -36,6 +37,7 @@ type CreateNotificationParams struct {
 	Acted          pgtype.Bool
 	Payload        []byte
 	ExpiresAt      pgtype.Timestamptz
+	Count          pgtype.Int4
 }
 
 func (q *Queries) CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error) {
@@ -48,6 +50,7 @@ func (q *Queries) CreateNotification(ctx context.Context, arg CreateNotification
 		arg.Acted,
 		arg.Payload,
 		arg.ExpiresAt,
+		arg.Count,
 	)
 	var i Notification
 	err := row.Scan(
@@ -63,6 +66,7 @@ func (q *Queries) CreateNotification(ctx context.Context, arg CreateNotification
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.DeletedAt,
+		&i.Count,
 	)
 	return i, err
 }
@@ -99,7 +103,7 @@ func (q *Queries) DeleteNotification(ctx context.Context, arg DeleteNotification
 }
 
 const getNotificationByID = `-- name: GetNotificationByID :one
-SELECT id, user_id, notif_type, source_service, source_entity_id, seen, needs_action, acted, payload, created_at, expires_at, deleted_at
+SELECT id, user_id, notif_type, source_service, source_entity_id, seen, needs_action, acted, payload, created_at, expires_at, deleted_at, count
 FROM notifications
 WHERE id = $1 AND deleted_at IS NULL
 `
@@ -120,6 +124,7 @@ func (q *Queries) GetNotificationByID(ctx context.Context, id int64) (Notificati
 		&i.CreatedAt,
 		&i.ExpiresAt,
 		&i.DeletedAt,
+		&i.Count,
 	)
 	return i, err
 }
@@ -137,10 +142,44 @@ func (q *Queries) GetNotificationType(ctx context.Context, notifType string) (No
 	return i, err
 }
 
-const getUserNotifications = `-- name: GetUserNotifications :many
-SELECT id, user_id, notif_type, source_service, source_entity_id, seen, needs_action, acted, payload, created_at, expires_at, deleted_at
+const getUnreadNotificationByTypeAndEntity = `-- name: GetUnreadNotificationByTypeAndEntity :one
+SELECT id, user_id, notif_type, source_service, source_entity_id, seen, needs_action, acted, payload, created_at, expires_at, deleted_at, count
 FROM notifications
-WHERE user_id = $1 
+WHERE user_id = $1 AND notif_type = $2 AND source_entity_id = $3 AND seen = false AND deleted_at IS NULL
+LIMIT 1
+`
+
+type GetUnreadNotificationByTypeAndEntityParams struct {
+	UserID         int64
+	NotifType      string
+	SourceEntityID pgtype.Int8
+}
+
+func (q *Queries) GetUnreadNotificationByTypeAndEntity(ctx context.Context, arg GetUnreadNotificationByTypeAndEntityParams) (Notification, error) {
+	row := q.db.QueryRow(ctx, getUnreadNotificationByTypeAndEntity, arg.UserID, arg.NotifType, arg.SourceEntityID)
+	var i Notification
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.NotifType,
+		&i.SourceService,
+		&i.SourceEntityID,
+		&i.Seen,
+		&i.NeedsAction,
+		&i.Acted,
+		&i.Payload,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.DeletedAt,
+		&i.Count,
+	)
+	return i, err
+}
+
+const getUserNotifications = `-- name: GetUserNotifications :many
+SELECT id, user_id, notif_type, source_service, source_entity_id, seen, needs_action, acted, payload, created_at, expires_at, deleted_at, count
+FROM notifications
+WHERE user_id = $1
   AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3
@@ -174,6 +213,7 @@ func (q *Queries) GetUserNotifications(ctx context.Context, arg GetUserNotificat
 			&i.CreatedAt,
 			&i.ExpiresAt,
 			&i.DeletedAt,
+			&i.Count,
 		); err != nil {
 			return nil, err
 		}
@@ -186,7 +226,7 @@ func (q *Queries) GetUserNotifications(ctx context.Context, arg GetUserNotificat
 }
 
 const getUserNotificationsCount = `-- name: GetUserNotificationsCount :one
-SELECT COUNT(*) 
+SELECT COUNT(*)
 FROM notifications
 WHERE user_id = $1 AND deleted_at IS NULL
 `
@@ -199,7 +239,7 @@ func (q *Queries) GetUserNotificationsCount(ctx context.Context, userID int64) (
 }
 
 const getUserUnreadNotificationsCount = `-- name: GetUserUnreadNotificationsCount :one
-SELECT COUNT(*) 
+SELECT COUNT(*)
 FROM notifications
 WHERE user_id = $1 AND seen = false AND deleted_at IS NULL
 `
@@ -231,5 +271,20 @@ type MarkNotificationAsReadParams struct {
 
 func (q *Queries) MarkNotificationAsRead(ctx context.Context, arg MarkNotificationAsReadParams) error {
 	_, err := q.db.Exec(ctx, markNotificationAsRead, arg.ID, arg.UserID)
+	return err
+}
+
+const updateNotificationCount = `-- name: UpdateNotificationCount :exec
+UPDATE notifications SET count = $1 WHERE id = $2 AND user_id = $3
+`
+
+type UpdateNotificationCountParams struct {
+	Count  pgtype.Int4
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) UpdateNotificationCount(ctx context.Context, arg UpdateNotificationCountParams) error {
+	_, err := q.db.Exec(ctx, updateNotificationCount, arg.Count, arg.ID, arg.UserID)
 	return err
 }

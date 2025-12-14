@@ -310,7 +310,7 @@ func (s *UsersHandler) GetFollowSuggestions(ctx context.Context, req *wrapperspb
 	return usersToPB(resp), nil
 }
 
-func (s *UsersHandler) IsFollowing(ctx context.Context, req *pb.FollowUserRequest) (*wrapperspb.BoolValue, error) {
+func (s *UsersHandler) IsFollowing(ctx context.Context, req *pb.IsFollowingRequest) (*wrapperspb.BoolValue, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "IsFollowing: request is nil")
 	}
@@ -575,7 +575,7 @@ func (s *UsersHandler) IsGroupMember(ctx context.Context, req *pb.GeneralGroupRe
 	return wrapperspb.Bool(resp), nil
 }
 
-func (s *UsersHandler) RequestJoinGroupOrCancel(ctx context.Context, req *pb.GroupJoinRequest) (*emptypb.Empty, error) {
+func (s *UsersHandler) RequestJoinGroup(ctx context.Context, req *pb.GroupJoinRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "RequestJoinGroupOrCancel: request is nil")
 	}
@@ -590,7 +590,7 @@ func (s *UsersHandler) RequestJoinGroupOrCancel(ctx context.Context, req *pb.Gro
 		return nil, err
 	}
 
-	err := s.Application.RequestJoinGroupOrCancel(ctx, models.GroupJoinRequest{
+	err := s.Application.RequestJoinGroup(ctx, models.GroupJoinRequest{
 		GroupId:     ct.Id(groupId),
 		RequesterId: ct.Id(requesterId),
 	})

@@ -14,11 +14,13 @@ type Querier interface {
 	DeleteNotification(ctx context.Context, arg DeleteNotificationParams) error
 	GetNotificationByID(ctx context.Context, id int64) (Notification, error)
 	GetNotificationType(ctx context.Context, notifType string) (NotificationType, error)
+	GetUnreadNotificationByTypeAndEntity(ctx context.Context, arg GetUnreadNotificationByTypeAndEntityParams) (Notification, error)
 	GetUserNotifications(ctx context.Context, arg GetUserNotificationsParams) ([]Notification, error)
 	GetUserNotificationsCount(ctx context.Context, userID int64) (int64, error)
 	GetUserUnreadNotificationsCount(ctx context.Context, userID int64) (int64, error)
 	MarkAllAsRead(ctx context.Context, userID int64) error
 	MarkNotificationAsRead(ctx context.Context, arg MarkNotificationAsReadParams) error
+	UpdateNotificationCount(ctx context.Context, arg UpdateNotificationCountParams) error
 }
 
 var _ Querier = (*Queries)(nil)

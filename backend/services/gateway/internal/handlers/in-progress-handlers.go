@@ -362,7 +362,7 @@ func (s *Handlers) RequestJoinGroupOrCancel() http.HandlerFunc {
 			GroupId:     body.GroupId.Int64(),
 		}
 
-		_, err = s.App.Users.RequestJoinGroupOrCancel(ctx, req)
+		_, err = s.App.Users.RequestJoinGroup(ctx, req)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "Could not process join request: "+err.Error())
 			return

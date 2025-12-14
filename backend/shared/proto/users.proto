@@ -80,7 +80,7 @@ service UserService {
   rpc IsGroupMember (GeneralGroupRequest) returns (google.protobuf.BoolValue);
 
   // Creates or cancels a join request for the group.
-  rpc RequestJoinGroupOrCancel (GroupJoinRequest) returns (google.protobuf.Empty);
+  rpc RequestJoinGroup (GroupJoinRequest) returns (google.protobuf.Empty);
 
   // Accepts or declines a received group invite.
   rpc RespondToGroupInvite (HandleGroupInviteRequest) returns (google.protobuf.Empty);

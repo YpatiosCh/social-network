@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -12,61 +13,6 @@ import (
 
 	"social-network/services/notifications/internal/db/sqlc"
 )
-
-// MockDB is a mock implementation of the database queries
-type MockDB struct {
-	mock.Mock
-}
-
-func (m *MockDB) CreateNotification(ctx context.Context, arg sqlc.CreateNotificationParams) (sqlc.Notification, error) {
-	args := m.Called(ctx, arg)
-	return args.Get(0).(sqlc.Notification), args.Error(1)
-}
-
-func (m *MockDB) GetNotificationByID(ctx context.Context, id int64) (sqlc.Notification, error) {
-	args := m.Called(ctx, id)
-	return args.Get(0).(sqlc.Notification), args.Error(1)
-}
-
-func (m *MockDB) GetUserNotifications(ctx context.Context, arg sqlc.GetUserNotificationsParams) ([]sqlc.Notification, error) {
-	args := m.Called(ctx, arg)
-	return args.Get(0).([]sqlc.Notification), args.Error(1)
-}
-
-func (m *MockDB) GetUserNotificationsCount(ctx context.Context, userID int64) (int64, error) {
-	args := m.Called(ctx, userID)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockDB) GetUserUnreadNotificationsCount(ctx context.Context, userID int64) (int64, error) {
-	args := m.Called(ctx, userID)
-	return args.Get(0).(int64), args.Error(1)
-}
-
-func (m *MockDB) MarkNotificationAsRead(ctx context.Context, arg sqlc.MarkNotificationAsReadParams) error {
-	args := m.Called(ctx, arg)
-	return args.Error(0)
-}
-
-func (m *MockDB) MarkAllAsRead(ctx context.Context, userID int64) error {
-	args := m.Called(ctx, userID)
-	return args.Error(0)
-}
-
-func (m *MockDB) DeleteNotification(ctx context.Context, arg sqlc.DeleteNotificationParams) error {
-	args := m.Called(ctx, arg)
-	return args.Error(0)
-}
-
-func (m *MockDB) CreateNotificationType(ctx context.Context, arg sqlc.CreateNotificationTypeParams) error {
-	args := m.Called(ctx, arg)
-	return args.Error(0)
-}
-
-func (m *MockDB) GetNotificationType(ctx context.Context, notifType string) (sqlc.NotificationType, error) {
-	args := m.Called(ctx, notifType)
-	return args.Get(0).(sqlc.NotificationType), args.Error(1)
-}
 
 // Test CreateNotification function
 func TestCreateNotification(t *testing.T) {
@@ -98,6 +44,7 @@ func TestCreateNotification(t *testing.T) {
 		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 		DeletedAt:      pgtype.Timestamptz{Valid: false},
 		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
 	}
 
 	mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil)
@@ -144,6 +91,7 @@ func TestGetNotification(t *testing.T) {
 		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 		DeletedAt:      pgtype.Timestamptz{Valid: false},
 		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
 	}
 
 	mockDB.On("GetNotificationByID", ctx, notificationID).Return(expectedDBNotification, nil)
@@ -193,6 +141,7 @@ func TestGetUserNotifications(t *testing.T) {
 			ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 			DeletedAt:      pgtype.Timestamptz{Valid: false},
 			Payload:        payloadBytes,
+			Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
 		},
 	}
 
@@ -343,6 +292,7 @@ func TestCreateFollowRequestNotification(t *testing.T) {
 		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 		DeletedAt:      pgtype.Timestamptz{Valid: false},
 		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
 	}
 
 	mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil)
@@ -387,6 +337,7 @@ func TestCreateGroupInviteNotification(t *testing.T) {
 		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 		DeletedAt:      pgtype.Timestamptz{Valid: false},
 		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
 	}
 
 	mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil)
@@ -431,6 +382,7 @@ func TestCreateGroupJoinRequestNotification(t *testing.T) {
 		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 		DeletedAt:      pgtype.Timestamptz{Valid: false},
 		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
 	}
 
 	mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil)
@@ -475,6 +427,7 @@ func TestCreateNewEventNotification(t *testing.T) {
 		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
 		DeletedAt:      pgtype.Timestamptz{Valid: false},
 		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
 	}
 
 	mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil)
@@ -482,6 +435,175 @@ func TestCreateNewEventNotification(t *testing.T) {
 	err := app.CreateNewEventNotification(ctx, userID, groupID, eventID, groupName, eventTitle)
 
 	assert.NoError(t, err)
+
+	mockDB.AssertExpectations(t)
+}
+
+// Test CreateNotificationWithAggregation function - no aggregation path
+func TestCreateNotificationWithAggregationNoExisting(t *testing.T) {
+	mockDB := new(MockDB)
+	app := NewApplication(mockDB)
+
+	ctx := context.Background()
+	userID := int64(1)
+	notifType := PostLike
+	title := "Post Liked"
+	message := "User liked your post"
+	sourceService := "posts"
+	sourceEntityID := int64(2)
+	needsAction := false
+	payload := map[string]string{"liker_id": "2", "liker_name": "testuser"}
+	aggregate := true
+
+	payloadBytes, _ := json.Marshal(payload)
+
+	// Expect GetUnreadNotificationByTypeAndEntity to return error (no existing notification)
+	mockDB.On("GetUnreadNotificationByTypeAndEntity", ctx, mock.AnythingOfType("sqlc.GetUnreadNotificationByTypeAndEntityParams")).Return(sqlc.Notification{}, fmt.Errorf("sql: no rows in result set"))
+
+	// Expect CreateNotification to be called
+	expectedNotification := sqlc.Notification{
+		ID:             1,
+		UserID:         userID,
+		NotifType:      string(notifType),
+		SourceService:  sourceService,
+		SourceEntityID: pgtype.Int8{Int64: sourceEntityID, Valid: true},
+		Seen:           pgtype.Bool{Bool: false, Valid: true},
+		NeedsAction:    pgtype.Bool{Bool: needsAction, Valid: true},
+		Acted:          pgtype.Bool{Bool: false, Valid: true},
+		CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+		DeletedAt:      pgtype.Timestamptz{Valid: false},
+		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
+	}
+
+	mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil)
+
+	notification, err := app.CreateNotificationWithAggregation(ctx, userID, notifType, title, message, sourceService, sourceEntityID, needsAction, payload, aggregate)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, notification)
+	assert.Equal(t, int32(1), notification.Count)  // Should be 1 since no existing notification was found
+	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, notifType, notification.Type)
+
+	mockDB.AssertExpectations(t)
+}
+
+// Test CreateNotificationWithAggregation function - aggregation path
+func TestCreateNotificationWithAggregationExisting(t *testing.T) {
+	mockDB := new(MockDB)
+	app := NewApplication(mockDB)
+
+	ctx := context.Background()
+	userID := int64(1)
+	notifType := PostLike
+	title := "Post Liked"
+	message := "User liked your post"
+	sourceService := "posts"
+	sourceEntityID := int64(2)
+	needsAction := false
+	payload := map[string]string{"liker_id": "2", "liker_name": "testuser"}
+	aggregate := true
+
+	payloadBytes, _ := json.Marshal(payload)
+
+	// First, expect GetUnreadNotificationByTypeAndEntity to return an existing notification with count=2
+	existingNotification := sqlc.Notification{
+		ID:             10,
+		UserID:         userID,
+		NotifType:      string(notifType),
+		SourceService:  sourceService,
+		SourceEntityID: pgtype.Int8{Int64: sourceEntityID, Valid: true},
+		Seen:           pgtype.Bool{Bool: false, Valid: true},
+		NeedsAction:    pgtype.Bool{Bool: needsAction, Valid: true},
+		Acted:          pgtype.Bool{Bool: false, Valid: true},
+		CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+		DeletedAt:      pgtype.Timestamptz{Valid: false},
+		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 2, Valid: true}, // Existing count is 2
+	}
+
+	mockDB.On("GetUnreadNotificationByTypeAndEntity", ctx, mock.AnythingOfType("sqlc.GetUnreadNotificationByTypeAndEntityParams")).Return(existingNotification, nil)
+
+	// Then expect UpdateNotificationCount to be called to increment the count to 3
+	mockDB.On("UpdateNotificationCount", ctx, mock.AnythingOfType("sqlc.UpdateNotificationCountParams")).Return(nil)
+
+	// Finally expect GetNotificationByID to fetch the updated notification
+	updatedNotification := sqlc.Notification{
+		ID:             10,
+		UserID:         userID,
+		NotifType:      string(notifType),
+		SourceService:  sourceService,
+		SourceEntityID: pgtype.Int8{Int64: sourceEntityID, Valid: true},
+		Seen:           pgtype.Bool{Bool: false, Valid: true},
+		NeedsAction:    pgtype.Bool{Bool: needsAction, Valid: true},
+		Acted:          pgtype.Bool{Bool: false, Valid: true},
+		CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+		DeletedAt:      pgtype.Timestamptz{Valid: false},
+		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 3, Valid: true}, // Updated count is 3
+	}
+
+	mockDB.On("GetNotificationByID", ctx, int64(10)).Return(updatedNotification, nil)
+
+	notification, err := app.CreateNotificationWithAggregation(ctx, userID, notifType, title, message, sourceService, sourceEntityID, needsAction, payload, aggregate)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, notification)
+	assert.Equal(t, int32(3), notification.Count)  // Should be 3 (existing count 2 + 1)
+	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, notifType, notification.Type)
+
+	mockDB.AssertExpectations(t)
+}
+
+// Test CreateNotificationWithAggregation with aggregation disabled
+func TestCreateNotificationWithAggregationDisabled(t *testing.T) {
+	mockDB := new(MockDB)
+	app := NewApplication(mockDB)
+
+	ctx := context.Background()
+	userID := int64(1)
+	notifType := PostLike
+	title := "Post Liked"
+	message := "User liked your post"
+	sourceService := "posts"
+	sourceEntityID := int64(2)
+	needsAction := false
+	payload := map[string]string{"liker_id": "2", "liker_name": "testuser"}
+	aggregate := false // Aggregation disabled
+
+	payloadBytes, _ := json.Marshal(payload)
+
+	// When aggregation is disabled, CreateNotification should be called directly
+	expectedNotification := sqlc.Notification{
+		ID:             1,
+		UserID:         userID,
+		NotifType:      string(notifType),
+		SourceService:  sourceService,
+		SourceEntityID: pgtype.Int8{Int64: sourceEntityID, Valid: true},
+		Seen:           pgtype.Bool{Bool: false, Valid: true},
+		NeedsAction:    pgtype.Bool{Bool: needsAction, Valid: true},
+		Acted:          pgtype.Bool{Bool: false, Valid: true},
+		CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+		DeletedAt:      pgtype.Timestamptz{Valid: false},
+		Payload:        payloadBytes,
+		Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
+	}
+
+	mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil)
+
+	notification, err := app.CreateNotificationWithAggregation(ctx, userID, notifType, title, message, sourceService, sourceEntityID, needsAction, payload, aggregate)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, notification)
+	assert.Equal(t, int32(1), notification.Count)  // Should be 1 since aggregation is disabled
+	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, notifType, notification.Type)
 
 	mockDB.AssertExpectations(t)
 }

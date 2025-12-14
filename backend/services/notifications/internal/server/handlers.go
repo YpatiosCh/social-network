@@ -24,7 +24,11 @@ func (s *Server) CreateNotification(ctx context.Context, req *notifPb.CreateNoti
 		payload[k] = v
 	}
 
-	notification, err := s.Application.CreateNotification(
+	// For now, use aggregation based on notification type (like, comment, follower, message)
+	// When protobuf is regenerated with the Aggregate field, this can be controlled from the request
+	aggregate := shouldAggregateNotification(req.Type)
+
+	notification, err := s.Application.CreateNotificationWithAggregation(
 		ctx,
 		req.UserId,
 		convertProtoNotificationTypeToApplication(req.Type),
@@ -34,6 +38,7 @@ func (s *Server) CreateNotification(ctx context.Context, req *notifPb.CreateNoti
 		req.SourceEntityId,
 		req.NeedsAction,
 		payload,
+		aggregate,
 	)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create notification: %v", err)
@@ -44,47 +49,36 @@ func (s *Server) CreateNotification(ctx context.Context, req *notifPb.CreateNoti
 
 // CreateNotifications creates multiple notifications
 func (s *Server) CreateNotifications(ctx context.Context, req *notifPb.CreateNotificationsRequest) (*notifPb.CreateNotificationsResponse, error) {
-	notifications := make([]struct {
-		UserID         int64
-		Type           application.NotificationType
-		Title          string
-		Message        string
-		SourceService  string
-		SourceEntityID int64
-		NeedsAction    bool
-		Payload        map[string]string
-	}, len(req.Notifications))
+	// Create notifications individually to allow for aggregation control
+	createdNotifications := make([]*application.Notification, 0, len(req.Notifications))
 
-	for i, n := range req.Notifications {
+	for _, n := range req.Notifications {
 		payload := make(map[string]string)
 		for k, v := range n.Payload {
 			payload[k] = v
 		}
 
-		notifications[i] = struct {
-			UserID         int64
-			Type           application.NotificationType
-			Title          string
-			Message        string
-			SourceService  string
-			SourceEntityID int64
-			NeedsAction    bool
-			Payload        map[string]string
-		}{
-			UserID:         n.UserId,
-			Type:           convertProtoNotificationTypeToApplication(n.Type),
-			Title:          n.Title,
-			Message:        n.Message,
-			SourceService:  n.SourceService,
-			SourceEntityID: n.SourceEntityId,
-			NeedsAction:    n.NeedsAction,
-			Payload:        payload,
-		}
-	}
+		// For now, use aggregation based on notification type (like, comment, follower, message)
+		// When protobuf is regenerated with the Aggregate field, this can be controlled from the request
+		aggregate := shouldAggregateNotification(n.Type)
 
-	createdNotifications, err := s.Application.CreateNotifications(ctx, notifications)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create notifications: %v", err)
+		notification, err := s.Application.CreateNotificationWithAggregation(
+			ctx,
+			n.UserId,
+			convertProtoNotificationTypeToApplication(n.Type),
+			n.Title,
+			n.Message,
+			n.SourceService,
+			n.SourceEntityId,
+			n.NeedsAction,
+			payload,
+			aggregate,  // Use the aggregate flag determined by type
+		)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to create notification: %v", err)
+		}
+
+		createdNotifications = append(createdNotifications, notification)
 	}
 
 	pbNotifications := make([]*notifPb.Notification, len(createdNotifications))
@@ -257,10 +251,27 @@ func (s *Server) convertToProtoNotification(notification *application.Notificati
 		SourceEntityId: notification.SourceEntityID,
 		NeedsAction:    notification.NeedsAction,
 		Acted:          notification.Acted,
+		Count:          notification.Count,
 		Payload:        payload,
 		CreatedAt:      createdAt,
 		ExpiresAt:      expiresAt,
 		Status:         status,
+	}
+}
+
+// Helper function to determine if a notification type should be aggregated
+func shouldAggregateNotification(notificationType notifPb.NotificationType) bool {
+	switch notificationType {
+	case notifPb.NotificationType_NOTIFICATION_TYPE_POST_LIKE:
+		return true
+	case notifPb.NotificationType_NOTIFICATION_TYPE_POST_COMMENT:
+		return true
+	case notifPb.NotificationType_NOTIFICATION_TYPE_NEW_FOLLOWER:
+		return true
+	case notifPb.NotificationType_NOTIFICATION_TYPE_NEW_MESSAGE:
+		return true
+	default:
+		return false
 	}
 }
 
