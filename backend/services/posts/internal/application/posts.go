@@ -221,7 +221,7 @@ func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req models.
 		return models.Post{}, err
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, []int64{p.CreatorID})
+	userMap, err := s.userRetriever.GetUsers(ctx, []int64{p.CreatorID})
 	if err != nil {
 		return models.Post{}, err
 	}
@@ -239,10 +239,6 @@ func (s *Application) GetMostPopularPostInGroup(ctx context.Context, req models.
 		UpdatedAt:       ct.GenDateTime(p.UpdatedAt.Time),
 		Image:           ct.Id(p.Image),
 	}
-
-	// if err := s.hydratePost(ctx, &post); err != nil {
-	// 	return models.Post{}, err
-	// }
 
 	return post, nil
 }
@@ -270,7 +266,7 @@ func (s *Application) GetPostById(ctx context.Context, req models.GenericReq) (m
 		return models.Post{}, err
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, []int64{p.CreatorID})
+	userMap, err := s.userRetriever.GetUsers(ctx, []int64{p.CreatorID})
 	if err != nil {
 		return models.Post{}, err
 	}
@@ -291,10 +287,6 @@ func (s *Application) GetPostById(ctx context.Context, req models.GenericReq) (m
 		UpdatedAt:       ct.GenDateTime(p.UpdatedAt.Time),
 		Image:           ct.Id(p.Image),
 	}
-
-	// if err := s.hydratePost(ctx, &post); err != nil {
-	// 	return models.Post{}, err
-	// }
 
 	return post, nil
 }

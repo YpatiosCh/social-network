@@ -57,7 +57,7 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 		return posts, nil
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, userIDs)
+	userMap, err := s.userRetriever.GetUsers(ctx, userIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +68,6 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 			posts[i].User = u
 		}
 	}
-	// if err := s.hydratePosts(ctx, posts); err != nil {
-	// 	return nil, err
-	// }
 
 	return posts, nil
 }
@@ -113,7 +110,7 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 		return posts, nil
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, userIDs)
+	userMap, err := s.userRetriever.GetUsers(ctx, userIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -124,9 +121,6 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 			posts[i].User = u
 		}
 	}
-	// if err := s.hydratePosts(ctx, posts); err != nil {
-	// 	return nil, err
-	// }
 
 	return posts, nil
 }
@@ -178,14 +172,12 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 		})
 
 	}
-	// if err := s.hydratePosts(ctx, posts); err != nil {
-	// 	return nil, err
-	// }
+
 	if len(posts) == 0 {
 		return posts, nil
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, userIDs)
+	userMap, err := s.userRetriever.GetUsers(ctx, userIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +250,7 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 		return posts, nil
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, userIDs)
+	userMap, err := s.userRetriever.GetUsers(ctx, userIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -269,9 +261,6 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 			posts[i].User = u
 		}
 	}
-	// if err := s.hydratePosts(ctx, posts); err != nil {
-	// 	return nil, err
-	// }
 
 	return posts, nil
 }

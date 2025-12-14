@@ -26,7 +26,7 @@ func (s *Application) SuggestUsersByPostActivity(ctx context.Context, req models
 		return nil, err
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, ids)
+	userMap, err := s.userRetriever.GetUsers(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -37,11 +37,6 @@ func (s *Application) SuggestUsersByPostActivity(ctx context.Context, req models
 			users = append(users, u)
 		}
 	}
-
-	// err = s.hydrator.HydrateUserSlice(ctx, users)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	return users, nil
 }

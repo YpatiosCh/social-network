@@ -99,9 +99,9 @@ func (s *Application) GetUserProfile(ctx context.Context, req models.UserProfile
 		profile.OwnProfile = true
 	}
 
-	if !profile.Public && !profile.ViewerIsFollowing && !profile.OwnProfile {
-		return models.UserProfileResponse{}, ErrProfilePrivate
-	}
+	// if !profile.Public && !profile.ViewerIsFollowing && !profile.OwnProfile {
+	// 	return models.UserProfileResponse{}, ErrProfilePrivate
+	// }
 
 	profile.FollowersCount, err = s.db.GetFollowerCount(ctx, req.UserId.Int64())
 	if err != nil {

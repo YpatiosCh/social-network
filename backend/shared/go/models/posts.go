@@ -44,9 +44,6 @@ type Post struct {
 	Image           ct.Id `validate:"nullable"`
 }
 
-func (p *Post) GetUserId() int64 { return p.User.UserId.Int64() }
-func (p *Post) SetUser(u User)   { p.User = u }
-
 type CreatePostReq struct {
 	CreatorId   ct.Id
 	Body        ct.PostBody
@@ -101,9 +98,6 @@ type Comment struct {
 	Image          ct.Id `validate:"nullable"`
 }
 
-func (c *Comment) GetUserId() int64 { return c.User.UserId.Int64() }
-func (c *Comment) SetUser(u User)   { c.User = u }
-
 type CreateCommentReq struct {
 	CreatorId ct.Id
 	ParentId  ct.Id
@@ -136,9 +130,6 @@ type Event struct {
 	UpdatedAt     ct.GenDateTime
 	UserResponse  *bool
 }
-
-func (e *Event) GetUserId() int64 { return e.User.UserId.Int64() }
-func (e *Event) SetUser(u User)   { e.User = u }
 
 type CreateEventReq struct {
 	Title     ct.Title

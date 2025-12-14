@@ -1,4 +1,4 @@
-package userhydrate
+package retrieveusers
 
 import (
 	"context"

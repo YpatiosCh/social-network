@@ -5,19 +5,19 @@ import (
 	"social-network/services/posts/internal/client"
 	"social-network/services/posts/internal/db/sqlc"
 	cm "social-network/shared/gen-go/common"
-	userhydrate "social-network/shared/go/hydrateusers"
 	"social-network/shared/go/models"
 	redis_connector "social-network/shared/go/redis"
+	ur "social-network/shared/go/retrieveusers"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Application struct {
-	db       sqlc.Querier
-	txRunner TxRunner
-	clients  ClientsInterface
-	hydrator Hydrator
+	db            sqlc.Querier
+	txRunner      TxRunner
+	clients       ClientsInterface
+	userRetriever UserRetriever
 }
 
 type UserHydrator struct {
@@ -38,10 +38,8 @@ type RedisCache interface {
 }
 
 // Hydrator defines the subset of behavior used by application for user hydration.
-type Hydrator interface {
+type UserRetriever interface {
 	GetUsers(ctx context.Context, userIDs []int64) (map[int64]models.User, error)
-	// HydrateUsers(ctx context.Context, items []models.HasUser) error
-	// HydrateUserSlice(ctx context.Context, users []models.User) error
 }
 
 // ClientsInterface defines the methods that Application needs from clients.
@@ -65,10 +63,10 @@ func NewApplication(db sqlc.Querier, pool *pgxpool.Pool, clients *client.Clients
 	cache := redis_connector.NewRedisClient("redis:6379", "", 0)
 
 	return &Application{
-		db:       db,
-		txRunner: txRunner,
-		clients:  clients,
-		hydrator: userhydrate.NewUserHydrator(clients, cache, 3*time.Minute),
+		db:            db,
+		txRunner:      txRunner,
+		clients:       clients,
+		userRetriever: ur.NewUserRetriever(clients, cache, 3*time.Minute),
 	}
 }
 
