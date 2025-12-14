@@ -9,22 +9,25 @@ import (
 func (a *Application) CreateFollowRequestNotification(ctx context.Context, targetUserID, requesterUserID int64, requesterUsername string) error {
 	title := "New Follow Request"
 	message := fmt.Sprintf("%s wants to follow you", requesterUsername)
-	
+
 	payload := map[string]string{
 		"requester_id":   fmt.Sprintf("%d", requesterUserID),
 		"requester_name": requesterUsername,
 	}
 
-	_, err := a.CreateNotification(
+	// Follow requests should not be aggregated since they require action
+	// We ignore the aggregate parameter for notifications that need action
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		targetUserID,           // recipient
-		FollowRequest,          // type
-		title,                  // title
-		message,                // message
-		"users",                // source service
-		requesterUserID,        // source entity ID
-		true,                   // needs action
-		payload,                // payload
+		targetUserID,    // recipient
+		FollowRequest,   // type
+		title,           // title
+		message,         // message
+		"users",         // source service
+		requesterUserID, // source entity ID
+		true,            // needs action
+		payload,         // payload
+		false,           // never aggregate follow requests
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create follow request notification: %w", err)
@@ -34,25 +37,26 @@ func (a *Application) CreateFollowRequestNotification(ctx context.Context, targe
 }
 
 // CreateNewFollowerNotification creates a notification when someone follows a user
-func (a *Application) CreateNewFollowerNotification(ctx context.Context, targetUserID, followerUserID int64, followerUsername string) error {
+func (a *Application) CreateNewFollowerNotification(ctx context.Context, targetUserID, followerUserID int64, followerUsername string, aggregate bool) error {
 	title := "New Follower"
 	message := fmt.Sprintf("%s is now following you", followerUsername)
-	
+
 	payload := map[string]string{
 		"follower_id":   fmt.Sprintf("%d", followerUserID),
 		"follower_name": followerUsername,
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		targetUserID,           // recipient
-		NewFollower,            // type
-		title,                  // title
-		message,                // message
-		"users",                // source service
-		followerUserID,         // source entity ID
-		false,                  // doesn't need action
-		payload,                // payload
+		targetUserID,   // recipient
+		NewFollower,    // type
+		title,          // title
+		message,        // message
+		"users",        // source service
+		followerUserID, // source entity ID
+		false,          // doesn't need action
+		payload,        // payload
+		aggregate,      // whether to aggregate
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create new follower notification: %w", err)
@@ -65,25 +69,26 @@ func (a *Application) CreateNewFollowerNotification(ctx context.Context, targetU
 func (a *Application) CreateGroupInviteNotification(ctx context.Context, invitedUserID, inviterUserID, groupID int64, groupName, inviterUsername string) error {
 	title := "Group Invitation"
 	message := fmt.Sprintf("%s invited you to join the group \"%s\"", inviterUsername, groupName)
-	
+
 	payload := map[string]string{
-		"inviter_id":    fmt.Sprintf("%d", inviterUserID),
-		"inviter_name":  inviterUsername,
-		"group_id":      fmt.Sprintf("%d", groupID),
-		"group_name":    groupName,
-		"action":        "accept_or_decline",
+		"inviter_id":   fmt.Sprintf("%d", inviterUserID),
+		"inviter_name": inviterUsername,
+		"group_id":     fmt.Sprintf("%d", groupID),
+		"group_name":   groupName,
+		"action":       "accept_or_decline",
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		invitedUserID,          // recipient
-		GroupInvite,            // type
-		title,                  // title
-		message,                // message
-		"users",                // source service
-		groupID,                // source entity ID (the group)
-		true,                   // needs action
-		payload,                // payload
+		invitedUserID, // recipient
+		GroupInvite,   // type
+		title,         // title
+		message,       // message
+		"users",       // source service
+		groupID,       // source entity ID (the group)
+		true,          // needs action
+		payload,       // payload
+		false,         // never aggregate group invites
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create group invite notification: %w", err)
@@ -96,25 +101,26 @@ func (a *Application) CreateGroupInviteNotification(ctx context.Context, invited
 func (a *Application) CreateGroupJoinRequestNotification(ctx context.Context, groupOwnerID, requesterID, groupID int64, groupName, requesterUsername string) error {
 	title := "New Group Join Request"
 	message := fmt.Sprintf("%s wants to join your group \"%s\"", requesterUsername, groupName)
-	
+
 	payload := map[string]string{
-		"requester_id":  fmt.Sprintf("%d", requesterID),
+		"requester_id":   fmt.Sprintf("%d", requesterID),
 		"requester_name": requesterUsername,
-		"group_id":      fmt.Sprintf("%d", groupID),
-		"group_name":    groupName,
-		"action":        "accept_or_decline",
+		"group_id":       fmt.Sprintf("%d", groupID),
+		"group_name":     groupName,
+		"action":         "accept_or_decline",
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		groupOwnerID,           // recipient (group owner)
-		GroupJoinRequest,       // type
-		title,                  // title
-		message,                // message
-		"users",                // source service
-		groupID,                // source entity ID (the group)
-		true,                   // needs action
-		payload,                // payload
+		groupOwnerID,     // recipient (group owner)
+		GroupJoinRequest, // type
+		title,            // title
+		message,          // message
+		"users",          // source service
+		groupID,          // source entity ID (the group)
+		true,             // needs action
+		payload,          // payload
+		false,            // don't aggregate group join requests
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create group join request notification: %w", err)
@@ -127,25 +133,26 @@ func (a *Application) CreateGroupJoinRequestNotification(ctx context.Context, gr
 func (a *Application) CreateNewEventNotification(ctx context.Context, userID, groupID, eventID int64, groupName, eventTitle string) error {
 	title := "New Event in Group"
 	message := fmt.Sprintf("New event \"%s\" was created in group \"%s\"", eventTitle, groupName)
-	
+
 	payload := map[string]string{
-		"group_id":      fmt.Sprintf("%d", groupID),
-		"group_name":    groupName,
-		"event_id":      fmt.Sprintf("%d", eventID),
-		"event_title":   eventTitle,
-		"action":        "view_event",
+		"group_id":    fmt.Sprintf("%d", groupID),
+		"group_name":  groupName,
+		"event_id":    fmt.Sprintf("%d", eventID),
+		"event_title": eventTitle,
+		"action":      "view_event",
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		userID,                 // recipient
-		NewEvent,               // type
-		title,                  // title
-		message,                // message
-		"posts",                // source service
-		eventID,                // source entity ID (the event)
-		false,                  // doesn't need action (just informational)
-		payload,                // payload
+		userID,   // recipient
+		NewEvent, // type
+		title,    // title
+		message,  // message
+		"posts",  // source service
+		eventID,  // source entity ID (the event)
+		false,    // doesn't need action (just informational)
+		payload,  // payload
+		false,    // never aggregate new events
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create new event notification: %w", err)
@@ -157,27 +164,28 @@ func (a *Application) CreateNewEventNotification(ctx context.Context, userID, gr
 // Additional notification types for extended functionality
 
 // CreatePostLikeNotification creates a notification when someone likes a user's post
-func (a *Application) CreatePostLikeNotification(ctx context.Context, userID, likerID, postID int64, likerUsername string) error {
+func (a *Application) CreatePostLikeNotification(ctx context.Context, userID, likerID, postID int64, likerUsername string, aggregate bool) error {
 	title := "Post Liked"
 	message := fmt.Sprintf("%s liked your post", likerUsername)
-	
+
 	payload := map[string]string{
-		"liker_id":     fmt.Sprintf("%d", likerID),
-		"liker_name":   likerUsername,
-		"post_id":      fmt.Sprintf("%d", postID),
-		"action":       "view_post",
+		"liker_id":   fmt.Sprintf("%d", likerID),
+		"liker_name": likerUsername,
+		"post_id":    fmt.Sprintf("%d", postID),
+		"action":     "view_post",
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		userID,                 // recipient
-		PostLike,               // type
-		title,                  // title
-		message,                // message
-		"posts",                // source service
-		postID,                 // source entity ID
-		false,                  // doesn't need action
-		payload,                // payload
+		userID,    // recipient
+		PostLike,  // type
+		title,     // title
+		message,   // message
+		"posts",   // source service
+		postID,    // source entity ID
+		false,     // doesn't need action
+		payload,   // payload
+		aggregate, // whether to aggregate
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create post like notification: %w", err)
@@ -187,10 +195,10 @@ func (a *Application) CreatePostLikeNotification(ctx context.Context, userID, li
 }
 
 // CreatePostCommentNotification creates a notification when someone comments on a user's post
-func (a *Application) CreatePostCommentNotification(ctx context.Context, userID, commenterID, postID int64, commenterUsername, commentContent string) error {
+func (a *Application) CreatePostCommentNotification(ctx context.Context, userID, commenterID, postID int64, commenterUsername, commentContent string, aggregate bool) error {
 	title := "New Comment"
 	message := fmt.Sprintf("%s commented on your post", commenterUsername)
-	
+
 	payload := map[string]string{
 		"commenter_id":    fmt.Sprintf("%d", commenterID),
 		"commenter_name":  commenterUsername,
@@ -199,16 +207,17 @@ func (a *Application) CreatePostCommentNotification(ctx context.Context, userID,
 		"action":          "view_post",
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		userID,                 // recipient
-		PostComment,            // type
-		title,                  // title
-		message,                // message
-		"posts",                // source service
-		postID,                 // source entity ID
-		false,                  // doesn't need action
-		payload,                // payload
+		userID,      // recipient
+		PostComment, // type
+		title,       // title
+		message,     // message
+		"posts",     // source service
+		postID,      // source entity ID
+		false,       // doesn't need action
+		payload,     // payload
+		aggregate,   // whether to aggregate
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create post comment notification: %w", err)
@@ -223,24 +232,25 @@ func (a *Application) CreateMentionNotification(ctx context.Context, userID, men
 	message := fmt.Sprintf("%s mentioned you in a post", mentionerUsername)
 
 	payload := map[string]string{
-		"mentioner_id":    fmt.Sprintf("%d", mentionerID),
-		"mentioner_name":  mentionerUsername,
-		"post_id":         fmt.Sprintf("%d", postID),
-		"post_content":    postContent,
-		"mention_text":    mentionText,
-		"action":          "view_post",
+		"mentioner_id":   fmt.Sprintf("%d", mentionerID),
+		"mentioner_name": mentionerUsername,
+		"post_id":        fmt.Sprintf("%d", postID),
+		"post_content":   postContent,
+		"mention_text":   mentionText,
+		"action":         "view_post",
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		userID,                 // recipient
-		Mention,                // type
-		title,                  // title
-		message,                // message
-		"posts",                // source service
-		postID,                 // source entity ID
-		false,                  // doesn't need action
-		payload,                // payload
+		userID,  // recipient
+		Mention, // type
+		title,   // title
+		message, // message
+		"posts", // source service
+		postID,  // source entity ID
+		false,   // doesn't need action
+		payload, // payload
+		false,   // never aggregate mentions
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create mention notification: %w", err)
@@ -250,7 +260,7 @@ func (a *Application) CreateMentionNotification(ctx context.Context, userID, men
 }
 
 // CreateNewMessageNotification creates a notification when a user receives a new message in a chat
-func (a *Application) CreateNewMessageNotification(ctx context.Context, userID, senderID, chatID int64, senderUsername, messageContent string) error {
+func (a *Application) CreateNewMessageNotification(ctx context.Context, userID, senderID, chatID int64, senderUsername, messageContent string, aggregate bool) error {
 	title := "New Message"
 	message := fmt.Sprintf("%s sent you a message", senderUsername)
 
@@ -262,16 +272,17 @@ func (a *Application) CreateNewMessageNotification(ctx context.Context, userID, 
 		"action":          "view_chat",
 	}
 
-	_, err := a.CreateNotification(
+	_, err := a.CreateNotificationWithAggregation(
 		ctx,
-		userID,                 // recipient
-		NewMessage,             // type
-		title,                  // title
-		message,                // message
-		"chat",                 // source service
-		chatID,                 // source entity ID (the chat)
-		false,                  // doesn't need action (just informational)
-		payload,                // payload
+		userID,     // recipient
+		NewMessage, // type
+		title,      // title
+		message,    // message
+		"chat",     // source service
+		chatID,     // source entity ID (the chat)
+		false,      // doesn't need action (just informational)
+		payload,    // payload
+		aggregate,  // whether to aggregate
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create new message notification: %w", err)

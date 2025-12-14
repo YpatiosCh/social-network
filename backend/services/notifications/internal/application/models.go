@@ -29,6 +29,7 @@ type Notification struct {
 	Seen           bool              `json:"seen"`
 	NeedsAction    bool              `json:"needs_action"`
 	Acted          bool              `json:"acted"`
+	Count          int32             `json:"count"`
 	Payload        map[string]string `json:"payload"`
 	CreatedAt      time.Time         `json:"created_at"`
 	ExpiresAt      *time.Time        `json:"expires_at"`
