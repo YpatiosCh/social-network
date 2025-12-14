@@ -190,7 +190,7 @@ func (s *Application) GetCommentsByParentId(ctx context.Context, req models.Enti
 		return comments, nil
 	}
 
-	userMap, err := s.hydrator.GetUsers(ctx, userIDs)
+	userMap, err := s.userRetriever.GetUsers(ctx, userIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -201,9 +201,6 @@ func (s *Application) GetCommentsByParentId(ctx context.Context, req models.Enti
 			comments[i].User = u
 		}
 	}
-	// if err := s.hydrateComments(ctx, comments); err != nil {
-	// 	return nil, err
-	// }
 
 	return comments, nil
 }

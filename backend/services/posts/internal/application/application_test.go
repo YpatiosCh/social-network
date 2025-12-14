@@ -67,18 +67,10 @@ func TestCreatePost_SelectedAudience_Success(t *testing.T) {
 	txMock.AssertExpectations(t)
 }
 
-// fake hydrator to avoid touching redis/clients during hydrate calls
-type fakeHydrator struct{}
+// fake retriever to avoid touching redis/clients during user retrieval calls
+type fakeRetriever struct{}
 
-func (f *fakeHydrator) HydrateUsers(ctx context.Context, items []models.HasUser) error {
-	return nil
-}
-
-func (f *fakeHydrator) HydrateUserSlice(ctx context.Context, users []models.User) error {
-	return nil
-}
-
-func (f *fakeHydrator) GetUsers(ctx context.Context, userIDs []int64) (map[int64]models.User, error) {
+func (f *fakeRetriever) GetUsers(ctx context.Context, userIDs []int64) (map[int64]models.User, error) {
 	return nil, nil
 }
 
@@ -293,7 +285,7 @@ func TestFeeds_Empty_NoHydrationError(t *testing.T) {
 	dbMock.On("GetGroupPostsPaginated", mock.Anything, mock.Anything).Return([]sqlc.GetGroupPostsPaginatedRow{}, nil)
 
 	app := NewApplicationWithMocks(dbMock, clientMock)
-	app.hydrator = &fakeHydrator{}
+	app.userRetriever = &fakeRetriever{}
 
 	_, err := app.GetPersonalizedFeed(ctx, models.GetPersonalizedFeedReq{RequesterId: ct.Id(21), Limit: ct.Limit(10), Offset: ct.Offset(0)})
 	assert.NoError(t, err)

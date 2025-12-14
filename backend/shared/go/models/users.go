@@ -55,17 +55,6 @@ type User struct {
 type Users struct {
 	Users []User `json:"users"`
 }
-type UserHydrateAdapter struct {
-	u *User
-}
-
-func (a UserHydrateAdapter) GetUserId() int64 {
-	return a.u.UserId.Int64()
-}
-
-func (a UserHydrateAdapter) SetUser(user User) {
-	*(a.u) = user
-}
 
 type UserSearchReq struct {
 	SearchTerm ct.SearchTerm `json:"search_term"`
