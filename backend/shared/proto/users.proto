@@ -47,13 +47,13 @@ service UserService {
   rpc HandleFollowRequest (HandleFollowRequestRequest) returns (google.protobuf.Empty);
 
   // Returns ids that the user is following.
-  rpc GetFollowingIds (google.protobuf.Int64Value) returns (common.Int64Arr);
+  rpc GetFollowingIds (google.protobuf.Int64Value) returns (common.UserIds);
 
   // Suggests users to follow based on the caller's network.
   rpc GetFollowSuggestions (google.protobuf.Int64Value) returns (common.ListUsers);
 
   // Returns whether follower_id currently follows target_user_id.
-  rpc IsFollowing (FollowUserRequest) returns (google.protobuf.BoolValue);
+  rpc IsFollowing (IsFollowingRequest) returns (google.protobuf.BoolValue);
 
   // Returns whether both users follow each other.
   rpc AreFollowingEachOther (FollowUserRequest) returns (google.protobuf.BoolValue);
@@ -98,7 +98,7 @@ service UserService {
   rpc GetBasicUserInfo (google.protobuf.Int64Value) returns (common.User);
 
   // Retrieves basic info for multiple users.
-  rpc GetBatchBasicUserInfo (common.Int64Arr) returns (common.ListUsers);
+  rpc GetBatchBasicUserInfo (common.UserIds) returns (common.ListUsers);
 
   // Returns the full profile visible to the requester.
   rpc GetUserProfile (GetUserProfileRequest) returns (UserProfileResponse);
@@ -239,7 +239,7 @@ message GroupSearchRequest {
   string search_term = 1;
   int64 user_id = 2;
   int32 limit = 3;
-  int32 offset = 4; 
+  int32 offset = 4;
 }
 
 

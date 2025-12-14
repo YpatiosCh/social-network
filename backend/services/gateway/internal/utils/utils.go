@@ -10,18 +10,19 @@ import (
 	"mime/multipart"
 	"net/http"
 	"slices"
+	"social-network/shared/go/customtypes"
 
 	"github.com/google/uuid"
 )
 
 // Adds value val to r context with key 'key'
-func RequestWithValue[T any](r *http.Request, key string, val T) *http.Request {
+func RequestWithValue(r *http.Request, key customtypes.CtxKey, val any) *http.Request {
 	ctx := context.WithValue(r.Context(), key, val)
 	return r.WithContext(ctx)
 }
 
 // Get value T from request context with key 'key'
-func GetValue[T any](r *http.Request, key string) (T, bool) {
+func GetValue[T any](r *http.Request, key customtypes.CtxKey) (T, bool) {
 	v := r.Context().Value(key)
 	if v == nil {
 		fmt.Println("v is nil")
@@ -59,9 +60,9 @@ func WriteJSON(w http.ResponseWriter, code int, v any) error {
 	}
 
 	fmt.Println("sending this:", string(b))
-	// fmt.Println("sending this:", v) // This is misleading beacause some types change during Encode
 
-	return json.NewEncoder(w).Encode(v)
+	_, err = w.Write(b)
+	return err
 }
 
 // func WriteJSON(w http.ResponseWriter, code int, v any) error {

@@ -28,6 +28,8 @@ func (c *ChatService) CreateMessage(ctx context.Context,
 
 // Returns messages with id smaller that BoundaryMessageId. If BoundaryMessageId is null
 // returns previous messages from and including conversation's last_message_id.
+// If hydrate users is true then the messages.Sender field is populated with username and avatar id
+// by calling the user service client.
 func (c *ChatService) GetPreviousMessages(ctx context.Context,
 	args md.GetPrevMessagesParams) (resp md.GetPrevMessagesResp, err error) {
 	if err != ct.ValidateStruct(args) {
@@ -46,8 +48,12 @@ func (c *ChatService) GetPreviousMessages(ctx context.Context,
 		}, nil
 	}
 
-	if resp.FirstMessageId == resp.Messages[0].Id {
-		resp.HaveMoreBefore = false
+	if resp.FirstMessageId != resp.Messages[0].Id {
+		resp.HaveMoreBefore = true
+	}
+
+	if !args.HydrateUsers {
+		return resp, nil
 	}
 
 	allMemberIDs := make(ct.Ids, 0)
@@ -71,6 +77,8 @@ func (c *ChatService) GetPreviousMessages(ctx context.Context,
 // pagination when loading newer messages.
 // Can also be called with boundary as the last read message to get unread messages.
 // Returns validation error if no boundary given.
+// If hydrate users is true then the messages.Sender field is populated with username and avatar id
+// by calling the user service client.
 func (c *ChatService) GetNextMessages(ctx context.Context,
 	args md.GetNextMessageParams) (resp md.GetNextMessagesResp, err error) {
 	if err != ct.ValidateStruct(args) {
@@ -88,8 +96,12 @@ func (c *ChatService) GetNextMessages(ctx context.Context,
 	}
 
 	lastIdx := len(resp.Messages) - 1
-	if resp.LastMessageId == resp.Messages[lastIdx].Id {
-		resp.HaveMoreAfter = false
+	if resp.LastMessageId != resp.Messages[lastIdx].Id {
+		resp.HaveMoreAfter = true
+	}
+
+	if !args.HydrateUsers {
+		return resp, nil
 	}
 
 	allMemberIDs := make(ct.Ids, 0)

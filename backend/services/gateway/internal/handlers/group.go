@@ -42,11 +42,11 @@ func (s *Handlers) CreateGroup() http.HandlerFunc {
 		}
 
 		type createGroupDataResponse struct {
-			GroupId ct.EncryptedId `json:"group_id"`
+			GroupId ct.Id `json:"group_id"`
 		}
 
 		resp := createGroupDataResponse{
-			GroupId: ct.EncryptedId(groupId.Value),
+			GroupId: ct.Id(groupId.Value),
 		}
 
 		utils.WriteJSON(w, http.StatusOK, resp)

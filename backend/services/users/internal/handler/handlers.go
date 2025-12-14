@@ -276,7 +276,7 @@ func (s *UsersHandler) HandleFollowRequest(ctx context.Context, req *pb.HandleFo
 	return &emptypb.Empty{}, nil
 }
 
-func (s *UsersHandler) GetFollowingIds(ctx context.Context, req *wrapperspb.Int64Value) (*cm.Int64Arr, error) {
+func (s *UsersHandler) GetFollowingIds(ctx context.Context, req *wrapperspb.Int64Value) (*cm.UserIds, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "GetFollowingIds: request is nil")
 	}
@@ -289,7 +289,7 @@ func (s *UsersHandler) GetFollowingIds(ctx context.Context, req *wrapperspb.Int6
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "GetFollowingIds: %v", err)
 	}
-	return &cm.Int64Arr{Values: resp}, nil
+	return &cm.UserIds{Values: resp}, nil
 }
 
 func (s *UsersHandler) GetFollowSuggestions(ctx context.Context, req *wrapperspb.Int64Value) (*cm.ListUsers, error) {
@@ -748,7 +748,7 @@ func (s *UsersHandler) GetBasicUserInfo(ctx context.Context, req *wrapperspb.Int
 	}, nil
 }
 
-func (s *UsersHandler) GetBatchBasicUserInfo(ctx context.Context, req *cm.Int64Arr) (*cm.ListUsers, error) {
+func (s *UsersHandler) GetBatchBasicUserInfo(ctx context.Context, req *cm.UserIds) (*cm.ListUsers, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
 	}
