@@ -1,6 +1,6 @@
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function getAllGroups(limit, offset) {
+export async function getAllGroups({ limit, offset }) {
     try {
         const groups = await serverApiRequest(`/groups/paginated`, {
             method: "POST",
@@ -10,7 +10,7 @@ export async function getAllGroups(limit, offset) {
             }),
         });
 
-        return groups;
+        return groups.group_arr;
 
     } catch (error) {
         console.error("Error fetching groups:", error);
