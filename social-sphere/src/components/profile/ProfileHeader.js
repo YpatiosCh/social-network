@@ -6,7 +6,7 @@ import Image from "next/image";
 import ProfileStats from "./ProfileStats";
 import Modal from "@/components/ui/Modal";
 import { handleFollowRequest, unfollowUser } from "@/services/requests/followRequest";
-import { updatePrivacyAction } from "@/app/actions/settings";
+import { updatePrivacyAction } from "@/services/actions/settings";
 
 export function ProfileHeader({ user }) {
     const [isFollowing, setIsFollowing] = useState(user.viewer_is_following);
