@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"social-network/services/gateway/internal/security"
 	"social-network/services/gateway/internal/utils"
@@ -633,17 +634,21 @@ func (s *Handlers) UpdateUserPassword() http.HandlerFunc {
 		}
 		_ = body
 
-		oldPassword, err := ct.Password(r.FormValue("old_password")).Hash()
+		fmt.Println("old password:", body.OldPassword, " new password:", body.NewPassword)
+
+		oldPassword, err := ct.Password(body.OldPassword).Hash()
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "could not hash password")
 			return
 		}
 
-		newPassword, err := ct.Password(r.FormValue("new_password")).Hash()
+		newPassword, err := ct.Password(body.NewPassword).Hash()
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusInternalServerError, "could not hash password")
 			return
 		}
+
+		fmt.Println("hashed old password:", oldPassword.String(), " hashed new password:", newPassword.String())
 
 		req := &users.UpdatePasswordRequest{
 			UserId:      claims.UserId,

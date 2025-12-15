@@ -103,19 +103,26 @@ func (s *Application) UpdateUserPassword(ctx context.Context, req models.UpdateP
 		return err
 	}
 
-	if !checkPassword(req.NewPassword.String(), req.OldPassword.String()) {
-		return ErrNotAuthorized
-	}
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
+		row, err := q.GetUserPassword(ctx, req.UserId.Int64())
+		if err != nil {
+			return err
+		}
 
-	err := s.db.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{
-		UserID:       req.UserId.Int64(),
-		PasswordHash: req.NewPassword.String(),
+		if !checkPassword(row, req.OldPassword.String()) {
+			return ErrNotAuthorized
+		}
+
+		err = s.db.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{
+			UserID:       req.UserId.Int64(),
+			PasswordHash: req.NewPassword.String(),
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *Application) UpdateUserEmail(ctx context.Context, req models.UpdateEmailRequest) error {

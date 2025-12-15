@@ -88,20 +88,20 @@ func (s *UsersHandler) UpdateUserPassword(ctx context.Context, req *pb.UpdatePas
 		return nil, status.Error(codes.InvalidArgument, "UpdateUserPassword: request is nil")
 	}
 
-	userId := req.GetUserId()
-	if err := invalidId("userId", userId); err != nil {
-		return nil, err
-	}
+	// userId := req.GetUserId()
+	// if err := invalidId("userId", userId); err != nil {
+	// 	return nil, err
+	// }
 
-	newPassword := req.GetNewPassword()
-	if err := invalidString("newPassword", newPassword); err != nil {
-		return nil, err
-	}
+	// newPassword := req.GetNewPassword()
+	// if err := invalidString("newPassword", newPassword); err != nil {
+	// 	return nil, err
+	// }
 
 	err := s.Application.UpdateUserPassword(ctx, models.UpdatePasswordRequest{
-		UserId:      ct.Id(userId),
-		OldPassword: ct.HashedPassword(req.GetOldPassword()),
-		NewPassword: ct.HashedPassword(newPassword),
+		UserId:      ct.Id(req.UserId),
+		OldPassword: ct.HashedPassword(req.OldPassword),
+		NewPassword: ct.HashedPassword(req.NewPassword),
 	})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "UpdateUserPassword: %v", err)

@@ -5,8 +5,8 @@ POST {{baseUrl}}/login
 Content-Type: application/json
 
 {
-  "identifier": "jane@doe.com",
-  "password": "Password!123"
+  "identifier": "myuser1234",
+  "password": "superSecret1234"
 }
 
 ### 2) LOGOUT
@@ -20,7 +20,7 @@ Content-Type: multipart/form-data; boundary=BOUNDARY
 --BOUNDARY
 Content-Disposition: form-data; name="username"
 
-myuser123
+myuser1234
 --BOUNDARY
 Content-Disposition: form-data; name="first_name"
 
@@ -44,7 +44,7 @@ true
 --BOUNDARY
 Content-Disposition: form-data; name="email"
 
-john@example.com
+john2@example.com
 --BOUNDARY
 Content-Disposition: form-data; name="password"
 
