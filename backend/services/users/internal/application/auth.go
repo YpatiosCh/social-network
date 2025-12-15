@@ -97,31 +97,32 @@ func (s *Application) LoginUser(ctx context.Context, req models.LoginRequest) (m
 }
 
 func (s *Application) UpdateUserPassword(ctx context.Context, req models.UpdatePasswordRequest) error {
-	//TODO validate password (length, special characters, etc)
 
 	//TODO think whether transaction is needed here
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
 	}
 
-	hashedPassword, err := s.db.GetUserPassword(ctx, req.UserId.Int64())
-	if err != nil {
-		return err
-	}
+	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
+		row, err := q.GetUserPassword(ctx, req.UserId.Int64())
+		if err != nil {
+			return err
+		}
 
-	if !checkPassword(hashedPassword, req.OldPassword.String()) {
-		return ErrNotAuthorized
-	}
+		if !checkPassword(row, req.OldPassword.String()) {
+			return ErrNotAuthorized
+		}
 
-	err = s.db.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{
-		UserID:       req.UserId.Int64(),
-		PasswordHash: req.NewPassword.String(),
+		err = s.db.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{
+			UserID:       req.UserId.Int64(),
+			PasswordHash: req.NewPassword.String(),
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *Application) UpdateUserEmail(ctx context.Context, req models.UpdateEmailRequest) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -12,6 +13,90 @@ import (
 
 // CreateNotification creates a new notification
 func (a *Application) CreateNotification(ctx context.Context, userID int64, notifType NotificationType, title, message, sourceService string, sourceEntityID int64, needsAction bool, payload map[string]string) (*Notification, error) {
+	return a.CreateNotificationWithAggregation(ctx, userID, notifType, title, message, sourceService, sourceEntityID, needsAction, payload, false)
+}
+
+// CreateNotificationWithAggregation creates a new notification or aggregates with an existing one if applicable
+func (a *Application) CreateNotificationWithAggregation(ctx context.Context, userID int64, notifType NotificationType, title, message, sourceService string, sourceEntityID int64, needsAction bool, payload map[string]string, aggregate bool) (*Notification, error) {
+	if !aggregate {
+		// If aggregation is disabled, create a new notification as before
+		return a.createNotification(ctx, userID, notifType, title, message, sourceService, sourceEntityID, needsAction, payload, 1)
+	}
+
+	// If aggregation is enabled, first check for an existing unread notification of same type and entity
+	existingNotification, err := a.DB.GetUnreadNotificationByTypeAndEntity(ctx, db.GetUnreadNotificationByTypeAndEntityParams{
+		UserID:         userID,
+		NotifType:      string(notifType),
+		SourceEntityID: pgtype.Int8{Int64: sourceEntityID, Valid: true},
+	})
+
+	if err != nil {
+		// If no existing notification found (which is normal), create a new one
+		if err.Error() == "sql: no rows in result set" {
+			return a.createNotification(ctx, userID, notifType, title, message, sourceService, sourceEntityID, needsAction, payload, 1)
+		}
+		return nil, fmt.Errorf("failed to check for existing notification: %w", err)
+	}
+
+	// If an existing unread notification is found, increment its count and update it
+	newCount := existingNotification.Count.Int32 + 1
+	err = a.DB.UpdateNotificationCount(ctx, db.UpdateNotificationCountParams{
+		Count:  pgtype.Int4{Int32: newCount, Valid: true},
+		ID:     existingNotification.ID,
+		UserID: userID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update notification count: %w", err)
+	}
+
+	// Fetch and return the updated notification
+	updatedNotification, err := a.DB.GetNotificationByID(ctx, existingNotification.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated notification: %w", err)
+	}
+
+	// Convert database notification to our model
+	notification := &Notification{
+		ID:             updatedNotification.ID,
+		UserID:         updatedNotification.UserID,
+		Type:           NotificationType(updatedNotification.NotifType),
+		SourceService:  updatedNotification.SourceService,
+		Title:          a.formatAggregatedTitle(title, int64(newCount)),
+		Message:        a.formatAggregatedMessage(message, int64(newCount)),
+		Count:          newCount,
+	}
+
+	// Handle optional fields with proper type conversion
+	if updatedNotification.SourceEntityID.Valid {
+		notification.SourceEntityID = updatedNotification.SourceEntityID.Int64
+	}
+	notification.Seen = updatedNotification.Seen.Bool
+	notification.NeedsAction = updatedNotification.NeedsAction.Bool
+	notification.Acted = updatedNotification.Acted.Bool
+
+	if updatedNotification.CreatedAt.Valid {
+		notification.CreatedAt = updatedNotification.CreatedAt.Time
+	}
+	if updatedNotification.ExpiresAt.Valid {
+		notification.ExpiresAt = &updatedNotification.ExpiresAt.Time
+	}
+	if updatedNotification.DeletedAt.Valid {
+		notification.DeletedAt = &updatedNotification.DeletedAt.Time
+	}
+
+	// Parse the payload JSON back to map
+	if len(updatedNotification.Payload) > 0 {
+		err = json.Unmarshal(updatedNotification.Payload, &notification.Payload)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
+		}
+	}
+
+	return notification, nil
+}
+
+// createNotification is a helper function that creates a notification with a specific count
+func (a *Application) createNotification(ctx context.Context, userID int64, notifType NotificationType, title, message, sourceService string, sourceEntityID int64, needsAction bool, payload map[string]string, count int32) (*Notification, error) {
 	// Prepare the JSON payload
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
@@ -31,6 +116,7 @@ func (a *Application) CreateNotification(ctx context.Context, userID int64, noti
 		Acted:          pgtype.Bool{Bool: false, Valid: true}, // New notifications haven't been acted upon yet
 		Payload:        payloadJSON,
 		ExpiresAt:      pgtype.Timestamptz{Time: expiresAt, Valid: true},
+		Count:          pgtype.Int4{Int32: count, Valid: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create notification: %w", err)
@@ -53,6 +139,7 @@ func (a *Application) CreateNotification(ctx context.Context, userID int64, noti
 	notification.Seen = dbNotification.Seen.Bool
 	notification.NeedsAction = dbNotification.NeedsAction.Bool
 	notification.Acted = dbNotification.Acted.Bool
+	notification.Count = dbNotification.Count.Int32 // Set the count from the database response
 
 	if dbNotification.CreatedAt.Valid {
 		notification.CreatedAt = dbNotification.CreatedAt.Time
@@ -73,6 +160,48 @@ func (a *Application) CreateNotification(ctx context.Context, userID int64, noti
 	}
 
 	return notification, nil
+}
+
+// formatAggregatedTitle formats notification titles when notifications are aggregated
+func (a *Application) formatAggregatedTitle(originalTitle string, count int64) string {
+	if count <= 1 {
+		return originalTitle
+	}
+
+	// For now, we'll handle a few common cases, but this could be extended based on notification type
+	switch originalTitle {
+	case "Post Liked":
+		return fmt.Sprintf("%d People Liked Your Post", count)
+	case "New Comment":
+		return fmt.Sprintf("%d People Commented On Your Post", count)
+	case "New Follower":
+		return fmt.Sprintf("%d New Followers", count)
+	case "New Message":
+		return fmt.Sprintf("%d New Messages", count)
+	default:
+		return fmt.Sprintf("%d Notifications", count)
+	}
+}
+
+// formatAggregatedMessage formats notification messages when notifications are aggregated
+func (a *Application) formatAggregatedMessage(originalMessage string, count int64) string {
+	if count <= 1 {
+		return originalMessage
+	}
+
+	// For now, we'll handle a few common cases, but this could be extended based on notification type
+	switch {
+	case strings.Contains(originalMessage, "liked your post"):
+		return fmt.Sprintf("%d people liked your post", count)
+	case strings.Contains(originalMessage, "commented on your post"):
+		return fmt.Sprintf("%d people commented on your post", count)
+	case strings.Contains(originalMessage, "is now following you"):
+		return fmt.Sprintf("%d people are now following you", count)
+	case strings.Contains(originalMessage, "sent you a message"):
+		return fmt.Sprintf("%d people sent you a message", count)
+	default:
+		return fmt.Sprintf("You have %d notifications", count)
+	}
 }
 
 // CreateNotifications creates multiple notifications in a batch
@@ -265,6 +394,7 @@ func (a *Application) CreateDefaultNotificationTypes(ctx context.Context) error 
 		{string(PostLike), "posts", true},
 		{string(PostComment), "posts", true},
 		{string(Mention), "posts", true},
+		{string(NewMessage), "chat", true},
 	}
 
 	for _, nt := range defaultTypes {

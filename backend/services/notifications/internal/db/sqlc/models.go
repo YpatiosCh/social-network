@@ -21,6 +21,7 @@ type Notification struct {
 	CreatedAt      pgtype.Timestamptz
 	ExpiresAt      pgtype.Timestamptz
 	DeletedAt      pgtype.Timestamptz
+	Count          pgtype.Int4
 }
 
 type NotificationType struct {

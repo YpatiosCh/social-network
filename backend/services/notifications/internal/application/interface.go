@@ -19,6 +19,8 @@ type DBInterface interface {
 	DeleteNotification(ctx context.Context, arg sqlc.DeleteNotificationParams) error
 	CreateNotificationType(ctx context.Context, arg sqlc.CreateNotificationTypeParams) error
 	GetNotificationType(ctx context.Context, notifType string) (sqlc.NotificationType, error)
+	UpdateNotificationCount(ctx context.Context, arg sqlc.UpdateNotificationCountParams) error
+	GetUnreadNotificationByTypeAndEntity(ctx context.Context, arg sqlc.GetUnreadNotificationByTypeAndEntityParams) (sqlc.Notification, error)
 }
 
 // Update the Application struct to use the interface

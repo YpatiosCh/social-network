@@ -320,23 +320,35 @@ func (q *Queries) GetUserGroupRole(ctx context.Context, arg GetUserGroupRolePara
 }
 
 const getUserGroups = `-- name: GetUserGroups :many
-SELECT DISTINCT
-    g.id AS group_id,
-    g.group_owner,
-    g.group_title,
-    g.group_description,
-    g.group_image,
-    g.members_count,
-    CASE WHEN gm.user_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_member,
-    CASE WHEN g.group_owner = $1 THEN TRUE ELSE FALSE END AS is_owner
-FROM groups g
-LEFT JOIN group_members gm
-    ON gm.group_id = g.id
-    AND gm.user_id = $1
-    AND gm.deleted_at IS NULL
-WHERE g.deleted_at IS NULL
-  AND (gm.user_id = $1 OR g.group_owner = $1)
-ORDER BY COALESCE(gm.joined_at, g.created_at) DESC, g.id DESC
+SELECT
+    group_id,
+    group_owner,
+    group_title,
+    group_description,
+    group_image,
+    members_count,
+    is_member,
+    is_owner
+FROM (
+    SELECT DISTINCT
+        g.id AS group_id,
+        g.group_owner,
+        g.group_title,
+        g.group_description,
+        g.group_image,
+        g.members_count,
+        CASE WHEN gm.user_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_member,
+        CASE WHEN g.group_owner = $1 THEN TRUE ELSE FALSE END AS is_owner,
+        COALESCE(gm.joined_at, g.created_at) AS sort_date
+    FROM groups g
+    LEFT JOIN group_members gm
+        ON gm.group_id = g.id
+        AND gm.user_id = $1
+        AND gm.deleted_at IS NULL
+    WHERE g.deleted_at IS NULL
+      AND (gm.user_id = $1 OR g.group_owner = $1)
+) t
+ORDER BY sort_date DESC, group_id DESC
 LIMIT $2 OFFSET $3
 `
 

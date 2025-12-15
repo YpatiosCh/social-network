@@ -16,6 +16,7 @@ const (
 	PostLike           NotificationType = "like"
 	PostComment        NotificationType = "post_reply"
 	Mention            NotificationType = "mention"
+	NewMessage         NotificationType = "new_message"
 )
 
 // Notification represents a notification entity
@@ -28,6 +29,7 @@ type Notification struct {
 	Seen           bool              `json:"seen"`
 	NeedsAction    bool              `json:"needs_action"`
 	Acted          bool              `json:"acted"`
+	Count          int32             `json:"count"`
 	Payload        map[string]string `json:"payload"`
 	CreatedAt      time.Time         `json:"created_at"`
 	ExpiresAt      *time.Time        `json:"expires_at"`

@@ -5,8 +5,8 @@ POST {{baseUrl}}/login
 Content-Type: application/json
 
 {
-  "identifier": "jane@doe.com",
-  "password": "Password!123"
+  "identifier": "myuser1234",
+  "password": "superSecret123"
 }
 
 ### 2) LOGOUT
@@ -20,7 +20,7 @@ Content-Type: multipart/form-data; boundary=BOUNDARY
 --BOUNDARY
 Content-Disposition: form-data; name="username"
 
-myuser123
+myuser1234
 --BOUNDARY
 Content-Disposition: form-data; name="first_name"
 
@@ -44,7 +44,7 @@ true
 --BOUNDARY
 Content-Disposition: form-data; name="email"
 
-john@example.com
+john2@example.com
 --BOUNDARY
 Content-Disposition: form-data; name="password"
 
@@ -54,7 +54,7 @@ superSecret123
 ### 4) USERPROFILE
 
 # use user id from register or login
-GET {{baseUrl}}/profile/GWpmbk5ezJn4 
+POST {{baseUrl}}/profile/GWpmbk5ezJn4 
 
 ### 5) PUBLICFEED
 
@@ -63,3 +63,21 @@ GET {{baseUrl}}/public-feed
 
 ### 5) FOLLOW SUGGESTIONS
 GET {{baseUrl}}/users/follow-suggestions
+
+### 6) USER GROUPS
+POST {{baseUrl}}/groups/user/
+Content-Type: application/json
+
+{
+  "limit": 10,
+  "offset": 0
+}
+
+### 7) CHANGE PASSWORD
+POST {{baseUrl}}/account/update/password
+Content-Type: application/json
+
+{
+  "old_password": "superSecret1234",
+  "new_password": "superSecret123"
+}
