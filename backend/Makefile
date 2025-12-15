@@ -17,7 +17,7 @@ docker-up:
 
 delete-volumes:
 	docker compose down
-	docker volume rm backend_users-db-data backend_posts-db-data backend_chat-db-data backend_notifications-db-data backend_media-db-data
+	docker volume rm social-network_notifications-db-data social-network_users-db-data social-network_posts-db-data social-network_chat-db-data social-network_notifications-db-data social-network_media-db-data
 
 # ==== K8s ====
 

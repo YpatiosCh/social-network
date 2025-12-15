@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"database/sql"
 	"social-network/services/users/internal/db/sqlc"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
@@ -72,8 +73,14 @@ func (s *Application) LoginUser(ctx context.Context, req models.LoginRequest) (m
 	}
 
 	err := s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
-		row, err := q.GetUserForLogin(ctx, req.Identifier.String())
+		row, err := q.GetUserForLogin(ctx, sqlc.GetUserForLoginParams{
+			Username:     req.Identifier.String(),
+			PasswordHash: req.Password.String(),
+		})
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return ErrWrongCredentials
+			}
 			return err
 		}
 
@@ -83,9 +90,9 @@ func (s *Application) LoginUser(ctx context.Context, req models.LoginRequest) (m
 			AvatarId: ct.Id(row.AvatarID),
 		}
 
-		if !checkPassword(row.PasswordHash, req.Password.String()) {
-			return ErrWrongCredentials
-		}
+		// if !checkPassword(row.PasswordHash, req.Password.String()) {
+		// 	return ErrWrongCredentials
+		// }
 		return nil
 	})
 
