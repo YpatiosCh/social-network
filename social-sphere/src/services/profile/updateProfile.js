@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api";
+import { serverApiRequest } from "@/lib/server-api";
 
 /**
  * Updates the user's profile privacy.
@@ -6,9 +7,15 @@ import { apiRequest } from "@/lib/api";
  * @returns {Promise<Object>} The response from the server.
  */
 export async function updateProfilePrivacy({ bool }) {
+    const isServer = typeof window === 'undefined';
+    const apiFn = isServer ? serverApiRequest : apiRequest;
+
     try {
-        const response = await apiRequest("/account/update/public", {
+        const response = await apiFn("/account/update/public", {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({
                 public: bool,
             }),
@@ -26,10 +33,15 @@ export async function updateProfilePrivacy({ bool }) {
  * @returns {Promise<Object>} The response from the server.
  */
 export async function updateProfileEmail({ email }) {
+    const isServer = typeof window === 'undefined';
+    const apiFn = isServer ? serverApiRequest : apiRequest;
+
     try {
-        // TODO: Add email validation
-        const response = await apiRequest("/account/update/email", {
+        const response = await apiFn("/account/update/email", {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({
                 email: email,
             }),
@@ -43,16 +55,23 @@ export async function updateProfileEmail({ email }) {
 
 /**
  * Updates the user's profile password.
- * @param { string } password - The new password.
+ * @param {string} oldPassword - The old password.
+ * @param {string} newPassword - The new password.
  * @returns {Promise<Object>} The response from the server.
  */
-export async function updateProfilePassword({ password }) {
+export async function updateProfilePassword({ oldPassword, newPassword }) {
+    const isServer = typeof window === 'undefined';
+    const apiFn = isServer ? serverApiRequest : apiRequest;
+
     try {
-        // TODO: Add password validation
-        const response = await apiRequest("/account/update/password", {
+        const response = await apiFn("/account/update/password", {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({
-                password: password,
+                old_password: oldPassword,
+                new_password: newPassword,
             }),
         });
         return response;
@@ -64,6 +83,7 @@ export async function updateProfilePassword({ password }) {
 
 /**
  * Updates the user's profile information.
+ * @param {string} username - The new username.
  * @param {string} first_name - The new first name.
  * @param {string} last_name - The new last name.
  * @param {Date} date_of_birth - The new date of birth.
@@ -71,11 +91,17 @@ export async function updateProfilePassword({ password }) {
  * @param {string} about - The new about text.
  * @returns {Promise<Object>} The response from the server.
  */
-export async function updateProfileInfo({ first_name, last_name, date_of_birth, avatar_id, about }) {
+export async function updateProfileInfo({ username, first_name, last_name, date_of_birth, avatar_id, about }) {
+    const isServer = typeof window === 'undefined';
+    const apiFn = isServer ? serverApiRequest : apiRequest;
+
     try {
-        const response = await apiRequest("/profile/update", {
+        const response = await apiFn("/profile/update", {
             method: "POST",
-            body: JSON.stringify({ first_name, last_name, date_of_birth, avatar_id, about }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, first_name, last_name, date_of_birth, avatar_id, about }),
         });
         return response;
     } catch (error) {
