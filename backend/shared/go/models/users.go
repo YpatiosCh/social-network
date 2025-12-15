@@ -76,6 +76,7 @@ type UserProfileResponse struct {
 	About             ct.About       `json:"about"`
 	Public            bool           `json:"public"`
 	CreatedAt         ct.GenDateTime `json:"created_at"`
+	Email             ct.Email       `json:"email"`
 	FollowersCount    int64          `json:"followers_count"`
 	FollowingCount    int64          `json:"following_count"`
 	GroupsCount       int64          `json:"groups_count"`

@@ -70,18 +70,21 @@ func (q *Queries) GetUserBasic(ctx context.Context, id int64) (GetUserBasicRow, 
 
 const getUserProfile = `-- name: GetUserProfile :one
 SELECT
-    id,
-    username,
-    first_name,
-    last_name,
-    date_of_birth,
-    avatar_id,
-    about_me,
-    profile_public,
-    created_at
-FROM users
-WHERE id = $1
-  AND deleted_at IS NULL
+    u.id,
+    u.username,
+    u.first_name,
+    u.last_name,
+    u.date_of_birth,
+    u.avatar_id,
+    u.about_me,
+    u.profile_public,
+    u.created_at,
+    a.email
+FROM users u
+INNER JOIN auth_user a
+    ON a.user_id = u.id
+WHERE u.id = $1
+  AND u.deleted_at IS NULL
 `
 
 type GetUserProfileRow struct {
@@ -94,6 +97,7 @@ type GetUserProfileRow struct {
 	AboutMe       string
 	ProfilePublic bool
 	CreatedAt     pgtype.Timestamptz
+	Email         string
 }
 
 func (q *Queries) GetUserProfile(ctx context.Context, id int64) (GetUserProfileRow, error) {
@@ -109,6 +113,7 @@ func (q *Queries) GetUserProfile(ctx context.Context, id int64) (GetUserProfileR
 		&i.AboutMe,
 		&i.ProfilePublic,
 		&i.CreatedAt,
+		&i.Email,
 	)
 	return i, err
 }

@@ -814,6 +814,7 @@ func (s *UsersHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfil
 		About:             profile.About.String(),
 		Public:            profile.Public,
 		CreatedAt:         profile.CreatedAt.ToProto(),
+		Email:             profile.Email.String(),
 		FollowersCount:    profile.FollowersCount,
 		FollowingCount:    profile.FollowingCount,
 		GroupsCount:       profile.GroupsCount,

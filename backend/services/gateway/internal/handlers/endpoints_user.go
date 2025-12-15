@@ -56,6 +56,7 @@ func (h *Handlers) getUserProfile() http.HandlerFunc {
 			About             ct.About       `json:"about,omitempty"`
 			Public            bool           `json:"public"`
 			CreatedAt         time.Time      `json:"created_at"`
+			Email             fmt.Stringer   `json:"email"`
 			FollowersCount    int64          `json:"followers_count"`
 			FollowingCount    int64          `json:"following_count"`
 			GroupsCount       int64          `json:"groups_count"`
@@ -75,6 +76,7 @@ func (h *Handlers) getUserProfile() http.HandlerFunc {
 			About:             ct.About(grpcResp.About),
 			Public:            grpcResp.Public,
 			CreatedAt:         grpcResp.CreatedAt.AsTime(),
+			Email:             ct.Email(grpcResp.Email),
 			FollowersCount:    grpcResp.FollowersCount,
 			FollowingCount:    grpcResp.FollowingCount,
 			GroupsCount:       grpcResp.GroupsCount,

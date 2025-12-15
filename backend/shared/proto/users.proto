@@ -125,13 +125,14 @@ message UserProfileResponse {
   string about = 7;
   bool public = 8;
   google.protobuf.Timestamp created_at = 9;
-  int64 followers_count = 10;
-  int64 following_count = 11;
-  int64 groups_count = 12;
-  int64 owned_groups_count = 13;
-  bool viewer_is_following = 14;
-  bool own_profile = 15;
-  bool is_pending = 16;
+  string email = 10;
+  int64 followers_count = 11;
+  int64 following_count = 12;
+  int64 groups_count = 13;
+  int64 owned_groups_count = 14;
+  bool viewer_is_following = 15;
+  bool own_profile = 16;
+  bool is_pending = 17;
 }
 
 // REGISTER USER

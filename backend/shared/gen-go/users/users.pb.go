@@ -36,13 +36,14 @@ type UserProfileResponse struct {
 	About             string                 `protobuf:"bytes,7,opt,name=about,proto3" json:"about,omitempty"`
 	Public            bool                   `protobuf:"varint,8,opt,name=public,proto3" json:"public,omitempty"`
 	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	FollowersCount    int64                  `protobuf:"varint,10,opt,name=followers_count,json=followersCount,proto3" json:"followers_count,omitempty"`
-	FollowingCount    int64                  `protobuf:"varint,11,opt,name=following_count,json=followingCount,proto3" json:"following_count,omitempty"`
-	GroupsCount       int64                  `protobuf:"varint,12,opt,name=groups_count,json=groupsCount,proto3" json:"groups_count,omitempty"`
-	OwnedGroupsCount  int64                  `protobuf:"varint,13,opt,name=owned_groups_count,json=ownedGroupsCount,proto3" json:"owned_groups_count,omitempty"`
-	ViewerIsFollowing bool                   `protobuf:"varint,14,opt,name=viewer_is_following,json=viewerIsFollowing,proto3" json:"viewer_is_following,omitempty"`
-	OwnProfile        bool                   `protobuf:"varint,15,opt,name=own_profile,json=ownProfile,proto3" json:"own_profile,omitempty"`
-	IsPending         bool                   `protobuf:"varint,16,opt,name=is_pending,json=isPending,proto3" json:"is_pending,omitempty"`
+	Email             string                 `protobuf:"bytes,10,opt,name=email,proto3" json:"email,omitempty"`
+	FollowersCount    int64                  `protobuf:"varint,11,opt,name=followers_count,json=followersCount,proto3" json:"followers_count,omitempty"`
+	FollowingCount    int64                  `protobuf:"varint,12,opt,name=following_count,json=followingCount,proto3" json:"following_count,omitempty"`
+	GroupsCount       int64                  `protobuf:"varint,13,opt,name=groups_count,json=groupsCount,proto3" json:"groups_count,omitempty"`
+	OwnedGroupsCount  int64                  `protobuf:"varint,14,opt,name=owned_groups_count,json=ownedGroupsCount,proto3" json:"owned_groups_count,omitempty"`
+	ViewerIsFollowing bool                   `protobuf:"varint,15,opt,name=viewer_is_following,json=viewerIsFollowing,proto3" json:"viewer_is_following,omitempty"`
+	OwnProfile        bool                   `protobuf:"varint,16,opt,name=own_profile,json=ownProfile,proto3" json:"own_profile,omitempty"`
+	IsPending         bool                   `protobuf:"varint,17,opt,name=is_pending,json=isPending,proto3" json:"is_pending,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -138,6 +139,13 @@ func (x *UserProfileResponse) GetCreatedAt() *timestamppb.Timestamp {
 		return x.CreatedAt
 	}
 	return nil
+}
+
+func (x *UserProfileResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
 }
 
 func (x *UserProfileResponse) GetFollowersCount() int64 {
@@ -1886,7 +1894,7 @@ var File_users_proto protoreflect.FileDescriptor
 
 const file_users_proto_rawDesc = "" +
 	"\n" +
-	"\vusers.proto\x12\x05users\x1a\fcommon.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1egoogle/protobuf/wrappers.proto\"\xda\x04\n" +
+	"\vusers.proto\x12\x05users\x1a\fcommon.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1egoogle/protobuf/wrappers.proto\"\xf0\x04\n" +
 	"\x13UserProfileResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1d\n" +
@@ -1898,17 +1906,18 @@ const file_users_proto_rawDesc = "" +
 	"\x05about\x18\a \x01(\tR\x05about\x12\x16\n" +
 	"\x06public\x18\b \x01(\bR\x06public\x129\n" +
 	"\n" +
-	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12'\n" +
-	"\x0ffollowers_count\x18\n" +
-	" \x01(\x03R\x0efollowersCount\x12'\n" +
-	"\x0ffollowing_count\x18\v \x01(\x03R\x0efollowingCount\x12!\n" +
-	"\fgroups_count\x18\f \x01(\x03R\vgroupsCount\x12,\n" +
-	"\x12owned_groups_count\x18\r \x01(\x03R\x10ownedGroupsCount\x12.\n" +
-	"\x13viewer_is_following\x18\x0e \x01(\bR\x11viewerIsFollowing\x12\x1f\n" +
-	"\vown_profile\x18\x0f \x01(\bR\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x14\n" +
+	"\x05email\x18\n" +
+	" \x01(\tR\x05email\x12'\n" +
+	"\x0ffollowers_count\x18\v \x01(\x03R\x0efollowersCount\x12'\n" +
+	"\x0ffollowing_count\x18\f \x01(\x03R\x0efollowingCount\x12!\n" +
+	"\fgroups_count\x18\r \x01(\x03R\vgroupsCount\x12,\n" +
+	"\x12owned_groups_count\x18\x0e \x01(\x03R\x10ownedGroupsCount\x12.\n" +
+	"\x13viewer_is_following\x18\x0f \x01(\bR\x11viewerIsFollowing\x12\x1f\n" +
+	"\vown_profile\x18\x10 \x01(\bR\n" +
 	"ownProfile\x12\x1d\n" +
 	"\n" +
-	"is_pending\x18\x10 \x01(\bR\tisPending\"\xa5\x02\n" +
+	"is_pending\x18\x11 \x01(\bR\tisPending\"\xa5\x02\n" +
 	"\x13RegisterUserRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1d\n" +
 	"\n" +
