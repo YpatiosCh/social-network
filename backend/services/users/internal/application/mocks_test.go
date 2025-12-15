@@ -25,8 +25,8 @@ func (m *MockQuerier) InsertNewUserAuth(ctx context.Context, arg sqlc.InsertNewU
 	return args.Error(0)
 }
 
-func (m *MockQuerier) GetUserForLogin(ctx context.Context, identifier string) (sqlc.GetUserForLoginRow, error) {
-	args := m.Called(ctx, identifier)
+func (m *MockQuerier) GetUserForLogin(ctx context.Context, arg sqlc.GetUserForLoginParams) (sqlc.GetUserForLoginRow, error) {
+	args := m.Called(ctx, arg)
 	if args.Get(0) == nil {
 		return sqlc.GetUserForLoginRow{}, args.Error(1)
 	}

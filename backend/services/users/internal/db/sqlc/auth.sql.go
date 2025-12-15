@@ -38,10 +38,16 @@ SELECT
     au.password_hash
 FROM users u
 JOIN auth_user au ON au.user_id = u.id
-WHERE (u.username = $1 OR au.email = $1)
+WHERE (u.username = $1 OR au.email = $1) 
+  AND password_hash = $2
   AND u.current_status = 'active'
   AND u.deleted_at IS NULL
 `
+
+type GetUserForLoginParams struct {
+	Username     string
+	PasswordHash string
+}
 
 type GetUserForLoginRow struct {
 	ID            int64
@@ -51,8 +57,8 @@ type GetUserForLoginRow struct {
 	PasswordHash  string
 }
 
-func (q *Queries) GetUserForLogin(ctx context.Context, username string) (GetUserForLoginRow, error) {
-	row := q.db.QueryRow(ctx, getUserForLogin, username)
+func (q *Queries) GetUserForLogin(ctx context.Context, arg GetUserForLoginParams) (GetUserForLoginRow, error) {
+	row := q.db.QueryRow(ctx, getUserForLogin, arg.Username, arg.PasswordHash)
 	var i GetUserForLoginRow
 	err := row.Scan(
 		&i.ID,

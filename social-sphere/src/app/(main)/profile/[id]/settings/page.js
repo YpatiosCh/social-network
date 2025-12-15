@@ -1,0 +1,15 @@
+import { getProfileInfo } from "@/services/profile/getProfileInfo";
+import { redirect } from "next/navigation";
+import SettingsClient from "./SettingsClient";
+
+export default async function SettingsPage({ params }) {
+    const { id } = await params;
+
+    // get user's info
+    const user = await getProfileInfo(id);
+    console.log(user);
+
+    if (user.user_id !== id) { redirect(`/profile/${id}`); }
+
+    return <SettingsClient user={user} />;
+}

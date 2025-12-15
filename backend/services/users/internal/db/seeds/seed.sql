@@ -6,8 +6,10 @@
 -------------------------------------------------------
 
 -------------------------------------------------------
--- Users
+-- Users and Auth Records in Transaction
 -------------------------------------------------------
+BEGIN TRANSACTION;
+
 INSERT INTO users (username, first_name, last_name, date_of_birth, avatar_id, about_me, profile_public, current_status)
 OVERRIDING SYSTEM VALUE
 VALUES
@@ -23,16 +25,15 @@ VALUES
 ('jack', 'Jack', 'Black', '1990-10-10', 10, 'Actor and musician', TRUE, 'active')
 ON CONFLICT (id) DO NOTHING;
 
--------------------------------------------------------
--- Auth Records (fake passwords)
--------------------------------------------------------
 INSERT INTO auth_user (user_id, email, password_hash)
 SELECT u.id,
        LOWER(u.username) || '@example.com' AS email,
        'hash' AS password_hash
 FROM users u
 LEFT JOIN auth_user a ON a.user_id = u.id
-WHERE a.user_id IS NULL;  
+WHERE a.user_id IS NULL;
+
+COMMIT;  
 
 -------------------------------------------------------
 -- Follow relationships (direct)
