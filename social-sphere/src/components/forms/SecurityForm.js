@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { updateEmailAction, updatePasswordAction } from "@/app/actions/settings";
+import { updatePasswordAction, updateEmailAction } from "@/services/actions/settings";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const initialState = {

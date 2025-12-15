@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updatePrivacyAction } from "@/app/actions/settings";
+import { updatePrivacyAction } from "@/services/actions/settings";
 import { Lock, Globe, Loader2 } from "lucide-react";
 
 export default function PrivacyForm({ user }) {
@@ -74,7 +74,7 @@ export default function PrivacyForm({ user }) {
                             }`}
                     >
                         <span
-                            className={`${isPrivate ? 'translate-x-4 h-5 w-5 transform rounded-full bg-background transition-transform duration-200 flex items-center justify-center' : 'translate-x-1 h-5 w-5 transform rounded-full bg-(--accent) transition-transform duration-200 flex items-center justify-center z-index-1' 
+                            className={`${isPrivate ? 'translate-x-4 h-5 w-5 transform rounded-full bg-background transition-transform duration-200 flex items-center justify-center' : 'translate-x-1 h-5 w-5 transform rounded-full bg-(--accent) transition-transform duration-200 flex items-center justify-center z-index-1'
                                 } `}
                         >
                             {isPending && <Loader2 className="w-3 h-3 animate-spin text-foreground" />}
