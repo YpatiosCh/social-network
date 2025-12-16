@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS files (
     object_key    TEXT NOT NULL,               -- path/key in MinIO
 
     visibility    file_visibility NOT NULL,
+    status       TEXT NOT NULL,
 
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -62,4 +63,26 @@ CREATE TRIGGER update_variant_updated_at
 BEFORE UPDATE ON file_variants
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
+
+-- Trigger to set variant of a file to processing when file_id status is set to complete.
+CREATE OR REPLACE FUNCTION set_variants_processing()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only act if status was changed to 'complete'
+    IF NEW.status = 'complete' AND OLD.status IS DISTINCT FROM NEW.status THEN
+        UPDATE file_variants
+        SET status = 'processing'
+        WHERE file_id = NEW.id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER files_status_complete_trigger
+AFTER UPDATE OF status ON files
+FOR EACH ROW
+WHEN (NEW.status = 'complete')   -- optional extra safety
+EXECUTE FUNCTION set_variants_processing();
 

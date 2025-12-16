@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"social-network/shared/go/db"
 )
@@ -11,13 +10,8 @@ import (
 func main() {
 	log.Println("Running database migrations...")
 	dbUrl := os.Getenv("DATABASE_URL")
-	for range 10 {
-		if err := db.RunMigrations(dbUrl, "./migrations"); err != nil {
-			log.Println("Migration failed, retrying in 2s:", err)
-			time.Sleep(2 * time.Second)
-			continue
-		}
-		break
+	if err := db.RunMigrations(dbUrl, "./migrations"); err != nil {
+		log.Fatal("Migration failed", err)
 	}
 
 	log.Println("Migrations completed successfully.")
