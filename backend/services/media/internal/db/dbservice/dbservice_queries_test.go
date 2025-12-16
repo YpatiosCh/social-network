@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"social-network/shared/go/customtypes"
+	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/db"
 	"testing"
 
@@ -57,7 +57,8 @@ func TestQuerier(t *testing.T) {
 			SizeBytes:  1024,
 			Bucket:     "test-bucket",
 			ObjectKey:  obj,
-			Visibility: customtypes.Public, // Adjust to your enum
+			Visibility: ct.Public, // Adjust to your enum
+			Status:     ct.Complete,
 		}
 
 		// Create file
@@ -75,22 +76,22 @@ func TestQuerier(t *testing.T) {
 			Filename:   "test.jpg",
 			MimeType:   "image/jpeg",
 			SizeBytes:  1024,
-			Variant:    customtypes.Medium,
+			Variant:    ct.ImgMedium,
 			Bucket:     "test-bucket",
 			ObjectKey:  obj,
-			Visibility: customtypes.Public,
-			Status:     customtypes.Pending,
+			Visibility: ct.Public,
+			Status:     ct.Pending,
 		}
 
 		_, err = q.CreateVariant(ctx, variant)
 		require.NoError(t, err)
 		require.NotZero(t, fileId)
 
-		retrieved, err = q.GetVariant(ctx, fileId, customtypes.Medium)
+		retrieved, err = q.GetVariant(ctx, fileId, ct.ImgMedium)
 		require.NoError(t, err)
 		require.Equal(t, file.Filename, retrieved.Filename)
 
-		err = q.UpdateVariantStatus(ctx, fileId, variant.Variant, customtypes.Complete)
+		err = q.UpdateVariantStatus(ctx, fileId, variant.Variant, ct.Complete)
 		require.NoError(t, err)
 	})
 }

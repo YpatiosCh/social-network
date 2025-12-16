@@ -12,6 +12,7 @@ type DBTX interface {
 	Query(context.Context, string, ...interface{}) (pgx.Rows, error)
 	QueryRow(context.Context, string, ...interface{}) pgx.Row
 }
+
 type Queries struct {
 	db DBTX
 }

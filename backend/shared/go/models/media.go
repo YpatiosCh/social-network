@@ -11,5 +11,5 @@ type FileMeta struct {
 	ObjectKey string // the name given to file in fileservice
 
 	Visibility ct.FileVisibility
-	Variant    ct.ImgVariant // thumb, small, medium, large
+	Variant    ct.FileVariant // thumb, small, medium, large
 }

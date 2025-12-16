@@ -21,20 +21,20 @@ type MediaHandler struct {
 }
 
 // pbToCtImgVariant converts protobuf ImgVariant to customtypes ImgVariant
-func pbToCtImgVariant(v pb.ImgVariant) ct.ImgVariant {
+func pbToCtImgVariant(v pb.ImgVariant) ct.FileVariant {
 	switch v {
 	case pb.ImgVariant_THUMBNAIL:
-		return ct.Thumbnail
+		return ct.ImgThumbnail
 	case pb.ImgVariant_SMALL:
-		return ct.Small
+		return ct.ImgSmall
 	case pb.ImgVariant_MEDIUM:
-		return ct.Medium
+		return ct.ImgMedium
 	case pb.ImgVariant_LARGE:
-		return ct.Large
+		return ct.ImgLarge
 	case pb.ImgVariant_ORIGINAL:
 		return ct.Original
 	default:
-		return ct.ImgVariant("") // invalid, but handle gracefully
+		return ct.FileVariant("") // invalid, but handle gracefully
 	}
 }
 
@@ -115,7 +115,7 @@ func (m *MediaHandler) UploadImage(ctx context.Context, req *pb.UploadImageReque
 	}
 
 	// Convert variants
-	variants := make([]ct.ImgVariant, len(req.Variants))
+	variants := make([]ct.FileVariant, len(req.Variants))
 	for i, v := range req.Variants {
 		variants[i] = pbToCtImgVariant(v)
 	}

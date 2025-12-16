@@ -111,50 +111,50 @@ func (v FileVisibility) SetExp() time.Duration {
 
 // Describes the type of image
 // thumb, small, medium, large
-type ImgVariant string
+type FileVariant string
 
 const (
-	Thumbnail ImgVariant = "thumb"
-	Small     ImgVariant = "small"
-	Medium    ImgVariant = "medium"
-	Large     ImgVariant = "large"
-	Original  ImgVariant = "original"
+	ImgThumbnail FileVariant = "thumb"
+	ImgSmall     FileVariant = "small"
+	ImgMedium    FileVariant = "medium"
+	ImgLarge     FileVariant = "large"
+	Original     FileVariant = "original"
 )
 
-func (v ImgVariant) String() string {
+func (v FileVariant) String() string {
 	return string(v)
 }
 
-func (v ImgVariant) IsValid() bool {
+func (v FileVariant) IsValid() bool {
 	switch v {
-	case Thumbnail, Small, Medium, Large, Original:
+	case ImgThumbnail, ImgSmall, ImgMedium, ImgLarge, Original:
 		return true
 	default:
 		return false
 	}
 }
 
-func (v ImgVariant) Validate() error {
+func (v FileVariant) Validate() error {
 	if !v.IsValid() {
 		return fmt.Errorf("invalid ImgVariant: %q", v)
 	}
 	return nil
 }
 
-func (v ImgVariant) MarshalJSON() ([]byte, error) {
+func (v FileVariant) MarshalJSON() ([]byte, error) {
 	if err := v.Validate(); err != nil {
 		return nil, err
 	}
 	return json.Marshal(string(v))
 }
 
-func (v *ImgVariant) UnmarshalJSON(data []byte) error {
+func (v *FileVariant) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
 
-	val := ImgVariant(s)
+	val := FileVariant(s)
 	if !val.IsValid() {
 		return fmt.Errorf("invalid ImgVariant: %q", s)
 	}
@@ -163,7 +163,7 @@ func (v *ImgVariant) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *ImgVariant) Scan(src any) error {
+func (v *FileVariant) Scan(src any) error {
 	if src == nil {
 		*v = ""
 		return nil
@@ -171,14 +171,14 @@ func (v *ImgVariant) Scan(src any) error {
 
 	switch s := src.(type) {
 	case string:
-		val := ImgVariant(s)
+		val := FileVariant(s)
 		if !val.IsValid() {
 			return fmt.Errorf("invalid ImgVariant: %q", s)
 		}
 		*v = val
 		return nil
 	case []byte:
-		val := ImgVariant(string(s))
+		val := FileVariant(string(s))
 		if !val.IsValid() {
 			return fmt.Errorf("invalid ImgVariant: %q", s)
 		}
@@ -189,7 +189,7 @@ func (v *ImgVariant) Scan(src any) error {
 	}
 }
 
-func (v ImgVariant) Value() (driver.Value, error) {
+func (v FileVariant) Value() (driver.Value, error) {
 	if err := v.Validate(); err != nil {
 		return nil, err
 	}

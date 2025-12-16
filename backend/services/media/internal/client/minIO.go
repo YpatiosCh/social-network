@@ -116,7 +116,7 @@ func (c *Clients) GenerateVariant(
 	return err
 }
 
-func resizeForVariant(src image.Image, variant ct.ImgVariant) image.Image {
+func resizeForVariant(src image.Image, variant ct.FileVariant) image.Image {
 	maxWidth, maxHeight := variantToSize(variant)
 	bounds := src.Bounds()
 	w := bounds.Dx()
@@ -143,18 +143,18 @@ func resizeForVariant(src image.Image, variant ct.ImgVariant) image.Image {
 	return dst
 }
 
-func variantToSize(variant ct.ImgVariant) (maxWidth, maxHeight int) {
+func variantToSize(variant ct.FileVariant) (maxWidth, maxHeight int) {
 	switch variant {
-	case ct.Large:
+	case ct.ImgLarge:
 		return 1600, 1600
 
-	case ct.Medium:
+	case ct.ImgMedium:
 		return 800, 800
 
-	case ct.Small:
+	case ct.ImgSmall:
 		return 400, 400
 
-	case ct.Thumbnail:
+	case ct.ImgThumbnail:
 		return 150, 150
 
 	default:
