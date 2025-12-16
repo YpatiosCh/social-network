@@ -17,21 +17,30 @@ Content-Type: application/json
 ### Register user
 POST {{baseUrl}}/register
 Content-Type: application/json
+Host: minio:9000
 
 {
-  "username": "johnkoe",
+  "username": "johnaoe",
   "first_name": "John",
   "last_name": "Doe",
   "date_of_birth": "1995-04-12",
   "about": "Software engineer and coffee lover",
   "public": true,
-  "email": "john.koe@example.com",
+  "email": "john.aoe@example.com",
   "password": "StrongPassword123!",
 
   "avatar_name": "avatar.png",
-  "avatar_size": 245678,
-  "avatar_type": "image/png"
+  "avatar_size": 397,
+  "avatar_type": "image/jpg"
 }
+
+### Upload file
+PUT http://minio:9000/uploads-originals/6476b142-e64d-43ed-b6b3-95e80be13ba6?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20251216%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20251216T202445Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=57b9a69ff965a6bbc565003016f333fc3c4aa994637e3a9451641bac0340158a
+
+Content-Type: application/octet-stream
+Host: minio:9000
+
+<./test.jpg>
 
 ### Validate file
 POST {{baseUrl}}/validate-file-upload

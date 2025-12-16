@@ -2,6 +2,7 @@ package entry
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"reflect"
 	"social-network/services/media/internal/configs"
@@ -24,6 +25,7 @@ func NewMinIOConn(cfgs configs.FileService) (*minio.Client, error) {
 		minioClient, err = minio.New(endpoint, &minio.Options{
 			Creds:  credentials.NewStaticV4(accessKey, secret, ""),
 			Secure: false,
+			Region: "us-east-1",
 		})
 		if err == nil {
 			break
@@ -35,12 +37,16 @@ func NewMinIOConn(cfgs configs.FileService) (*minio.Client, error) {
 		return nil, err
 	}
 
+	log.Println("Connected to minio client")
+
 	// Ensure bucket exists
 	ctx := context.Background()
 	if err := EnsureBuckets(ctx,
 		minioClient, cfgs.Buckets); err != nil {
 		return nil, err
 	}
+
+	log.Println("Setting up lifecycle rules")
 
 	lcfg := lifecycle.NewConfiguration()
 
@@ -70,9 +76,10 @@ func NewMinIOConn(cfgs configs.FileService) (*minio.Client, error) {
 
 func EnsureBuckets(ctx context.Context, client *minio.Client, buckets configs.Buckets) error {
 	v := reflect.ValueOf(buckets)
-
+	log.Println("Creating buckets")
 	for i := 0; i < v.NumField(); i++ {
 		bucketName := v.Field(i).String()
+		log.Println("Checking bucket", bucketName)
 
 		if bucketName == "" {
 			continue
@@ -84,11 +91,13 @@ func EnsureBuckets(ctx context.Context, client *minio.Client, buckets configs.Bu
 		}
 
 		if !exists {
+			fmt.Printf("Creating bucket: %v\n", bucketName)
 			if err := client.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
 				return err
 			}
 		}
 	}
+	log.Println("Buckets created!")
 
 	return nil
 }

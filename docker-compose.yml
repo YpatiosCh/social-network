@@ -101,6 +101,7 @@ services:
     build:
       context: backend/.
       dockerfile: services/chat/Dockerfile
+    container_name: chat
     environment:
       <<: *common-env
       DATABASE_URL: postgres://postgres:secret@chat-db:5432/social_chat?sslmode=disable
@@ -188,6 +189,7 @@ services:
     build:
       context: backend/.
       dockerfile: services/media/Dockerfile
+    container_name: media
     environment:
       <<: *common-env
       SERVICE_PORT: ":50051"

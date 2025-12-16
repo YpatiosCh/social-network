@@ -3,7 +3,7 @@ package client
 import (
 	"bytes"
 	"context"
-	"errors"
+	"fmt"
 	"image"
 	"math"
 	"net/url"
@@ -65,7 +65,11 @@ func (c *Clients) ValidateUpload(
 	}
 
 	if info.Size != fm.SizeBytes {
-		return errors.New("size mismatch")
+		return fmt.Errorf(
+			"upload size mismatch: expected=%d actual=%d",
+			fm.SizeBytes,
+			info.Size,
+		)
 	}
 
 	// TODO: deep validation (images)

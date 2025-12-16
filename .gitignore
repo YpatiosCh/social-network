@@ -6,6 +6,7 @@
 *.bin
 *.exe
 __debug_bin*
+backend/test.jpg
 
 test_output
 downloads
