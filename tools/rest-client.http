@@ -14,43 +14,33 @@ Content-Type: application/json
 POST {{baseUrl}}/logout
 Content-Type: application/json
 
-### 3) REGISTER (multipart form-data)
+### Register user
 POST {{baseUrl}}/register
-Content-Type: multipart/form-data; boundary=BOUNDARY
+Content-Type: application/json
 
---BOUNDARY
-Content-Disposition: form-data; name="username"
+{
+  "username": "johnkoe",
+  "first_name": "John",
+  "last_name": "Doe",
+  "date_of_birth": "1995-04-12",
+  "about": "Software engineer and coffee lover",
+  "public": true,
+  "email": "john.koe@example.com",
+  "password": "StrongPassword123!",
 
-user123
---BOUNDARY
-Content-Disposition: form-data; name="first_name"
+  "avatar_name": "avatar.png",
+  "avatar_size": 245678,
+  "avatar_type": "image/png"
+}
 
-John
---BOUNDARY
-Content-Disposition: form-data; name="last_name"
+### Validate file
+POST {{baseUrl}}/validate-file-upload
+Content-Type: application/json
 
-Doe
---BOUNDARY
-Content-Disposition: form-data; name="date_of_birth"
+{
+  "file_id":"BWJxbojagwOL"
+}
 
-1999-01-01
---BOUNDARY
-Content-Disposition: form-data; name="about"
-
-I love coding!
---BOUNDARY
-Content-Disposition: form-data; name="public"
-
-true
---BOUNDARY
-Content-Disposition: form-data; name="email"
-
-user123@example.com
---BOUNDARY
-Content-Disposition: form-data; name="password"
-
-superSecret1234
---BOUNDARY--
 
 ### 4) USERPROFILE
 

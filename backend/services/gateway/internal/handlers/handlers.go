@@ -31,6 +31,7 @@ func NewHandlers(
 		UsersService: UsersService,
 		PostsService: PostsService,
 		ChatService:  ChatService,
+		MediaService: MediaService,
 	}
 	return handlers.BuildMux(serviceName)
 }
@@ -74,6 +75,13 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			RateLimit(IP, 5, 5).
 			EnrichContext().
 			Finalize(h.registerHandler()))
+
+	mux.HandleFunc("/validate-file-upload",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			EnrichContext().
+			Finalize(h.validateFileUpload()))
 
 	mux.HandleFunc("/logout",
 		Chain().

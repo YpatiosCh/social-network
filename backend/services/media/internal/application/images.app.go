@@ -54,6 +54,7 @@ func (m *MediaService) UploadImage(ctx context.Context,
 
 			for _, v := range variants {
 				_, err := m.Queries.CreateVariant(ctx, dbservice.File{
+					Id:         fileId,
 					Filename:   req.Filename,
 					MimeType:   req.MimeType,
 					SizeBytes:  req.SizeBytes,
