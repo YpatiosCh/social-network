@@ -87,29 +87,29 @@ type GetGroupPostsReq struct {
 //-------------------------------------------
 
 type Comment struct {
-	CommentId      ct.Id
-	ParentId       ct.Id
-	Body           ct.CommentBody
-	User           User
-	ReactionsCount int
-	CreatedAt      ct.GenDateTime
-	UpdatedAt      ct.GenDateTime //can be nil
-	LikedByUser    bool
-	Image          ct.Id `validate:"nullable"`
+	CommentId      ct.Id          `json:"comment_id"`
+	ParentId       ct.Id          `json:"parent_id"`
+	Body           ct.CommentBody `json:"comment_body"`
+	User           User           `json:"user"`
+	ReactionsCount int            `json:"reactions_count"`
+	CreatedAt      ct.GenDateTime `json:"created_at"`
+	UpdatedAt      ct.GenDateTime `json:"updated_at"`
+	LikedByUser    bool           `json:"liked_by_user"`
+	Image          ct.Id          `json:"image" validate:"nullable"`
 }
 
 type CreateCommentReq struct {
 	CreatorId ct.Id
-	ParentId  ct.Id
-	Body      ct.CommentBody
-	Image     ct.Id `validate:"nullable"`
+	ParentId  ct.Id          `json:"parent_id"`
+	Body      ct.CommentBody `json:"comment_body"`
+	Image     ct.Id          `json:"image" validate:"nullable"`
 }
 
 type EditCommentReq struct {
 	CreatorId ct.Id
-	CommentId ct.Id
-	Body      ct.CommentBody `validate:"nullable"`
-	Image     ct.Id          `validate:"nullable"`
+	CommentId ct.Id          `json:"comment_id"`
+	Body      ct.CommentBody `json:"comment_body" validate:"nullable"`
+	Image     ct.Id          `json:"image" validate:"nullable"`
 }
 
 //-------------------------------------------

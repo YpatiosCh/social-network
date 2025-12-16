@@ -520,11 +520,7 @@ func (s *Handlers) UnFollowUser() http.HandlerFunc {
 			panic(1)
 		}
 
-		type reqBody struct {
-			UserId int64 `json:"user_id"`
-		}
-
-		body, err := utils.JSON2Struct(&reqBody{}, r)
+		body, err := utils.JSON2Struct(&models.FollowUserReq{}, r)
 		if err != nil {
 			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
 			return
@@ -532,7 +528,7 @@ func (s *Handlers) UnFollowUser() http.HandlerFunc {
 
 		req := &users.FollowUserRequest{
 			FollowerId:   claims.UserId,
-			TargetUserId: body.UserId,
+			TargetUserId: body.TargetUserId.Int64(),
 		}
 
 		resp, err := s.UsersService.UnFollowUser(ctx, req)
