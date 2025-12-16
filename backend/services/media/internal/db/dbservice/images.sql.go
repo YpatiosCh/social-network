@@ -20,7 +20,7 @@ func (q *Queries) CreateFile(
 			object_key,
 			visibility
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
 	`
 
@@ -150,8 +150,7 @@ func (q *Queries) UpdateVariantStatus(
 
 	const query = `
 		UPDATE file_variants
-		SET status = $2,
-		    updated_at = now()
+		SET status = $2
 		WHERE file_id = $1
 	`
 

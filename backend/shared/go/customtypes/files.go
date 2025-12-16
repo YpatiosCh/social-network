@@ -127,7 +127,7 @@ func (v ImgVariant) String() string {
 
 func (v ImgVariant) IsValid() bool {
 	switch v {
-	case Thumbnail, Small, Medium, Large:
+	case Thumbnail, Small, Medium, Large, Original:
 		return true
 	default:
 		return false
