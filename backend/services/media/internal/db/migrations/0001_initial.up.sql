@@ -1,4 +1,4 @@
-CREATE TYPE IF NOT EXISTS file_visibility AS ENUM ('private', 'public');
+CREATE TYPE file_visibility AS ENUM ('private', 'public');
 
 CREATE TABLE IF NOT EXISTS files (
     id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS file_variants (
     status       TEXT NOT NULL,
 
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     UNIQUE (file_id, variant),
     UNIQUE (bucket, object_key)

@@ -67,8 +67,6 @@ func (c *Clients) ValidateUpload(
 		return errors.New("size mismatch")
 	}
 
-	// TODO: Compress and copy to file variant
-
 	// TODO: deep validation (images)
 	// obj, err := c.MinIOClient.GetObject(ctx, fm.Bucket, fm.ObjectKey, minio.GetObjectOptions{})
 	// if err != nil {
@@ -79,10 +77,6 @@ func (c *Clients) ValidateUpload(
 	// if _, _, err := image.DecodeConfig(obj); err != nil {
 	// 	return errors.New("invalid image")
 	// }
-	if fm.Variant != ct.Large {
-		// Generate Variant
-		// go c.generateVariant(context.Background(),)
-	}
 	return nil
 }
 

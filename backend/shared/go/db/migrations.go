@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -56,7 +55,7 @@ func run(dbUrl string, migrationsPath string) error {
 // Runs migrations with retries
 func RunMigrations(dbUrl string, migrationsPath string) (err error) {
 	for range 10 {
-		if err = run(os.Getenv("DATABASE_URL"), "./migrations"); err != nil {
+		if err = run(dbUrl, migrationsPath); err != nil {
 			log.Println("Migration failed, retrying in 2s:", err)
 			time.Sleep(2 * time.Second)
 			continue
@@ -65,3 +64,16 @@ func RunMigrations(dbUrl string, migrationsPath string) (err error) {
 	}
 	return err
 }
+
+// // Runs migrations with retries
+// func RunMigrations(dbUrl string, migrationsPath string) (err error) {
+// 	for range 10 {
+// 		if err = run(os.Getenv("DATABASE_URL"), "./migrations"); err != nil {
+// 			log.Println("Migration failed, retrying in 2s:", err)
+// 			time.Sleep(2 * time.Second)
+// 			continue
+// 		}
+// 		return nil
+// 	}
+// 	return err
+// }
