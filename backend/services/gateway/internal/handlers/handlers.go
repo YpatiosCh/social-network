@@ -348,5 +348,14 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			RateLimit(USERID, 5, 5).
 			Finalize(h.deletePost()))
 
+	mux.HandleFunc("/comments/create",
+		Chain().
+			AllowedMethod("POST").
+			RateLimit(IP, 5, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 5, 5).
+			Finalize(h.createComment()))
+
 	return mux
 }

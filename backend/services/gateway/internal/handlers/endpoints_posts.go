@@ -325,3 +325,34 @@ func (h *Handlers) deletePost() http.HandlerFunc {
 
 	}
 }
+
+func (h *Handlers) createComment() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("createComment handler called")
+
+		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
+
+		body, err := utils.JSON2Struct(&models.CreateCommentReq{}, r)
+		if err != nil {
+			utils.ErrorJSON(w, http.StatusBadRequest, "Bad JSON data received")
+			return
+		}
+
+		grpcReq := posts.CreateCommentReq{
+			CreatorId: int64(claims.UserId),
+			ParentId:  body.ParentId.Int64(),
+			Body:      body.Body.String(),
+			Image:     int64(body.Image),
+		}
+
+		_, err = h.PostsService.CreateComment(r.Context(), &grpcReq)
+		if err != nil {
+			utils.ErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to create comment: %v", err.Error()))
+			return
+		}
+
+	}
+}
