@@ -109,8 +109,8 @@ func (v FileVisibility) SetExp() time.Duration {
 // ImgVariant
 // =======================
 
-// Describes the type of image
-// thumb, small, medium, large
+// Describes the type of file
+// original, thumb, small, medium, large
 type FileVariant string
 
 const (

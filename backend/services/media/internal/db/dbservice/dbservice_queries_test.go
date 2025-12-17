@@ -34,7 +34,7 @@ func setupTestDB(t *testing.T) (*Queries, func()) {
 	pool, err := pgxpool.New(ctx, testDBURL)
 	require.NoError(t, err)
 
-	q := New(pool)
+	q := NewQuerier(pool)
 
 	teardown := func() {
 		pool.Close()
@@ -91,7 +91,7 @@ func TestQuerier(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, file.Filename, retrieved.Filename)
 
-		err = q.UpdateVariantStatus(ctx, fileId, variant.Variant, ct.Complete)
+		err = q.UpdateVariantStatusAndSize(ctx, fileId, ct.Complete, retrieved.SizeBytes/2)
 		require.NoError(t, err)
 	})
 }

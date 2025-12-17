@@ -274,20 +274,22 @@ func (q *Queries) GetVariants(
 	return fms, notComplete, nil
 }
 
-func (q *Queries) UpdateVariantStatus(
+func (q *Queries) UpdateVariantStatusAndSize(
 	ctx context.Context,
 	fileId ct.Id,
-	variant ct.FileVariant,
 	status ct.UploadStatus,
+	size int64,
 ) error {
 
 	const query = `
 		UPDATE file_variants
-		SET status = $2
+		SET 
+			status = $2,
+			size_bytes = $3
 		WHERE file_id = $1
 	`
 
-	res, err := q.db.Exec(ctx, query, fileId, status)
+	res, err := q.db.Exec(ctx, query, fileId, status, size)
 	if err != nil {
 		return err
 	}
@@ -321,4 +323,50 @@ func (q *Queries) UpdateFileStatus(
 	}
 
 	return nil
+}
+
+func (q *Queries) GetPendingVariants(
+	ctx context.Context) (pending []Variant, err error) {
+	const query = `
+		SELECT 
+			fv.id,
+			f.id as file_id, 
+			f.filename, 
+			fv.mime_type, 
+			f.size_bytes, 
+			fv.bucket, 
+			fv.object_key, 
+			f.visibility, 
+			fv.variant
+		FROM file_variants fv
+		JOIN files f ON fv.file_id = f.id
+		WHERE fv.status = 'pending'
+	`
+
+	rows, err := q.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var fm Variant
+		err := rows.Scan(
+			&fm.Id,
+			&fm.FileId,
+			&fm.Filename,
+			&fm.MimeType,
+			&fm.SizeBytes,
+			&fm.Bucket,
+			&fm.ObjectKey,
+			&fm.Visibility,
+			&fm.Variant)
+		if err != nil {
+			return nil, err
+		}
+		pending = append(pending, fm)
+
+	}
+
+	return pending, err
 }

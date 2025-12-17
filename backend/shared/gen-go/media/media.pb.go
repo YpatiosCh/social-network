@@ -22,21 +22,22 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Enum representing different image variant sizes
-type ImgVariant int32
+// Describes the type of file
+// original, thumb, small, medium, large
+type FileVariant int32
 
 const (
-	ImgVariant_IMG_VARIANT_UNSPECIFIED ImgVariant = 0 // Default unspecified variant
-	ImgVariant_THUMBNAIL               ImgVariant = 1 // Thumbnail size variant
-	ImgVariant_SMALL                   ImgVariant = 2 // Small size variant
-	ImgVariant_MEDIUM                  ImgVariant = 3 // Medium size variant
-	ImgVariant_LARGE                   ImgVariant = 4 // Large size variant
-	ImgVariant_ORIGINAL                ImgVariant = 5 // Original size variant
+	FileVariant_IMG_VARIANT_UNSPECIFIED FileVariant = 0 // Default unspecified variant
+	FileVariant_THUMBNAIL               FileVariant = 1 // Thumbnail size variant
+	FileVariant_SMALL                   FileVariant = 2 // Small size variant
+	FileVariant_MEDIUM                  FileVariant = 3 // Medium size variant
+	FileVariant_LARGE                   FileVariant = 4 // Large size variant
+	FileVariant_ORIGINAL                FileVariant = 5 // Original size variant
 )
 
-// Enum value maps for ImgVariant.
+// Enum value maps for FileVariant.
 var (
-	ImgVariant_name = map[int32]string{
+	FileVariant_name = map[int32]string{
 		0: "IMG_VARIANT_UNSPECIFIED",
 		1: "THUMBNAIL",
 		2: "SMALL",
@@ -44,7 +45,7 @@ var (
 		4: "LARGE",
 		5: "ORIGINAL",
 	}
-	ImgVariant_value = map[string]int32{
+	FileVariant_value = map[string]int32{
 		"IMG_VARIANT_UNSPECIFIED": 0,
 		"THUMBNAIL":               1,
 		"SMALL":                   2,
@@ -54,34 +55,35 @@ var (
 	}
 )
 
-func (x ImgVariant) Enum() *ImgVariant {
-	p := new(ImgVariant)
+func (x FileVariant) Enum() *FileVariant {
+	p := new(FileVariant)
 	*p = x
 	return p
 }
 
-func (x ImgVariant) String() string {
+func (x FileVariant) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ImgVariant) Descriptor() protoreflect.EnumDescriptor {
+func (FileVariant) Descriptor() protoreflect.EnumDescriptor {
 	return file_media_proto_enumTypes[0].Descriptor()
 }
 
-func (ImgVariant) Type() protoreflect.EnumType {
+func (FileVariant) Type() protoreflect.EnumType {
 	return &file_media_proto_enumTypes[0]
 }
 
-func (x ImgVariant) Number() protoreflect.EnumNumber {
+func (x FileVariant) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ImgVariant.Descriptor instead.
-func (ImgVariant) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use FileVariant.Descriptor instead.
+func (FileVariant) EnumDescriptor() ([]byte, []int) {
 	return file_media_proto_rawDescGZIP(), []int{0}
 }
 
-// Enum representing file visibility levels
+// Describes file visibility
+// private, public
 type FileVisibility int32
 
 const (
@@ -131,6 +133,63 @@ func (FileVisibility) EnumDescriptor() ([]byte, []int) {
 	return file_media_proto_rawDescGZIP(), []int{1}
 }
 
+// Describes the file upload status:
+// pending, processing, complete, failed
+type UploadStatus int32
+
+const (
+	UploadStatus_UPLOAD_STATUS_UNSPECIFIED UploadStatus = 0
+	UploadStatus_UPLOAD_STATUS_PENDING     UploadStatus = 1
+	UploadStatus_UPLOAD_STATUS_PROCESSING  UploadStatus = 2
+	UploadStatus_UPLOAD_STATUS_COMPLETE    UploadStatus = 3
+	UploadStatus_UPLOAD_STATUS_FAILED      UploadStatus = 4
+)
+
+// Enum value maps for UploadStatus.
+var (
+	UploadStatus_name = map[int32]string{
+		0: "UPLOAD_STATUS_UNSPECIFIED",
+		1: "UPLOAD_STATUS_PENDING",
+		2: "UPLOAD_STATUS_PROCESSING",
+		3: "UPLOAD_STATUS_COMPLETE",
+		4: "UPLOAD_STATUS_FAILED",
+	}
+	UploadStatus_value = map[string]int32{
+		"UPLOAD_STATUS_UNSPECIFIED": 0,
+		"UPLOAD_STATUS_PENDING":     1,
+		"UPLOAD_STATUS_PROCESSING":  2,
+		"UPLOAD_STATUS_COMPLETE":    3,
+		"UPLOAD_STATUS_FAILED":      4,
+	}
+)
+
+func (x UploadStatus) Enum() *UploadStatus {
+	p := new(UploadStatus)
+	*p = x
+	return p
+}
+
+func (x UploadStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (UploadStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_media_proto_enumTypes[2].Descriptor()
+}
+
+func (UploadStatus) Type() protoreflect.EnumType {
+	return &file_media_proto_enumTypes[2]
+}
+
+func (x UploadStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use UploadStatus.Descriptor instead.
+func (UploadStatus) EnumDescriptor() ([]byte, []int) {
+	return file_media_proto_rawDescGZIP(), []int{2}
+}
+
 // Message representing metadata for a file
 type FileMeta struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -141,7 +200,7 @@ type FileMeta struct {
 	Bucket        string                 `protobuf:"bytes,5,opt,name=bucket,proto3" json:"bucket,omitempty"`                                    // Bucket name where the file is stored
 	ObjectKey     string                 `protobuf:"bytes,6,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`             // Key used to identify the file in the storage service
 	Visibility    FileVisibility         `protobuf:"varint,7,opt,name=visibility,proto3,enum=media.FileVisibility" json:"visibility,omitempty"` // Visibility level of the file
-	Variant       ImgVariant             `protobuf:"varint,8,opt,name=variant,proto3,enum=media.ImgVariant" json:"variant,omitempty"`           // Variant type of the image
+	Variant       FileVariant            `protobuf:"varint,8,opt,name=variant,proto3,enum=media.FileVariant" json:"variant,omitempty"`          // Variant type of the image
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -225,11 +284,11 @@ func (x *FileMeta) GetVisibility() FileVisibility {
 	return FileVisibility_FILE_VISIBILITY_UNSPECIFIED
 }
 
-func (x *FileMeta) GetVariant() ImgVariant {
+func (x *FileMeta) GetVariant() FileVariant {
 	if x != nil {
 		return x.Variant
 	}
-	return ImgVariant_IMG_VARIANT_UNSPECIFIED
+	return FileVariant_IMG_VARIANT_UNSPECIFIED
 }
 
 // Request message for uploading an image
@@ -240,7 +299,7 @@ type UploadImageRequest struct {
 	SizeBytes         int64                  `protobuf:"varint,3,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
 	Visibility        FileVisibility         `protobuf:"varint,4,opt,name=visibility,proto3,enum=media.FileVisibility" json:"visibility,omitempty"`
 	ExpirationSeconds int64                  `protobuf:"varint,5,opt,name=expiration_seconds,json=expirationSeconds,proto3" json:"expiration_seconds,omitempty"` // Expiration time for the upload URL in seconds
-	Variants          []ImgVariant           `protobuf:"varint,6,rep,packed,name=variants,proto3,enum=media.ImgVariant" json:"variants,omitempty"`               // List of image variants to generate
+	Variants          []FileVariant          `protobuf:"varint,6,rep,packed,name=variants,proto3,enum=media.FileVariant" json:"variants,omitempty"`              // List of image variants to generate
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -310,7 +369,7 @@ func (x *UploadImageRequest) GetExpirationSeconds() int64 {
 	return 0
 }
 
-func (x *UploadImageRequest) GetVariants() []ImgVariant {
+func (x *UploadImageRequest) GetVariants() []FileVariant {
 	if x != nil {
 		return x.Variants
 	}
@@ -373,8 +432,8 @@ func (x *UploadImageResponse) GetUploadUrl() string {
 // Request message for retrieving an image
 type GetImageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ImageId       int64                  `protobuf:"varint,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`        // Unique identifier of the image
-	Variant       ImgVariant             `protobuf:"varint,2,opt,name=variant,proto3,enum=media.ImgVariant" json:"variant,omitempty"` // Desired variant of the image
+	ImageId       int64                  `protobuf:"varint,1,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`         // Unique identifier of the image
+	Variant       FileVariant            `protobuf:"varint,2,opt,name=variant,proto3,enum=media.FileVariant" json:"variant,omitempty"` // Desired variant of the image
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -416,11 +475,11 @@ func (x *GetImageRequest) GetImageId() int64 {
 	return 0
 }
 
-func (x *GetImageRequest) GetVariant() ImgVariant {
+func (x *GetImageRequest) GetVariant() FileVariant {
 	if x != nil {
 		return x.Variant
 	}
-	return ImgVariant_IMG_VARIANT_UNSPECIFIED
+	return FileVariant_IMG_VARIANT_UNSPECIFIED
 }
 
 // Response message for retrieving an image
@@ -513,11 +572,219 @@ func (x *ValidateUploadRequest) GetFileId() int64 {
 	return 0
 }
 
+type ImageIds struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImgIds        []int64                `protobuf:"varint,1,rep,packed,name=img_ids,json=imgIds,proto3" json:"img_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageIds) Reset() {
+	*x = ImageIds{}
+	mi := &file_media_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageIds) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageIds) ProtoMessage() {}
+
+func (x *ImageIds) ProtoReflect() protoreflect.Message {
+	mi := &file_media_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageIds.ProtoReflect.Descriptor instead.
+func (*ImageIds) Descriptor() ([]byte, []int) {
+	return file_media_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ImageIds) GetImgIds() []int64 {
+	if x != nil {
+		return x.ImgIds
+	}
+	return nil
+}
+
+// Request with an array of file ids and the prefered variant.
+// Variant is common for all ids. If a variant is not present
+// returns the original.
+type GetImagesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ImgIds        *ImageIds              `protobuf:"bytes,1,opt,name=img_ids,json=imgIds,proto3" json:"img_ids,omitempty"`
+	Variant       FileVariant            `protobuf:"varint,2,opt,name=variant,proto3,enum=media.FileVariant" json:"variant,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetImagesRequest) Reset() {
+	*x = GetImagesRequest{}
+	mi := &file_media_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetImagesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetImagesRequest) ProtoMessage() {}
+
+func (x *GetImagesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_media_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetImagesRequest.ProtoReflect.Descriptor instead.
+func (*GetImagesRequest) Descriptor() ([]byte, []int) {
+	return file_media_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetImagesRequest) GetImgIds() *ImageIds {
+	if x != nil {
+		return x.ImgIds
+	}
+	return nil
+}
+
+func (x *GetImagesRequest) GetVariant() FileVariant {
+	if x != nil {
+		return x.Variant
+	}
+	return FileVariant_IMG_VARIANT_UNSPECIFIED
+}
+
+// Pair of file id and upload status representing the files that
+// not marked as completed.
+type FailedId struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        int64                  `protobuf:"varint,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	Status        UploadStatus           `protobuf:"varint,2,opt,name=status,proto3,enum=media.UploadStatus" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FailedId) Reset() {
+	*x = FailedId{}
+	mi := &file_media_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailedId) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailedId) ProtoMessage() {}
+
+func (x *FailedId) ProtoReflect() protoreflect.Message {
+	mi := &file_media_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailedId.ProtoReflect.Descriptor instead.
+func (*FailedId) Descriptor() ([]byte, []int) {
+	return file_media_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FailedId) GetFileId() int64 {
+	if x != nil {
+		return x.FileId
+	}
+	return 0
+}
+
+func (x *FailedId) GetStatus() UploadStatus {
+	if x != nil {
+		return x.Status
+	}
+	return UploadStatus_UPLOAD_STATUS_UNSPECIFIED
+}
+
+// map of image ids and dowload urls and array of failed ids.
+type GetImagesResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// map[ct.Id]string
+	DownloadUrls map[int64]string `protobuf:"bytes,1,rep,name=download_urls,json=downloadUrls,proto3" json:"download_urls,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// []FailedId
+	FailedIds     []*FailedId `protobuf:"bytes,2,rep,name=failed_ids,json=failedIds,proto3" json:"failed_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetImagesResponse) Reset() {
+	*x = GetImagesResponse{}
+	mi := &file_media_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetImagesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetImagesResponse) ProtoMessage() {}
+
+func (x *GetImagesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_media_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetImagesResponse.ProtoReflect.Descriptor instead.
+func (*GetImagesResponse) Descriptor() ([]byte, []int) {
+	return file_media_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetImagesResponse) GetDownloadUrls() map[int64]string {
+	if x != nil {
+		return x.DownloadUrls
+	}
+	return nil
+}
+
+func (x *GetImagesResponse) GetFailedIds() []*FailedId {
+	if x != nil {
+		return x.FailedIds
+	}
+	return nil
+}
+
 var File_media_proto protoreflect.FileDescriptor
 
 const file_media_proto_rawDesc = "" +
 	"\n" +
-	"\vmedia.proto\x12\x05media\x1a\x1bgoogle/protobuf/empty.proto\"\x8d\x02\n" +
+	"\vmedia.proto\x12\x05media\x1a\x1bgoogle/protobuf/empty.proto\"\x8e\x02\n" +
 	"\bFileMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\x12\x1b\n" +
@@ -529,8 +796,8 @@ const file_media_proto_rawDesc = "" +
 	"object_key\x18\x06 \x01(\tR\tobjectKey\x125\n" +
 	"\n" +
 	"visibility\x18\a \x01(\x0e2\x15.media.FileVisibilityR\n" +
-	"visibility\x12+\n" +
-	"\avariant\x18\b \x01(\x0e2\x11.media.ImgVariantR\avariant\"\x81\x02\n" +
+	"visibility\x12,\n" +
+	"\avariant\x18\b \x01(\x0e2\x12.media.FileVariantR\avariant\"\x82\x02\n" +
 	"\x12UploadImageRequest\x12\x1a\n" +
 	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x1b\n" +
 	"\tmime_type\x18\x02 \x01(\tR\bmimeType\x12\x1d\n" +
@@ -539,21 +806,35 @@ const file_media_proto_rawDesc = "" +
 	"\n" +
 	"visibility\x18\x04 \x01(\x0e2\x15.media.FileVisibilityR\n" +
 	"visibility\x12-\n" +
-	"\x12expiration_seconds\x18\x05 \x01(\x03R\x11expirationSeconds\x12-\n" +
-	"\bvariants\x18\x06 \x03(\x0e2\x11.media.ImgVariantR\bvariants\"M\n" +
+	"\x12expiration_seconds\x18\x05 \x01(\x03R\x11expirationSeconds\x12.\n" +
+	"\bvariants\x18\x06 \x03(\x0e2\x12.media.FileVariantR\bvariants\"M\n" +
 	"\x13UploadImageResponse\x12\x17\n" +
 	"\afile_id\x18\x01 \x01(\x03R\x06fileId\x12\x1d\n" +
 	"\n" +
-	"upload_url\x18\x02 \x01(\tR\tuploadUrl\"Y\n" +
+	"upload_url\x18\x02 \x01(\tR\tuploadUrl\"Z\n" +
 	"\x0fGetImageRequest\x12\x19\n" +
-	"\bimage_id\x18\x01 \x01(\x03R\aimageId\x12+\n" +
-	"\avariant\x18\x02 \x01(\x0e2\x11.media.ImgVariantR\avariant\"5\n" +
+	"\bimage_id\x18\x01 \x01(\x03R\aimageId\x12,\n" +
+	"\avariant\x18\x02 \x01(\x0e2\x12.media.FileVariantR\avariant\"5\n" +
 	"\x10GetImageResponse\x12!\n" +
 	"\fdownload_url\x18\x01 \x01(\tR\vdownloadUrl\"0\n" +
 	"\x15ValidateUploadRequest\x12\x17\n" +
-	"\afile_id\x18\x01 \x01(\x03R\x06fileId*h\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId\"#\n" +
+	"\bImageIds\x12\x17\n" +
+	"\aimg_ids\x18\x01 \x03(\x03R\x06imgIds\"j\n" +
+	"\x10GetImagesRequest\x12(\n" +
+	"\aimg_ids\x18\x01 \x01(\v2\x0f.media.ImageIdsR\x06imgIds\x12,\n" +
+	"\avariant\x18\x02 \x01(\x0e2\x12.media.FileVariantR\avariant\"P\n" +
+	"\bFailedId\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\x03R\x06fileId\x12+\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x13.media.UploadStatusR\x06status\"\xd5\x01\n" +
+	"\x11GetImagesResponse\x12O\n" +
+	"\rdownload_urls\x18\x01 \x03(\v2*.media.GetImagesResponse.DownloadUrlsEntryR\fdownloadUrls\x12.\n" +
 	"\n" +
-	"ImgVariant\x12\x1b\n" +
+	"failed_ids\x18\x02 \x03(\v2\x0f.media.FailedIdR\tfailedIds\x1a?\n" +
+	"\x11DownloadUrlsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\x03R\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*i\n" +
+	"\vFileVariant\x12\x1b\n" +
 	"\x17IMG_VARIANT_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tTHUMBNAIL\x10\x01\x12\t\n" +
 	"\x05SMALL\x10\x02\x12\n" +
@@ -565,10 +846,17 @@ const file_media_proto_rawDesc = "" +
 	"\x1bFILE_VISIBILITY_UNSPECIFIED\x10\x00\x12\v\n" +
 	"\aPRIVATE\x10\x01\x12\n" +
 	"\n" +
-	"\x06PUBLIC\x10\x022\xd9\x01\n" +
+	"\x06PUBLIC\x10\x02*\x9c\x01\n" +
+	"\fUploadStatus\x12\x1d\n" +
+	"\x19UPLOAD_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15UPLOAD_STATUS_PENDING\x10\x01\x12\x1c\n" +
+	"\x18UPLOAD_STATUS_PROCESSING\x10\x02\x12\x1a\n" +
+	"\x16UPLOAD_STATUS_COMPLETE\x10\x03\x12\x18\n" +
+	"\x14UPLOAD_STATUS_FAILED\x10\x042\x99\x02\n" +
 	"\fMediaService\x12D\n" +
 	"\vUploadImage\x12\x19.media.UploadImageRequest\x1a\x1a.media.UploadImageResponse\x12;\n" +
-	"\bGetImage\x12\x16.media.GetImageRequest\x1a\x17.media.GetImageResponse\x12F\n" +
+	"\bGetImage\x12\x16.media.GetImageRequest\x1a\x17.media.GetImageResponse\x12>\n" +
+	"\tGetImages\x12\x17.media.GetImagesRequest\x1a\x18.media.GetImagesResponse\x12F\n" +
 	"\x0eValidateUpload\x12\x1c.media.ValidateUploadRequest\x1a\x16.google.protobuf.EmptyB*Z(social-network/shared/gen-go/media;mediab\x06proto3"
 
 var (
@@ -583,36 +871,49 @@ func file_media_proto_rawDescGZIP() []byte {
 	return file_media_proto_rawDescData
 }
 
-var file_media_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_media_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_media_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_media_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_media_proto_goTypes = []any{
-	(ImgVariant)(0),               // 0: media.ImgVariant
+	(FileVariant)(0),              // 0: media.FileVariant
 	(FileVisibility)(0),           // 1: media.FileVisibility
-	(*FileMeta)(nil),              // 2: media.FileMeta
-	(*UploadImageRequest)(nil),    // 3: media.UploadImageRequest
-	(*UploadImageResponse)(nil),   // 4: media.UploadImageResponse
-	(*GetImageRequest)(nil),       // 5: media.GetImageRequest
-	(*GetImageResponse)(nil),      // 6: media.GetImageResponse
-	(*ValidateUploadRequest)(nil), // 7: media.ValidateUploadRequest
-	(*emptypb.Empty)(nil),         // 8: google.protobuf.Empty
+	(UploadStatus)(0),             // 2: media.UploadStatus
+	(*FileMeta)(nil),              // 3: media.FileMeta
+	(*UploadImageRequest)(nil),    // 4: media.UploadImageRequest
+	(*UploadImageResponse)(nil),   // 5: media.UploadImageResponse
+	(*GetImageRequest)(nil),       // 6: media.GetImageRequest
+	(*GetImageResponse)(nil),      // 7: media.GetImageResponse
+	(*ValidateUploadRequest)(nil), // 8: media.ValidateUploadRequest
+	(*ImageIds)(nil),              // 9: media.ImageIds
+	(*GetImagesRequest)(nil),      // 10: media.GetImagesRequest
+	(*FailedId)(nil),              // 11: media.FailedId
+	(*GetImagesResponse)(nil),     // 12: media.GetImagesResponse
+	nil,                           // 13: media.GetImagesResponse.DownloadUrlsEntry
+	(*emptypb.Empty)(nil),         // 14: google.protobuf.Empty
 }
 var file_media_proto_depIdxs = []int32{
-	1, // 0: media.FileMeta.visibility:type_name -> media.FileVisibility
-	0, // 1: media.FileMeta.variant:type_name -> media.ImgVariant
-	1, // 2: media.UploadImageRequest.visibility:type_name -> media.FileVisibility
-	0, // 3: media.UploadImageRequest.variants:type_name -> media.ImgVariant
-	0, // 4: media.GetImageRequest.variant:type_name -> media.ImgVariant
-	3, // 5: media.MediaService.UploadImage:input_type -> media.UploadImageRequest
-	5, // 6: media.MediaService.GetImage:input_type -> media.GetImageRequest
-	7, // 7: media.MediaService.ValidateUpload:input_type -> media.ValidateUploadRequest
-	4, // 8: media.MediaService.UploadImage:output_type -> media.UploadImageResponse
-	6, // 9: media.MediaService.GetImage:output_type -> media.GetImageResponse
-	8, // 10: media.MediaService.ValidateUpload:output_type -> google.protobuf.Empty
-	8, // [8:11] is the sub-list for method output_type
-	5, // [5:8] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	1,  // 0: media.FileMeta.visibility:type_name -> media.FileVisibility
+	0,  // 1: media.FileMeta.variant:type_name -> media.FileVariant
+	1,  // 2: media.UploadImageRequest.visibility:type_name -> media.FileVisibility
+	0,  // 3: media.UploadImageRequest.variants:type_name -> media.FileVariant
+	0,  // 4: media.GetImageRequest.variant:type_name -> media.FileVariant
+	9,  // 5: media.GetImagesRequest.img_ids:type_name -> media.ImageIds
+	0,  // 6: media.GetImagesRequest.variant:type_name -> media.FileVariant
+	2,  // 7: media.FailedId.status:type_name -> media.UploadStatus
+	13, // 8: media.GetImagesResponse.download_urls:type_name -> media.GetImagesResponse.DownloadUrlsEntry
+	11, // 9: media.GetImagesResponse.failed_ids:type_name -> media.FailedId
+	4,  // 10: media.MediaService.UploadImage:input_type -> media.UploadImageRequest
+	6,  // 11: media.MediaService.GetImage:input_type -> media.GetImageRequest
+	10, // 12: media.MediaService.GetImages:input_type -> media.GetImagesRequest
+	8,  // 13: media.MediaService.ValidateUpload:input_type -> media.ValidateUploadRequest
+	5,  // 14: media.MediaService.UploadImage:output_type -> media.UploadImageResponse
+	7,  // 15: media.MediaService.GetImage:output_type -> media.GetImageResponse
+	12, // 16: media.MediaService.GetImages:output_type -> media.GetImagesResponse
+	14, // 17: media.MediaService.ValidateUpload:output_type -> google.protobuf.Empty
+	14, // [14:18] is the sub-list for method output_type
+	10, // [10:14] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_media_proto_init() }
@@ -625,8 +926,8 @@ func file_media_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_media_proto_rawDesc), len(file_media_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   6,
+			NumEnums:      3,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

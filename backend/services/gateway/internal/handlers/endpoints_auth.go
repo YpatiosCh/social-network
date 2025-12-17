@@ -156,7 +156,7 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 				MimeType:          httpReq.AvatarType,
 				SizeBytes:         httpReq.AvatarSize,
 				Visibility:        media.FileVisibility_PUBLIC,
-				Variants:          []media.ImgVariant{1},
+				Variants:          []media.FileVariant{media.FileVariant_THUMBNAIL},
 				ExpirationSeconds: int64(exp),
 			})
 			if err != nil {

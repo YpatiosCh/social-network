@@ -56,7 +56,7 @@ func (m *MediaService) UploadImage(ctx context.Context,
 				_, err := m.Queries.CreateVariant(ctx, dbservice.File{
 					Id:         fileId,
 					Filename:   req.Filename,
-					MimeType:   req.MimeType,
+					MimeType:   "image/webp",
 					SizeBytes:  req.SizeBytes,
 					Bucket:     m.Cfgs.FileService.Buckets.Variants,
 					ObjectKey:  objectKey + "/" + v.String(),
@@ -129,13 +129,22 @@ func (m *MediaService) GetImage(ctx context.Context,
 	return url.String(), err
 }
 
-// Not allowing originals in batch request
+type FailedId struct {
+	Id     ct.Id
+	Status ct.UploadStatus
+}
+
+// Returns a id to download url pairs for
+// an array of file ids and the prefered variant.
+// Variant is common for all ids. If a variant is not present
+// returns url for the original format.
+// GetImages does not accept original variants in batch request
 func (m *MediaService) GetImages(ctx context.Context,
 	imgIds ct.Ids, variant ct.FileVariant,
-) (downUrls map[ct.Id]string, err error) {
+) (downUrls map[ct.Id]string, failedIds []FailedId, err error) {
 
 	if !imgIds.IsValid() || !variant.IsValid() || variant == ct.Original {
-		return nil, ct.ErrValidation
+		return nil, nil, ct.ErrValidation
 	}
 	var na ct.Ids
 	var fms []dbservice.File
@@ -159,25 +168,29 @@ func (m *MediaService) GetImages(ctx context.Context,
 	)
 
 	if errTx != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
+	failedIds = []FailedId{}
 	downUrls = make(map[ct.Id]string, len(fms))
 	for _, fm := range fms {
 		if fm.Status != ct.Complete {
+			failedIds = append(failedIds, FailedId{Id: fm.Id, Status: fm.Status})
 			fmt.Printf("requested file %v validation status is %v", fm.Id, fm.Status)
 			continue
 		}
 		url, err := m.Clients.GenerateDownloadURL(ctx, fm.Bucket, fm.ObjectKey, fm.Visibility.SetExp())
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		downUrls[fm.Id] = url.String()
 	}
 
-	return downUrls, nil
+	return downUrls, failedIds, nil
 }
 
+// This is a call to validate an already uploaded file.
+// Unvalidated files expire in 24 hours and are automatically
+// deleted from file service.
 func (m *MediaService) ValidateUpload(ctx context.Context,
 	fileId ct.Id) error {
 	if !fileId.IsValid() {

@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	MediaService_UploadImage_FullMethodName    = "/media.MediaService/UploadImage"
 	MediaService_GetImage_FullMethodName       = "/media.MediaService/GetImage"
+	MediaService_GetImages_FullMethodName      = "/media.MediaService/GetImages"
 	MediaService_ValidateUpload_FullMethodName = "/media.MediaService/ValidateUpload"
 )
 
@@ -31,11 +32,24 @@ const (
 //
 // Service definition for media operations
 type MediaServiceClient interface {
-	// Uploads an image and generates specified variants
+	// Provides a fileId and an upload url targeted on bucket Originals defined on configs.
+	// Creates all variant entries provided in []variants for workers to later
+	// create asynchronously the compressed files.
+	// Before accessing the upload a success response from ValidateUpload
+	// is nessecary. Validation expiration is set to 24 hours.
 	UploadImage(ctx context.Context, in *UploadImageRequest, opts ...grpc.CallOption) (*UploadImageResponse, error)
-	// Retrieves a download URL for a specific image variant
+	// Returns an image download URL for the requested imageId and Variant.
+	// If the variant is not available it falls back to the original file.
 	GetImage(ctx context.Context, in *GetImageRequest, opts ...grpc.CallOption) (*GetImageResponse, error)
-	// Validates the metadata for an intended upload
+	// Returns a id to download url pairs for
+	// an array of file ids and the prefered variant.
+	// Variant is common for all ids. If a variant is not present
+	// returns url for the original format.
+	// GetImages does not accept original variants in batch request
+	GetImages(ctx context.Context, in *GetImagesRequest, opts ...grpc.CallOption) (*GetImagesResponse, error)
+	// This is a call to validate an already uploaded file.
+	// Unvalidated files expire in 24 hours and are automatically
+	// deleted from file service.
 	ValidateUpload(ctx context.Context, in *ValidateUploadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -67,6 +81,16 @@ func (c *mediaServiceClient) GetImage(ctx context.Context, in *GetImageRequest, 
 	return out, nil
 }
 
+func (c *mediaServiceClient) GetImages(ctx context.Context, in *GetImagesRequest, opts ...grpc.CallOption) (*GetImagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetImagesResponse)
+	err := c.cc.Invoke(ctx, MediaService_GetImages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mediaServiceClient) ValidateUpload(ctx context.Context, in *ValidateUploadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -83,11 +107,24 @@ func (c *mediaServiceClient) ValidateUpload(ctx context.Context, in *ValidateUpl
 //
 // Service definition for media operations
 type MediaServiceServer interface {
-	// Uploads an image and generates specified variants
+	// Provides a fileId and an upload url targeted on bucket Originals defined on configs.
+	// Creates all variant entries provided in []variants for workers to later
+	// create asynchronously the compressed files.
+	// Before accessing the upload a success response from ValidateUpload
+	// is nessecary. Validation expiration is set to 24 hours.
 	UploadImage(context.Context, *UploadImageRequest) (*UploadImageResponse, error)
-	// Retrieves a download URL for a specific image variant
+	// Returns an image download URL for the requested imageId and Variant.
+	// If the variant is not available it falls back to the original file.
 	GetImage(context.Context, *GetImageRequest) (*GetImageResponse, error)
-	// Validates the metadata for an intended upload
+	// Returns a id to download url pairs for
+	// an array of file ids and the prefered variant.
+	// Variant is common for all ids. If a variant is not present
+	// returns url for the original format.
+	// GetImages does not accept original variants in batch request
+	GetImages(context.Context, *GetImagesRequest) (*GetImagesResponse, error)
+	// This is a call to validate an already uploaded file.
+	// Unvalidated files expire in 24 hours and are automatically
+	// deleted from file service.
 	ValidateUpload(context.Context, *ValidateUploadRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedMediaServiceServer()
 }
@@ -104,6 +141,9 @@ func (UnimplementedMediaServiceServer) UploadImage(context.Context, *UploadImage
 }
 func (UnimplementedMediaServiceServer) GetImage(context.Context, *GetImageRequest) (*GetImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetImage not implemented")
+}
+func (UnimplementedMediaServiceServer) GetImages(context.Context, *GetImagesRequest) (*GetImagesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetImages not implemented")
 }
 func (UnimplementedMediaServiceServer) ValidateUpload(context.Context, *ValidateUploadRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateUpload not implemented")
@@ -165,6 +205,24 @@ func _MediaService_GetImage_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MediaService_GetImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetImagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MediaServiceServer).GetImages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MediaService_GetImages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MediaServiceServer).GetImages(ctx, req.(*GetImagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MediaService_ValidateUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ValidateUploadRequest)
 	if err := dec(in); err != nil {
@@ -197,6 +255,10 @@ var MediaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetImage",
 			Handler:    _MediaService_GetImage_Handler,
+		},
+		{
+			MethodName: "GetImages",
+			Handler:    _MediaService_GetImages_Handler,
 		},
 		{
 			MethodName: "ValidateUpload",

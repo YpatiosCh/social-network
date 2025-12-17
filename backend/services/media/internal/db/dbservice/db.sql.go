@@ -17,8 +17,16 @@ type Queries struct {
 	db DBTX
 }
 
-func New(db DBTX) *Queries {
+type Workers struct {
+	db *Queries
+}
+
+func NewQuerier(db DBTX) *Queries {
 	return &Queries{db: db}
+}
+
+func NewWorker(db *Queries) *Workers {
+	return &Workers{db: db}
 }
 
 func (q *Queries) WithTx(tx pgx.Tx) *Queries {

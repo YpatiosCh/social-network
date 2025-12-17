@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"net/url"
+	ct "social-network/shared/go/customtypes"
 	md "social-network/shared/go/models"
 	"time"
 )
@@ -29,8 +30,10 @@ type Clients interface {
 
 	GenerateVariant(
 		ctx context.Context,
-		fm md.FileMeta,
-	) error
+		bucket string,
+		objectKey string,
+		variant ct.FileVariant,
+	) (size int64, err error)
 
 	DeleteFile(ctx context.Context,
 		bucket string,

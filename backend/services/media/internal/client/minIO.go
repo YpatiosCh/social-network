@@ -7,8 +7,10 @@ import (
 	"image"
 	"math"
 	"net/url"
+	"path/filepath"
 	ct "social-network/shared/go/customtypes"
 	md "social-network/shared/go/models"
+	"strings"
 	"time"
 
 	"github.com/chai2010/webp"
@@ -53,6 +55,7 @@ func (c *Clients) ValidateUpload(
 	ctx context.Context,
 	fm md.FileMeta,
 ) error {
+	fileCnstr := c.Configs.FileConstraints
 
 	info, err := c.MinIOClient.StatObject(
 		ctx,
@@ -72,16 +75,29 @@ func (c *Clients) ValidateUpload(
 		)
 	}
 
-	// TODO: deep validation (images)
-	// obj, err := c.MinIOClient.GetObject(ctx, fm.Bucket, fm.ObjectKey, minio.GetObjectOptions{})
-	// if err != nil {
-	// 	return err
-	// }
-	// defer obj.Close()
+	ext := strings.ToLower(filepath.Ext(fm.Filename))
+	if ok := fileCnstr.AllowedExt[ext]; !ok {
+		return fmt.Errorf("invalid file ext %v", ext)
+	}
 
-	// if _, _, err := image.DecodeConfig(obj); err != nil {
-	// 	return errors.New("invalid image")
-	// }
+	switch {
+	case fileCnstr.AllowedMIMEs[fm.MimeType]:
+		if info.Size > fileCnstr.MaxImageUpload {
+			return fmt.Errorf("image size %v exceedes allowed size %v",
+				info.Size,
+				fileCnstr.MaxImageUpload,
+			)
+		}
+		obj, err := c.MinIOClient.GetObject(ctx, fm.Bucket, fm.ObjectKey, minio.GetObjectOptions{})
+		if err != nil {
+			return err
+		}
+		defer obj.Close()
+		c.Validator.ValidateImage(ctx, obj)
+	default:
+		return fmt.Errorf("unsuported mime type %v", fm.MimeType)
+
+	}
 
 	tagSet, err := tags.NewTags(map[string]string{
 		"validated": "true",
@@ -114,38 +130,42 @@ func (c *Clients) DeleteFile(ctx context.Context,
 
 func (c *Clients) GenerateVariant(
 	ctx context.Context,
-	fm md.FileMeta,
-) error {
+	bucket string,
+	objectKey string,
+	variant ct.FileVariant,
+) (size int64, err error) {
 
-	obj, err := c.MinIOClient.GetObject(ctx, fm.Bucket, fm.ObjectKey, minio.GetObjectOptions{})
+	obj, err := c.MinIOClient.GetObject(ctx,
+		bucket, objectKey, minio.GetObjectOptions{})
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer obj.Close()
 
 	img, _, err := image.Decode(obj)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	resized := resizeForVariant(img, fm.Variant)
+	resized := resizeForVariant(img, variant)
 
 	var buf bytes.Buffer
 	if err := webp.Encode(&buf, resized, &webp.Options{Quality: 80}); err != nil {
-		return err
+		return 0, err
 	}
 
-	_, err = c.MinIOClient.PutObject(
+	info, err := c.MinIOClient.PutObject(
 		ctx,
 		c.Configs.Buckets.Variants,
-		fm.ObjectKey,
+		objectKey,
 		&buf,
 		int64(buf.Len()),
 		minio.PutObjectOptions{
 			ContentType: "image/webp",
 		},
 	)
-	return err
+	size = info.Size
+	return size, err
 }
 
 func resizeForVariant(src image.Image, variant ct.FileVariant) image.Image {

@@ -1,6 +1,8 @@
 package client
 
 import (
+	"context"
+	"io"
 	"social-network/services/media/internal/configs"
 
 	"github.com/minio/minio-go/v7"
@@ -9,4 +11,9 @@ import (
 type Clients struct {
 	Configs     configs.FileService
 	MinIOClient *minio.Client
+	Validator   Validator
+}
+
+type Validator interface {
+	ValidateImage(ctx context.Context, r io.Reader) error
 }

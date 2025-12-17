@@ -31,11 +31,18 @@ type Querier interface {
 		variant ct.FileVariant,
 	) (fms []File, notComplete []ct.Id, err error)
 
-	UpdateVariantStatus(ctx context.Context,
+	UpdateVariantStatusAndSize(
+		ctx context.Context,
 		fileId ct.Id,
-		variant ct.FileVariant,
 		status ct.UploadStatus,
+		size int64,
 	) error
+
+	GetPendingVariants(
+		ctx context.Context) (pending []Variant, err error)
+
+	// StartStaleFilesWorker(ctx context.Context)
+	MarkStaleFilesFailed(ctx context.Context) error
 }
 
 var _ Querier = (*Queries)(nil)

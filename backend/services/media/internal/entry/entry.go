@@ -13,6 +13,7 @@ import (
 	"social-network/services/media/internal/configs"
 	"social-network/services/media/internal/db/dbservice"
 	"social-network/services/media/internal/handler"
+	"social-network/services/media/internal/validator"
 	pb "social-network/shared/gen-go/media"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/gorpc"
@@ -26,12 +27,29 @@ import (
 
 func Run() error {
 	cfgs := configs.Config{
-		Port:  os.Getenv("SERVICE_PORT"),
-		DbURl: os.Getenv("DATABASE_URL"),
+		Server: configs.Server{
+			Port: os.Getenv("SERVICE_PORT"),
+		},
+		DB: configs.Db{
+			URL:                os.Getenv("DATABASE_URL"),
+			StaleFilesInterval: 1 * time.Hour,
+		},
 		FileService: configs.FileService{
 			Buckets: configs.Buckets{
 				Originals: "uploads-originals",
 				Variants:  "uploads-variants",
+			},
+			VariantWorkerInterval: 30 * time.Second,
+			FileConstraints: configs.FileConstraints{
+				MaxImageUpload: 5 << 20, // 5MB
+				MaxWidth:       4096,
+				MaxHeight:      4096,
+				AllowedMIMEs: map[string]bool{
+					"image/jpeg": true,
+					"image/png":  true,
+					"image/gif":  true,
+					"image/webp": true,
+				},
 			},
 			Endpoint:  os.Getenv("MINIO_ENDPOINT"),
 			AccessKey: os.Getenv("MINIO_ACCESS_KEY"),
@@ -39,7 +57,10 @@ func Run() error {
 		},
 	}
 
-	pool, err := connectToDb(context.Background(), cfgs.DbURl)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	pool, err := connectToDb(ctx, cfgs.DB.URL)
 	if err != nil {
 		return fmt.Errorf("failed to connect db: %v", err)
 	}
@@ -51,17 +72,26 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-
+	querier := dbservice.NewQuerier(pool)
 	app := application.NewMediaService(
 		pool,
-		&client.Clients{MinIOClient: fileServiceClient},
-		dbservice.New(pool),
+		&client.Clients{
+			MinIOClient: fileServiceClient,
+			Validator: &validator.ImageValidator{
+				Config: cfgs.FileService.FileConstraints,
+			},
+		},
+		querier,
 		cfgs,
 	)
+	w := dbservice.NewWorker(querier)
+
+	app.StartVariantWorker(ctx, cfgs.FileService.VariantWorkerInterval)
+	w.StartStaleFilesWorker(ctx, cfgs.DB.StaleFilesInterval)
 
 	service := &handler.MediaHandler{
 		Application: app,
-		Port:        cfgs.Port,
+		Configs:     cfgs.Server,
 	}
 
 	log.Println("Running gRpc service...")
@@ -78,6 +108,7 @@ func Run() error {
 	<-quit
 
 	log.Println("Shutting down server...")
+	cancel()
 	grpc.GracefulStop()
 	log.Println("Server stopped")
 	return nil
@@ -97,9 +128,9 @@ func connectToDb(ctx context.Context, connStr string) (pool *pgxpool.Pool, err e
 
 // RunGRPCServer starts the gRPC server and blocks
 func RunGRPCServer(s *handler.MediaHandler) (*grpc.Server, error) {
-	lis, err := net.Listen("tcp", s.Port)
+	lis, err := net.Listen("tcp", s.Configs.Port)
 	if err != nil {
-		log.Fatalf("Failed to listen on %s: %v", s.Port, err)
+		log.Fatalf("Failed to listen on %s: %v", s.Configs.Port, err)
 	}
 
 	customUnaryInterceptor, err := gorpc.UnaryServerInterceptorWithContextKeys([]gorpc.StringableKey{ct.UserId, ct.ReqID, ct.TraceId}...)
@@ -117,7 +148,7 @@ func RunGRPCServer(s *handler.MediaHandler) (*grpc.Server, error) {
 
 	pb.RegisterMediaServiceServer(grpcServer, s)
 
-	log.Printf("gRPC server listening on %s", s.Port)
+	log.Printf("gRPC server listening on %s", s.Configs.Port)
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("Failed to serve gRPC: %v", err)

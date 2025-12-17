@@ -79,7 +79,6 @@ func EnsureBuckets(ctx context.Context, client *minio.Client, buckets configs.Bu
 	log.Println("Creating buckets")
 	for i := 0; i < v.NumField(); i++ {
 		bucketName := v.Field(i).String()
-		log.Println("Checking bucket", bucketName)
 
 		if bucketName == "" {
 			continue
