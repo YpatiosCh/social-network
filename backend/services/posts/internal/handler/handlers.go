@@ -200,9 +200,10 @@ func (s *PostsHandler) GetPublicFeed(ctx context.Context, req *pb.GenericPaginat
 			PostId:   int64(p.PostId),
 			PostBody: string(p.Body),
 			User: &cm.User{
-				UserId:   p.User.UserId.Int64(),
-				Username: p.User.Username.String(),
-				Avatar:   p.User.AvatarId.Int64(),
+				UserId:    p.User.UserId.Int64(),
+				Username:  p.User.Username.String(),
+				Avatar:    p.User.AvatarId.Int64(),
+				AvatarUrl: p.User.AvatarURL,
 			},
 			GroupId:         int64(p.GroupId),
 			Audience:        p.Audience.String(),

@@ -3,6 +3,7 @@ package retrieveusers
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
@@ -87,9 +88,9 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs []int64) (map[int6
 		uniqueImageIds = append(uniqueImageIds, imageId)
 	}
 
-	fmt.Println("Unique image ids", uniqueImageIds)
+	//fmt.Println("Unique image ids", uniqueImageIds)
 
-	images := make(map[int64]string, len(uniqueImageIds)) //I don't ever user this
+	images := make(map[int64]string, len(uniqueImageIds))
 	var missingImages []int64
 
 	// Redis lookup for images
@@ -102,6 +103,9 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs []int64) (map[int6
 		}
 	}
 
+	//fmt.Println("found on redis", images)
+	//fmt.Println("users before image urls", users)
+
 	// // Batch RPC for missing images
 	if len(missingImages) > 0 {
 		imageMap, failedImages, err := h.clients.GetImages(ctx, missingImages)
@@ -109,9 +113,12 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs []int64) (map[int6
 			return nil, err
 		}
 
+		//merge with redis map
+		maps.Copy(images, imageMap)
+
 		for id, u := range users {
 
-			if url, ok := imageMap[u.AvatarId.Int64()]; ok {
+			if url, ok := images[u.AvatarId.Int64()]; ok {
 				u.AvatarURL = url
 				users[id] = u
 
@@ -122,10 +129,11 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs []int64) (map[int6
 				)
 			}
 		}
+		//fmt.Println("users after image urls", users)
 
-		//batch call to delete missing image ids
+		//TODO batch call to delete missing image ids
 		fmt.Println("failed", failedImages)
-		fmt.Println("map", imageMap)
+		//fmt.Println("map", images)
 	}
 
 	return users, nil

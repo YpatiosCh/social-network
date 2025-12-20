@@ -146,7 +146,10 @@ func (m *MediaService) GetImages(ctx context.Context,
 	imgIds ct.Ids, variant ct.FileVariant,
 ) (downUrls map[ct.Id]string, failedIds []FailedId, err error) {
 
+	//fmt.Println("received ids", imgIds)
+
 	if !imgIds.IsValid() || !variant.IsValid() || variant == ct.Original {
+		//fmt.Println("validation error", ct.ErrValidation)
 		return nil, nil, ct.ErrValidation
 	}
 	var na ct.Ids
@@ -159,12 +162,14 @@ func (m *MediaService) GetImages(ctx context.Context,
 			if err != nil {
 				return err
 			}
+			//fmt.Println("variants", fms)
 			if len(na) != 0 {
 				originals, err := m.Queries.GetFiles(ctx, na)
 				if err != nil {
 					return err
 				}
 				fms = append(fms, originals...)
+				//fmt.Println("fms", fms)
 			}
 			return nil
 		},
@@ -186,8 +191,11 @@ func (m *MediaService) GetImages(ctx context.Context,
 			return nil, nil, err
 		}
 		downUrls[fm.Id] = url.String()
+		//For testing with seeds
+		//downUrls[fm.Id] = fm.Filename
 	}
-
+	//fmt.Println("download urls", downUrls)
+	//fmt.Println("failed ids", failedIds)
 	return downUrls, failedIds, nil
 }
 

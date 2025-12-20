@@ -768,9 +768,10 @@ func (s *UsersHandler) GetBatchBasicUserInfo(ctx context.Context, req *cm.UserId
 	pbUsers := make([]*cm.User, 0, len(users))
 	for _, u := range users {
 		pbUsers = append(pbUsers, &cm.User{
-			UserId:   u.UserId.Int64(),
-			Username: u.Username.String(),
-			Avatar:   u.AvatarId.Int64(),
+			UserId:    u.UserId.Int64(),
+			Username:  u.Username.String(),
+			Avatar:    u.AvatarId.Int64(),
+			AvatarUrl: u.AvatarURL,
 		})
 	}
 

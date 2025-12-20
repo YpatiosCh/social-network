@@ -47,9 +47,10 @@ func (h *Handlers) getPublicFeed() http.HandlerFunc {
 				PostId: ct.Id(p.PostId),
 				Body:   ct.PostBody(p.PostBody),
 				User: models.User{
-					UserId:   ct.Id(p.User.UserId),
-					Username: ct.Username(p.User.Username),
-					AvatarId: ct.Id(p.User.Avatar),
+					UserId:    ct.Id(p.User.UserId),
+					Username:  ct.Username(p.User.Username),
+					AvatarId:  ct.Id(p.User.Avatar),
+					AvatarURL: p.User.AvatarUrl,
 				},
 				GroupId:         ct.Id(p.GroupId),
 				Audience:        ct.Audience(p.Audience),

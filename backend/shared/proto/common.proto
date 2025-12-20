@@ -9,6 +9,7 @@ message User {
   int64 user_id = 1;
   string username = 2;
   int64 avatar = 3;
+  string avatar_url=4;
 }
 
 message ListUsers {
