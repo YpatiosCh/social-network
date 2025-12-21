@@ -2,21 +2,24 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function unfollowUser(userId) {
+export async function getFriendsPosts({ limit = 10, offset = 0 } = {}) {
     try {
-        const response = await serverApiRequest("/user/unfollow", {
+        const posts = await serverApiRequest("/friends-feed", {
             method: "POST",
             body: JSON.stringify({
-                target_user_id: userId,
+                limit: limit,
+                offset: offset
             }),
             forwardCookies: true,
             headers: {
                 "Content-Type": "application/json"
             }
         });
-        return { success: true, data: response };
+
+        return posts;
+
     } catch (error) {
-        console.error("Error unfollowing user:", error);
-        return { success: false, error: error.message };
+        console.error("Error fetching friends posts:", error);
+        return [];
     }
 }

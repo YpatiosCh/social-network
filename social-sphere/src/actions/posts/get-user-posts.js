@@ -2,11 +2,12 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function getPublicPosts({ limit = 10, offset = 0 } = {}) {
+export async function getUserPosts({ creatorId, limit = 10, offset = 0 } = {}) {
     try {
-        const posts = await serverApiRequest("/public-feed", {
+        const posts = await serverApiRequest("/user/posts", {
             method: "POST",
             body: JSON.stringify({
+                creator_id: creatorId,
                 limit: limit,
                 offset: offset
             }),
@@ -19,7 +20,7 @@ export async function getPublicPosts({ limit = 10, offset = 0 } = {}) {
         return posts;
 
     } catch (error) {
-        console.error("Error fetching public posts:", error);
+        console.error("Error fetching user posts:", error);
 
         return [];
     }
