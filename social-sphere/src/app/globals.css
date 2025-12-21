@@ -12,18 +12,13 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 @import "tailwindcss";
 
 :root {
@@ -74,7 +69,7 @@ body {
 
 .form-toggle-btn:hover {
   color: var(--accent);
-}   
+}
 
 /* Avatar Upload */
 .avatar-container {
@@ -182,17 +177,49 @@ body {
 }
 
 @keyframes wander {
-  0%   { background-position: 50% 50%; }
-  10%  { background-position: 70% 20%; }
-  20%  { background-position: 30% 80%; }
-  30%  { background-position: 90% 40%; }
-  40%  { background-position: 10% 60%; }
-  50%  { background-position: 80% 90%; }
-  60%  { background-position: 20% 30%; }
-  70%  { background-position: 60% 10%; }
-  80%  { background-position: 40% 70%; }
-  90%  { background-position: 95% 50%; }
-  100% { background-position: 50% 50%; }
+  0% {
+    background-position: 50% 50%;
+  }
+
+  10% {
+    background-position: 70% 20%;
+  }
+
+  20% {
+    background-position: 30% 80%;
+  }
+
+  30% {
+    background-position: 90% 40%;
+  }
+
+  40% {
+    background-position: 10% 60%;
+  }
+
+  50% {
+    background-position: 80% 90%;
+  }
+
+  60% {
+    background-position: 20% 30%;
+  }
+
+  70% {
+    background-position: 60% 10%;
+  }
+
+  80% {
+    background-position: 40% 70%;
+  }
+
+  90% {
+    background-position: 95% 50%;
+  }
+
+  100% {
+    background-position: 50% 50%;
+  }
 }
 
 
@@ -215,6 +242,11 @@ body {
 
 .section-divider {
   @apply w-full max-w-[1000px] mx-auto h-px border-0 my-0;
+  background: linear-gradient(to right, transparent, var(--muted), transparent);
+}
+
+.prof-divider {
+  @apply w-full max-w-screen mx-auto h-px border-0 my-0;
   background: linear-gradient(to right, transparent, var(--muted), transparent);
 }
 

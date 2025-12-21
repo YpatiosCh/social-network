@@ -1,54 +1,13 @@
---check how can we cache rarely used/updated data => FETCH API REVALIDATE
+- User Profile to get image
 
+- Fix logout bug (rerenders page after logout)
 
-TODOS:
+- Create Post component (wait for createPost backend completion)
 
-(UI/UX appealing. Follow good practices)
+- Comments in Post Card (create comment - get comments)
 
-1. Create-Post component ACCORDING TO CURRENT DESIGN.
-2. Create-Comment component ACCORDING TO CURRENT DESIGN.
-3. Create-Group component ACCORDING TO CURRENT DESIGN.
+- Single post component
 
+- create Group
 
-
-============= Stamatis Todos =============
-
-1. Create single post page
-
-2. Post structure has changed. Update mock data, and post cards.
-- Currently post cards fetch last comment on hover. Update this.
-- Create navigational links with below schema. examples below: 
-      /profile/${basicUserInfo.UserID} -> navigates to profile page.
-      /profile/LastComment.Creator.UserID -> navigates to profile page.
-      /posts/${post.ID} -> navigates to post page.
-
-NumOfHearts should be a button as we will want to triger a reaction on click when ready.
-NumOfComments should stay as it is. We dynamically have a button to show comments on hover.
-
-post = {
-      ID: "1",
-      BasicUserInfo: {
-            UserID: "4",
-            Username: "watermelon_musk",
-            Avatar: "/elon.jpeg"
-      },
-      Content: "Sunday mornings are for slow breakfasts and even slower jazz. 🎷🥐 There's something magical about the quiet before the city wakes up.",
-      PostImage: "/elon.jpeg",
-      CreatedAt: "10m ago",
-      NumOfComments: 3,
-      NumOfHearts: 1345,
-      IsHearted: false,
-      LastComment: {
-            CommentId: "1",
-            Body: "This is a comment",
-            Creator: {
-                  UserID: "4",
-                  Username: "watermelon_musk",
-                  Avatar: "/elon.jpeg"
-            },
-            ReactionsCount: 1,
-            LikedByUser: false,
-            Image: null,
-            CreatedAt: "10m ago",
-      }
-}
+- group/{id} page with all fucks needed (REAL MAN DONT CRY)
