@@ -49,6 +49,7 @@ func (s *Handlers) GetFollowSuggestions() http.HandlerFunc {
 				UserId:   ct.Id(user.UserId),
 				Username: ct.Username(user.Username),
 				AvatarId: ct.Id(user.Avatar),
+				AvatarURL: user.AvatarUrl,
 			}
 			dedupedUsers = append(dedupedUsers, newUser)
 		}
