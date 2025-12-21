@@ -34,13 +34,15 @@ type MiddleSystem struct {
 	middlewareChain []func(http.ResponseWriter, *http.Request) (bool, *http.Request)
 	ratelimiter     ratelimiter
 	serviceName     string
+	endpoint        string
 }
 
 // Chain initializes a new middleware chain
-func (m *middleware) Chain() *MiddleSystem {
+func (m *middleware) Chain(endpoint string) *MiddleSystem {
 	return &MiddleSystem{
 		ratelimiter: m.ratelimiter,
 		serviceName: m.serviceName,
+		endpoint:    endpoint,
 	}
 }
 
@@ -150,7 +152,7 @@ func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, duratio
 				utils.ErrorJSON(w, http.StatusNotAcceptable, "your IP is absolutely WACK")
 				return false, nil
 			}
-			rateLimitKey = fmt.Sprintf("%s:ip:%s", m.serviceName, remoteIp)
+			rateLimitKey = fmt.Sprintf("%s:%s:ip:%s", m.serviceName, m.endpoint, remoteIp)
 		case UserLimit:
 			userId, ok := ctx.Value(ct.UserId).(int64)
 			if !ok {
@@ -159,7 +161,7 @@ func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, duratio
 				return false, nil
 			}
 			fmt.Println("[DEBUG] rate limited userId:", userId)
-			rateLimitKey = fmt.Sprintf("%s:id:%d", m.serviceName, userId)
+			rateLimitKey = fmt.Sprintf("%s:%s:id:%d", m.serviceName, m.endpoint, userId)
 		default:
 			panic("bad rate limit type argument!")
 		}

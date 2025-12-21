@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"social-network/services/posts/internal/db/sqlc"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
@@ -84,6 +85,7 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("public feed rows:", rows)
 	posts := make([]models.Post, 0, len(rows))
 	userIDs := make([]int64, 0, len(rows))
 
@@ -107,6 +109,7 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 		})
 	}
 	if len(posts) == 0 {
+		fmt.Println("no posts")
 		return posts, nil
 	}
 

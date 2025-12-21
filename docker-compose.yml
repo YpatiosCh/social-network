@@ -278,16 +278,19 @@ services:
         condition: service_started
 
 
-  # social-sphere:
-  #   build:
-  #     context: social-sphere/.
-  #     dockerfile: Dockerfile
-  #   container_name: social-sphere
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=production
-  #   restart: unless-stopped
+  social-sphere:
+    build:
+      context: social-sphere/.
+      dockerfile: Dockerfile
+    container_name: social-sphere
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SERVER_API_BASE=http://api-gateway:8081
+      - NEXT_PUBLIC_API_URL=http://localhost:8081
+
+    restart: unless-stopped
 
 
 volumes:

@@ -47,14 +47,14 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 	USERID := middleware.UserLimit
 
 	mux.HandleFunc("/test",
-		Chain().
+		Chain("/test").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			EnrichContext().
 			Finalize(h.testHandler()))
 
 	mux.HandleFunc("/profile/",
-		Chain().
+		Chain("/profile/").
 			AllowedMethod("POST").
 			RateLimit(IP, 40, 20).
 			Auth().
@@ -63,326 +63,326 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			Finalize(h.getUserProfile()))
 
 	mux.HandleFunc("/login",
-		Chain().
+		Chain("/login").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			EnrichContext().
 			Finalize(h.loginHandler()))
 
 	mux.HandleFunc("/register",
-		Chain().
+		Chain("/register").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			EnrichContext().
 			Finalize(h.registerHandler()))
 
 	mux.HandleFunc("/validate-file-upload",
-		Chain().
+		Chain("/validate-file-upload").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			EnrichContext().
 			Finalize(h.validateFileUpload()))
 
 	// Test handler for media package
 	mux.HandleFunc("/get-image",
-		Chain().
+		Chain("/get-image").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			EnrichContext().
 			Finalize(h.GetImageUrl()))
 
 	mux.HandleFunc("/logout",
-		Chain().
+		Chain("/logout").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.logoutHandler()))
 
 	mux.HandleFunc("/auth-status",
-		Chain().
+		Chain("/auth-status").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.authStatus()))
 
 	//NEW ENDPOINTS BELOW:
 
 	// Groups
 	mux.HandleFunc("/groups/create",
-		Chain().
+		Chain("/groups/create").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.CreateGroup()))
 
 	mux.HandleFunc("/groups/paginated",
-		Chain().
+		Chain("/groups/paginated").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.GetAllGroupsPaginated()))
 
 	// Follow actions
 	mux.HandleFunc("/user/follow",
-		Chain().
+		Chain("/user/follow").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.FollowUser()))
 
 	mux.HandleFunc("/users/followers/paginated",
-		Chain().
+		Chain("/users/followers/paginated").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.GetFollowersPaginated()))
 
 	mux.HandleFunc("/users/follow-suggestions",
-		Chain().
+		Chain("/users/follow-suggestions").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.GetFollowSuggestions()))
 
 	mux.HandleFunc("/following",
-		Chain().
+		Chain("/following").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.GetFollowingPaginated()))
 
 	mux.HandleFunc("/group/",
-		Chain().
+		Chain("/group/").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.GetGroupInfo()))
 
 	mux.HandleFunc("/group/members",
-		Chain().
+		Chain("/group/members").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.GetGroupMembers()))
 
 	mux.HandleFunc("/groups/user/",
-		Chain().
+		Chain("/groups/user/").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.GetUserGroupsPaginated()))
 
 	mux.HandleFunc("/follow/response",
-		Chain().
+		Chain("/follow/response").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.HandleFollowRequest()))
 
 	mux.HandleFunc("/group/handle-request",
-		Chain().
+		Chain("/group/handle-request").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.HandleGroupJoinRequest()))
 
 	mux.HandleFunc("/group/invite/user",
-		Chain().
+		Chain("/group/invite/user").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.InviteToGroup()))
 
 	mux.HandleFunc("/group/leave",
-		Chain().
+		Chain("/group/leave").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.LeaveGroup()))
 
 	mux.HandleFunc("/group/join",
-		Chain().
+		Chain("/group/join").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.RequestJoinGroupOrCancel()))
 
 	mux.HandleFunc("/group/invite/response",
-		Chain().
+		Chain("/group/invite/response").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.RespondToGroupInvite()))
 
 	mux.HandleFunc("/search/group",
-		Chain().
+		Chain("/search/group").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.SearchGroups()))
 
 	mux.HandleFunc("/users/search",
-		Chain().
+		Chain("/users/search").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.SearchUsers()))
 
 	mux.HandleFunc("/user/unfollow",
-		Chain().
+		Chain("/user/unfollow").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.UnFollowUser()))
 
 	mux.HandleFunc("/account/update/public",
-		Chain().
+		Chain("/account/update/public").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.UpdateProfilePrivacy()))
 
 	mux.HandleFunc("/account/update/email",
-		Chain().
+		Chain("/account/update/email").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.UpdateUserEmail()))
 
 	mux.HandleFunc("/account/update/password",
-		Chain().
+		Chain("/account/update/password").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.UpdateUserPassword()))
 
 	mux.HandleFunc("/profile/update",
-		Chain().
+		Chain("/profile/update").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.UpdateUserProfile()))
 
 	// POSTS
 
 	mux.HandleFunc("/public-feed",
-		Chain().
+		Chain("/public-feed").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.getPublicFeed()))
 
 	mux.HandleFunc("/friends-feed",
-		Chain().
+		Chain("/friends-feed").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.getPersonalizedFeed()))
 
 	mux.HandleFunc("/user/posts",
-		Chain().
+		Chain("/user/posts").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.getUserPostsPaginated()))
 
 	mux.HandleFunc("/post/",
-		Chain().
+		Chain("/post/").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.getPostById()))
 
 	mux.HandleFunc("/posts/create",
-		Chain().
+		Chain("/posts/create").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.createPost()))
 
 	mux.HandleFunc("/posts/delete/",
-		Chain().
+		Chain("/posts/delete/").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.deletePost()))
 
 	mux.HandleFunc("/comments/create",
-		Chain().
+		Chain("/comments/create").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.createComment()))
 
 	mux.HandleFunc("/comments/",
-		Chain().
+		Chain("/comments/").
 			AllowedMethod("POST").
-			RateLimit(IP, 5, 5).
+			RateLimit(IP, 20, 5).
 			Auth().
 			EnrichContext().
-			RateLimit(USERID, 5, 5).
+			RateLimit(USERID, 20, 5).
 			Finalize(h.getCommentsByParentId()))
 
 	return mux

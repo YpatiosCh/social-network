@@ -39,7 +39,7 @@ func (h *Handlers) getPublicFeed() http.HandlerFunc {
 			return
 		}
 
-		fmt.Println("retrieved public feed: ", grpcResp)
+		fmt.Printf("retrieved public feed: %v %T %v", grpcResp, grpcResp, grpcResp.Posts)
 
 		var postsResponse []models.Post
 		for _, p := range grpcResp.Posts {

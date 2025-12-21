@@ -54,12 +54,14 @@ func WriteJSON(w http.ResponseWriter, code int, v any) error {
 	if code == http.StatusNoContent {
 		return nil
 	}
+	fmt.Printf("writejson v:%v", v)
 	b, err := json.Marshal(v)
 	if err != nil {
+		fmt.Println("ERROR WHILE WRITING JSON:", err.Error())
 		return err
 	}
 
-	fmt.Println("sending this:", string(b))
+	fmt.Printf("sending this: %s, bytes:%v", string(b), b)
 
 	_, err = w.Write(b)
 	return err
