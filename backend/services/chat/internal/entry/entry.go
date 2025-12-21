@@ -16,11 +16,9 @@ import (
 	configutil "social-network/shared/go/configs"
 	contextkeys "social-network/shared/go/context-keys"
 	"social-network/shared/go/gorpc"
+	postgresql "social-network/shared/go/postgre"
 
 	"syscall"
-	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type configs struct {
@@ -44,14 +42,7 @@ func init() {
 
 func Run() error {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stopSignal()
-
-	pool, err := connectToDb(ctx, cfgs.DatabaseConn)
-	if err != nil {
-		return fmt.Errorf("failed to connect db: %v", err)
-	}
-	defer pool.Close()
-	fmt.Println("Conneted to DB")
+	defer stopSignal() //TODO check if this is ok
 
 	notifClient, err := gorpc.GetGRpcClient(notifications.NewNotificationServiceClient, cfgs.NotificationsAdress, contextkeys.CommonKeys())
 	if err != nil {
@@ -61,8 +52,15 @@ func Run() error {
 	if err != nil {
 		log.Fatal("failed to create user client: ", err)
 	}
-
 	clients := client.NewClients(userClient, notifClient)
+
+	pool, err := postgresql.NewPool(ctx, cfgs.DatabaseConn)
+	if err != nil {
+		return fmt.Errorf("failed to connect db: %v", err)
+	}
+	defer pool.Close()
+	fmt.Println("Conneted to DB")
+
 	app := application.NewChatService(
 		pool,
 		&clients,
@@ -97,16 +95,4 @@ func Run() error {
 	stopServerFunc()
 	log.Println("Server stopped")
 	return nil
-}
-
-func connectToDb(ctx context.Context, address string) (pool *pgxpool.Pool, err error) {
-	for i := range 10 {
-		pool, err = pgxpool.New(ctx, address)
-		if err == nil {
-			break
-		}
-		log.Printf("DB not ready yet (attempt %d): %v", i+1, err)
-		time.Sleep(2 * time.Second)
-	}
-	return pool, err
 }

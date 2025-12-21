@@ -30,6 +30,8 @@ func NewApplication(db sqlc.Querier, txRunner TxRunner, pool *pgxpool.Pool, clie
 
 // ClientsInterface defines the methods that Application needs from clients.
 type ClientsInterface interface {
+	GetImages(ctx context.Context, imageIds []int64) (map[int64]string, []int64, error)
+	GetImage(ctx context.Context, imageId int64) (string, error)
 	// CreateGroupConversation(ctx context.Context, groupId int64, ownerId int64) error
 	// CreatePrivateConversation(ctx context.Context, userId1, userId2 int64) error
 	// AddMembersToGroupConversation(ctx context.Context, groupId int64, userIds []int64) error
