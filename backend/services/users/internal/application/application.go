@@ -1,11 +1,17 @@
 package application
 
 import (
+	"context"
 	"social-network/services/users/internal/client"
 	"social-network/services/users/internal/db/sqlc"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// TxRunner defines the interface for running database transactions
+type TxRunner interface {
+	RunTx(ctx context.Context, fn func(*sqlc.Queries) error) error
+}
 
 type Application struct {
 	db       sqlc.Querier
@@ -14,16 +20,7 @@ type Application struct {
 }
 
 // NewApplication constructs a new UserService
-func NewApplication(db sqlc.Querier, pool *pgxpool.Pool, clients *client.Clients) *Application {
-	var txRunner TxRunner
-	if pool != nil {
-		queries, ok := db.(*sqlc.Queries)
-		if !ok {
-			panic("db must be *sqlc.Queries for transaction support")
-		}
-		txRunner = NewPgxTxRunner(pool, queries)
-	}
-
+func NewApplication(db sqlc.Querier, txRunner TxRunner, pool *pgxpool.Pool, clients *client.Clients) *Application {
 	return &Application{
 		db:       db,
 		txRunner: txRunner,

@@ -17,7 +17,7 @@ import (
 
 func TestGetBasicUserInfo_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -41,7 +41,7 @@ func TestGetBasicUserInfo_Success(t *testing.T) {
 
 func TestGetBasicUserInfo_NotFound(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	userID := int64(999)
@@ -57,7 +57,7 @@ func TestGetBasicUserInfo_NotFound(t *testing.T) {
 
 func TestGetUserProfile_Public_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -114,7 +114,7 @@ func TestGetUserProfile_Public_Success(t *testing.T) {
 
 func TestGetUserProfile_Private_NotFollowing(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -160,7 +160,7 @@ func TestGetUserProfile_Private_NotFollowing(t *testing.T) {
 
 func TestGetUserProfile_Private_IsFollowing(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	userID := int64(1)
@@ -214,7 +214,7 @@ func TestGetUserProfile_Private_IsFollowing(t *testing.T) {
 
 func TestSearchUsers_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	searchReq := models.UserSearchReq{
@@ -253,7 +253,7 @@ func TestSearchUsers_Success(t *testing.T) {
 
 func TestSearchUsers_NoResults(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	searchReq := models.UserSearchReq{
@@ -275,7 +275,7 @@ func TestSearchUsers_NoResults(t *testing.T) {
 
 func TestUpdateUserProfile_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 	dob := time.Date(1990, 1, 15, 0, 0, 0, 0, time.UTC)
@@ -319,7 +319,7 @@ func TestUpdateUserProfile_Success(t *testing.T) {
 
 func TestUpdateProfilePrivacy_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 
@@ -341,7 +341,7 @@ func TestUpdateProfilePrivacy_Success(t *testing.T) {
 
 func TestUpdateProfilePrivacy_Error(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, nil, nil)
 
 	ctx := context.Background()
 

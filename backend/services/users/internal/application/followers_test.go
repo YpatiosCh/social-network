@@ -9,12 +9,13 @@ import (
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetFollowersPaginated_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.Pagination{
@@ -55,7 +56,7 @@ func TestGetFollowersPaginated_Success(t *testing.T) {
 
 func TestGetFollowersPaginated_Empty(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.Pagination{
@@ -79,7 +80,7 @@ func TestGetFollowersPaginated_Empty(t *testing.T) {
 
 func TestGetFollowingPaginated_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.Pagination{
@@ -120,7 +121,7 @@ func TestGetFollowingPaginated_Success(t *testing.T) {
 
 func TestGetFollowingPaginated_Empty(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.Pagination{
@@ -144,7 +145,7 @@ func TestGetFollowingPaginated_Empty(t *testing.T) {
 
 func TestFollowUser_Immediate(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.FollowUserReq{
@@ -173,7 +174,7 @@ func TestFollowUser_Immediate(t *testing.T) {
 
 func TestFollowUser_Pending(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.FollowUserReq{
@@ -196,7 +197,7 @@ func TestFollowUser_Pending(t *testing.T) {
 
 func TestFollowUser_Error(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.FollowUserReq{
@@ -217,7 +218,7 @@ func TestFollowUser_Error(t *testing.T) {
 
 func TestUnFollowUser_Success(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.FollowUserReq{
@@ -245,7 +246,7 @@ func TestUnFollowUser_Success(t *testing.T) {
 
 func TestUnFollowUser_Error(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.FollowUserReq{
@@ -267,7 +268,7 @@ func TestUnFollowUser_Error(t *testing.T) {
 
 func TestHandleFollowRequest_Accept(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.HandleFollowRequestReq{
@@ -295,7 +296,7 @@ func TestHandleFollowRequest_Accept(t *testing.T) {
 
 func TestHandleFollowRequest_Reject(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.HandleFollowRequestReq{
@@ -317,7 +318,7 @@ func TestHandleFollowRequest_Reject(t *testing.T) {
 
 func TestHandleFollowRequest_AcceptError(t *testing.T) {
 	mockDB := new(MockQuerier)
-	service := NewApplication(mockDB, nil, nil)
+	service := NewApplication(mockDB, nil, &pgxpool.Pool{}, nil)
 
 	ctx := context.Background()
 	req := models.HandleFollowRequestReq{

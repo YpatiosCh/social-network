@@ -28,7 +28,7 @@ func (s *Application) RegisterUser(ctx context.Context, req models.RegisterUserR
 
 	var newId ct.Id
 
-	err := s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
+	err := s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
 
 		// Insert user
 		userId, err := q.InsertNewUser(ctx, sqlc.InsertNewUserParams{
@@ -72,7 +72,7 @@ func (s *Application) LoginUser(ctx context.Context, req models.LoginRequest) (m
 		return u, err
 	}
 
-	err := s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
+	err := s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
 		row, err := q.GetUserForLogin(ctx, sqlc.GetUserForLoginParams{
 			Username:     req.Identifier.String(),
 			PasswordHash: req.Password.String(),
@@ -110,7 +110,7 @@ func (s *Application) UpdateUserPassword(ctx context.Context, req models.UpdateP
 		return err
 	}
 
-	return s.txRunner.RunTx(ctx, func(q sqlc.Querier) error {
+	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
 		row, err := q.GetUserPassword(ctx, req.UserId.Int64())
 		if err != nil {
 			return err

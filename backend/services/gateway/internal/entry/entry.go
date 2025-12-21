@@ -58,7 +58,7 @@ func init() {
 	}
 }
 
-func Start() {
+func Run() {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	// Cache
@@ -125,9 +125,6 @@ func Start() {
 		ChatService,
 		MediaService,
 	)
-	if err != nil {
-		log.Fatal("Can't create handlers, ERROR:", err)
-	}
 
 	//
 	//

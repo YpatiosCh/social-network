@@ -15,23 +15,15 @@ import (
 	"social-network/shared/gen-go/users"
 	contextkeys "social-network/shared/go/context-keys"
 	"social-network/shared/go/gorpc"
+	postgresql "social-network/shared/go/postgre"
 	"syscall"
-	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 //TODO add logs as things are getting initialized
 
 func Run() error {
-
-	// DATABASE
-	pool, err := connectToDb(context.Background(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		return fmt.Errorf("failed to connect db: %v", err)
-	}
-	defer pool.Close()
-	log.Println("Connected to users-db database")
+	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stopSignal() //TODO REMOVE, stop signal should be called when appropriat, during shutdown of server or somethig
 
 	// CLIENT SERVICES
 	chatClient, err := gorpc.GetGRpcClient(chat.NewChatServiceClient, "chat:50051", contextkeys.CommonKeys())
@@ -47,9 +39,21 @@ func Run() error {
 		log.Fatal("failed to create chat client")
 	}
 
+	// DATABASE
+	pool, err := postgresql.NewPool(ctx, os.Getenv("DATABASE_URL"))
+	if err != nil {
+		return fmt.Errorf("failed to connect db: %v", err)
+	}
+	defer pool.Close()
+	log.Println("Connected to users-db database")
+
 	// APPLICATION
 	clients := client.NewClients(chatClient, notificationsClient)
-	app := application.NewApplication(sqlc.New(pool), pool, clients)
+	pgxRunner, err := postgresql.NewPgxTxRunner(pool, sqlc.New(pool))
+	if err != nil {
+		log.Fatal("failed to create pgxRunner")
+	}
+	app := application.NewApplication(sqlc.New(pool), pgxRunner, pool, clients)
 	service := *handler.NewUsersHanlder(app)
 
 	port := ":50051"
@@ -93,16 +97,4 @@ func Run() error {
 	stopServerFunc()
 	log.Println("Server stopped")
 	return nil
-}
-
-func connectToDb(ctx context.Context, address string) (pool *pgxpool.Pool, err error) {
-	for i := range 10 {
-		pool, err = pgxpool.New(ctx, address)
-		if err == nil {
-			break
-		}
-		log.Printf("DB not ready yet (attempt %d): %v", i+1, err)
-		time.Sleep(2 * time.Second)
-	}
-	return pool, err
 }
