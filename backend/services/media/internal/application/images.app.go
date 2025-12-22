@@ -248,6 +248,7 @@ func (m *MediaService) ValidateUpload(ctx context.Context,
 	return url, nil
 }
 
+// TODO: Make this part of ct.Ids methods
 func uniqueIds(ids ct.Ids) ct.Ids {
 	uniq := make(map[ct.Id]struct{}, len(ids))
 	cleaned := make([]ct.Id, 0, len(ids))
