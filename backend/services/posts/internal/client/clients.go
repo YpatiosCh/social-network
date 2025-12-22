@@ -15,6 +15,13 @@ type Clients struct {
 	MediaClient mediapb.MediaServiceClient
 }
 
+func NewClients(UserClient userpb.UserServiceClient, MediaClient mediapb.MediaServiceClient) *Clients {
+	return &Clients{
+		UserClient:  UserClient,
+		MediaClient: MediaClient,
+	}
+}
+
 func (c *Clients) IsFollowing(ctx context.Context, userId, targetUserId int64) (bool, error) {
 	resp, err := c.UserClient.IsFollowing(ctx, &userpb.IsFollowingRequest{
 		FollowerId:   userId,

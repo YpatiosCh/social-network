@@ -207,7 +207,7 @@ func (m *MediaService) GetImages(ctx context.Context,
 func (m *MediaService) ValidateUpload(ctx context.Context,
 	fileId ct.Id, returnURL bool) (url string, err error) {
 	if !fileId.IsValid() {
-		return url, ct.ErrValidation
+		return url, fmt.Errorf("fileId invalid, is not above 0: %w", ct.ErrValidation)
 	}
 
 	fileMeta, err := m.Queries.GetFileById(ctx, fileId)
