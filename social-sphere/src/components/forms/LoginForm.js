@@ -5,14 +5,13 @@ import { Eye, EyeOff } from "lucide-react";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { login } from "@/actions/auth/login";
 import { useStore } from "@/store/store";
-import { useRouter } from "next/router";
 
 export default function LoginForm() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const loadUserProfile = useStore((state) => state.loadUserProfile);
+    const setUser = useStore((state) => state.setUser);
 
     // Real-time validation hook
     const { errors: fieldErrors, validateField } = useFormValidation();
@@ -30,22 +29,18 @@ export default function LoginForm() {
             // call API to login
             const resp = await login({ identifier, password });
 
-            // chceck err
+            // check err
             if (!resp.success || resp.error) {
                 setError(resp.error || "Invalid credentials");
                 setIsLoading(false);
                 return;
             }
 
-            // get user id from response, get user profile and store in localStorage
-            const user = await loadUserProfile(resp.user_id);
-
-            // check err
-            if (!user.success) {
-                setError("Login successful but failed to load profile");
-                setIsLoading(false);
-                return;
-            }
+            // Store user data directly from login response
+            setUser({
+                id: resp.user_id,
+                avatar_url: resp.avatar_url || ""
+            });
 
             // all good
             window.location.href = "/feed/public";

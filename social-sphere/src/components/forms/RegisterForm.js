@@ -15,7 +15,7 @@ export default function RegisterForm() {
     const [avatarPreview, setAvatarPreview] = useState(null);
     const [avatarName, setAvatarName] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
-    const loadUserProfile = useStore((state) => state.loadUserProfile);
+    const setUser = useStore((state) => state.setUser);
 
     // Real-time validation state
     const { errors: fieldErrors, validateField } = useFormValidation();
@@ -56,6 +56,12 @@ export default function RegisterForm() {
                 return;
             }
 
+            // Prepare store data
+            const userStoreData = {
+                id: resp.UserId,
+                avatar_url: ""
+            };
+
             // Step 2: Upload avatar if needed
             if (avatarFile && resp.UploadUrl) {
                 try {
@@ -66,35 +72,25 @@ export default function RegisterForm() {
 
                     if (!uploadRes.ok) {
                         const errorText = await uploadRes.text();
-                        throw new Error(`Storage error (${uploadRes.status}): ${errorText}`);
-                    }
-
-                    // Step 3: Validate upload
-                    const validateResp = await validateUpload(resp.FileId);
-                    if (!validateResp.success) {
-                        console.error("Upload validation failed:", validateResp.error);
-                        // We might continue anyway if registration was successful
+                        console.error(`Storage error (${uploadRes.status}): ${errorText}`);
+                    } else {
+                        // Step 3: Validate upload
+                        const validateResp = await validateUpload(resp.FileId);
+                        console.log("Validate response:", validateResp);
+                        if (validateResp.success && validateResp.download_url) {
+                            userStoreData.avatar_url = validateResp.download_url;
+                            console.log("Set avatar_url to:", validateResp.download_url);
+                        } else {
+                            console.log("No download_url in response or validation failed");
+                        }
                     }
                 } catch (uploadError) {
                     console.error("Avatar upload error:", uploadError);
-                    setError("Avatar upload failed: " + uploadError.message);
-                    // Optional: we could still proceed if registration itself succeeded
-                    setIsLoading(false);
-                    return;
                 }
             }
 
-            // get user id from response, get user profile and store in localStorage
-            const user = await loadUserProfile(resp.UserId);
-
-            // check err
-            if (!user.success) {
-                setError("Registration successful but failed to load profile");
-                setIsLoading(false);
-                return;
-            }
-
-            // all good
+            // Step 4: Store user data and redirect
+            setUser(userStoreData);
             window.location.href = "/feed/public";
 
         } catch (error) {

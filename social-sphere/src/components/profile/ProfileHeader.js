@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Calendar, Link as Lock, Globe, UserPlus, UserCheck, UserMinus, Clock } from "lucide-react";
-import Image from "next/image";
 import ProfileStats from "./ProfileStats";
 import Modal from "@/components/ui/Modal";
 import { followUser } from "@/actions/requests/follow-user";
@@ -110,12 +109,11 @@ export function ProfileHeader({ user }) {
                         {/* Avatar */}
                         <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background shadow-sm shrink-0">
                             <div className="w-full h-full rounded-full overflow-hidden bg-(--muted)/10 relative">
-                                {user.avatar ? (
-                                    <Image
-                                        src={user.avatar}
+                                {user.avatar_url ? (
+                                    <img
+                                        src={user.avatar_url}
                                         alt={user.username}
-                                        fill
-                                        className="object-cover"
+                                        className="w-full h-full object-cover"
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 text-5xl font-bold text-(--muted)">

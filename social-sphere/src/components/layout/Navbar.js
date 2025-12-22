@@ -16,7 +16,6 @@ export default function Navbar() {
     const dropdownRef = useRef(null);
     const searchRef = useRef(null);
     const clearUser = useStore((state) => state.clearUser);
-    const router = useRouter();
 
     const user = useStore((state) => state.user);
 
@@ -168,11 +167,11 @@ export default function Navbar() {
                                                     className="flex items-center gap-3 px-4 py-3 hover:bg-(--muted)/5 transition-colors"
                                                 >
                                                     <div className="w-10 h-10 rounded-full bg-(--muted)/10 flex items-center justify-center overflow-hidden shrink-0">
-                                                        {/* {result.avatar_id ? (
-                                                            <img src={result.avatar_id} alt={result.username} className="w-full h-full object-cover" />
+                                                        {result.avatar_url ? (
+                                                            <img src={result.avatar_url} alt={result.username || "User"} className="w-full h-full object-cover" />
                                                         ) : (
                                                             <User className="w-5 h-5 text-(--muted)" />
-                                                        )} */}
+                                                        )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm font-medium text-foreground truncate">
@@ -277,8 +276,8 @@ export default function Navbar() {
                                     className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                                 >
                                     <div className="w-8 h-8 rounded-full bg-(--muted)/10 border border-(--border) flex items-center justify-center overflow-hidden hover:border-(--accent) transition-colors">
-                                        {user.avatar ? (
-                                            <img src={user.avatar} alt={user.username[0]} className="w-full h-full object-cover" />
+                                        {user.avatar_url ? (
+                                            <img src={user.avatar_url} alt={user.username?.[0] || "U"} className="w-full h-full object-cover" />
                                         ) : (
                                             <User className="w-4 h-4 text-(--muted)" />
                                         )}
