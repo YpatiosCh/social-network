@@ -156,6 +156,7 @@ func (c *Clients) DeleteFile(ctx context.Context,
 	)
 }
 
+// TODO: Generate many variants for the same file
 func (c *Clients) GenerateVariant(
 	ctx context.Context,
 	bucket string,
