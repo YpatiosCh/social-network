@@ -4,8 +4,6 @@ import (
 	"context"
 	"social-network/services/notifications/internal/client"
 	"social-network/services/notifications/internal/db/sqlc"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // DBInterface represents the interface for database operations
@@ -32,7 +30,7 @@ type Application struct {
 }
 
 // NewApplication creates a new notification application service
-func NewApplication(db DBInterface, pool *pgxpool.Pool, clients *client.Clients) *Application {
+func NewApplication(db DBInterface, clients *client.Clients) *Application {
 	return &Application{
 		DB:      db,
 		Clients: clients,

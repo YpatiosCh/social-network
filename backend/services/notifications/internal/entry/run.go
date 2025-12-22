@@ -27,7 +27,7 @@ func Run() error {
 	log.Println("Connected to notifications database")
 
 	clients := InitClients()
-	app := application.NewApplication(sqlc.New(pool), pool, clients)
+	app := application.NewApplication(sqlc.New(pool), clients)
 
 	// Initialize default notification types
 	if err := app.CreateDefaultNotificationTypes(context.Background()); err != nil {
