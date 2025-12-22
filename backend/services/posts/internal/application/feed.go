@@ -149,9 +149,7 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 	if err != nil {
 		return nil, err
 	}
-	if len(rows) == 0 {
-		return nil, ErrNotFound
-	}
+
 	posts := make([]models.Post, 0, len(rows))
 	userIDs := make([]int64, 0, len(rows))
 
