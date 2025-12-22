@@ -13,14 +13,18 @@ export async function login(credentials) {
             }
         });
 
-        if (!apiResp.UserId) {
+        if (!apiResp.id) {
             return {
                 success: false,
                 error: "Login failed - no user ID returned"
             };
         }
 
-        return { success: true, user_id: apiResp.UserId };
+        return {
+            success: true,
+            user_id: apiResp.id,
+            avatar_url: apiResp.avatar_url || ""
+        };
 
     } catch (error) {
         console.error("Login Action Error:", error);
