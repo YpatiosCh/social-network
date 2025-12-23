@@ -22,7 +22,7 @@ delete-volumes:
 
 docker-test:
 	$(MAKE) create-network
-	docker compose -f docker-test.yml up -d --build
+	docker compose -f docker-test.yml up --build
 
 docker-up-test:
 	$(MAKE) create-network
