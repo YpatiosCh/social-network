@@ -3,7 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
-	"social-network/services/users/internal/db/sqlc"
+	ds "social-network/services/users/internal/db/dbservice"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
 	"time"
@@ -143,7 +143,7 @@ func (s *Application) SearchUsers(ctx context.Context, req models.UserSearchReq)
 		return []models.User{}, err
 	}
 
-	rows, err := s.db.SearchUsers(ctx, sqlc.SearchUsersParams{
+	rows, err := s.db.SearchUsers(ctx, ds.SearchUsersParams{
 		Username: req.SearchTerm.String(),
 		Limit:    req.Limit.Int32(),
 	})
@@ -191,7 +191,7 @@ func (s *Application) UpdateUserProfile(ctx context.Context, req models.UpdatePr
 		Valid: true,
 	}
 
-	row, err := s.db.UpdateUserProfile(ctx, sqlc.UpdateUserProfileParams{
+	row, err := s.db.UpdateUserProfile(ctx, ds.UpdateUserProfileParams{
 		ID:          req.UserId.Int64(),
 		Username:    req.Username.String(),
 		FirstName:   req.FirstName.String(),
@@ -229,7 +229,7 @@ func (s *Application) UpdateProfilePrivacy(ctx context.Context, req models.Updat
 		return err
 	}
 
-	err := s.db.UpdateProfilePrivacy(ctx, sqlc.UpdateProfilePrivacyParams{
+	err := s.db.UpdateProfilePrivacy(ctx, ds.UpdateProfilePrivacyParams{
 		ID:            req.UserId.Int64(),
 		ProfilePublic: req.Public,
 	})

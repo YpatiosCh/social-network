@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"social-network/services/users/internal/db/sqlc"
+	ds "social-network/services/users/internal/db/dbservice"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
 )
@@ -12,7 +12,7 @@ func (s *Application) GetAllGroupsPaginated(ctx context.Context, req models.Pagi
 		return []models.Group{}, err
 	}
 	//paginated (sorting by most members first)
-	rows, err := s.db.GetAllGroups(ctx, sqlc.GetAllGroupsParams{
+	rows, err := s.db.GetAllGroups(ctx, ds.GetAllGroupsParams{
 		Offset: req.Offset.Int32(),
 		Limit:  req.Limit.Int32(),
 	})
@@ -68,7 +68,7 @@ func (s *Application) GetUserGroupsPaginated(ctx context.Context, req models.Pag
 	if err := ct.ValidateStruct(req); err != nil {
 		return []models.Group{}, err
 	}
-	rows, err := s.db.GetUserGroups(ctx, sqlc.GetUserGroupsParams{
+	rows, err := s.db.GetUserGroups(ctx, ds.GetUserGroupsParams{
 		GroupOwner: req.UserId.Int64(),
 		Limit:      req.Limit.Int32(),
 		Offset:     req.Offset.Int32(),
@@ -175,7 +175,7 @@ func (s *Application) GetGroupMembers(ctx context.Context, req models.GroupMembe
 	}
 
 	//paginated (newest first)
-	rows, err := s.db.GetGroupMembers(ctx, sqlc.GetGroupMembersParams{
+	rows, err := s.db.GetGroupMembers(ctx, ds.GetGroupMembersParams{
 		GroupID: req.GroupId.Int64(),
 		Limit:   req.Limit.Int32(),
 		Offset:  req.Offset.Int32(),
@@ -223,7 +223,7 @@ func (s *Application) SearchGroups(ctx context.Context, req models.GroupSearchRe
 	}
 	//weighted (title more important than description)
 	//paginated (most members first)
-	rows, err := s.db.SearchGroupsFuzzy(ctx, sqlc.SearchGroupsFuzzyParams{
+	rows, err := s.db.SearchGroupsFuzzy(ctx, ds.SearchGroupsFuzzyParams{
 		Similarity: req.SearchTerm.String(),
 		GroupOwner: req.UserId.Int64(),
 		Limit:      req.Limit.Int32(),
@@ -290,7 +290,7 @@ func (s *Application) InviteToGroup(ctx context.Context, req models.InviteToGrou
 		return ErrNotAuthorized
 	}
 
-	err = s.db.SendGroupInvite(ctx, sqlc.SendGroupInviteParams{
+	err = s.db.SendGroupInvite(ctx, ds.SendGroupInviteParams{
 		GroupID:    req.GroupId.Int64(),
 		SenderID:   req.InviterId.Int64(),
 		ReceiverID: req.InvitedId.Int64(),
@@ -307,7 +307,7 @@ func (s *Application) CancelInviteToGroup(ctx context.Context, req models.Invite
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
 	}
-	err := s.db.CancelGroupInvite(ctx, sqlc.CancelGroupInviteParams{
+	err := s.db.CancelGroupInvite(ctx, ds.CancelGroupInviteParams{
 		GroupID:    req.GroupId.Int64(),
 		ReceiverID: req.InvitedId.Int64(),
 		SenderID:   req.InviterId.Int64(),
@@ -323,7 +323,7 @@ func (s *Application) RequestJoinGroup(ctx context.Context, req models.GroupJoin
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
 	}
-	err := s.db.SendGroupJoinRequest(ctx, sqlc.SendGroupJoinRequestParams{
+	err := s.db.SendGroupJoinRequest(ctx, ds.SendGroupJoinRequestParams{
 		GroupID: req.GroupId.Int64(),
 		UserID:  req.RequesterId.Int64(),
 	})
@@ -340,7 +340,7 @@ func (s *Application) CancelJoinGroupRequest(ctx context.Context, req models.Gro
 	if err := ct.ValidateStruct(req); err != nil {
 		return err
 	}
-	err := s.db.CancelGroupJoinRequest(ctx, sqlc.CancelGroupJoinRequestParams{
+	err := s.db.CancelGroupJoinRequest(ctx, ds.CancelGroupJoinRequestParams{
 		GroupID: req.GroupId.Int64(),
 		UserID:  req.RequesterId.Int64(),
 	})
@@ -359,7 +359,7 @@ func (s *Application) RespondToGroupInvite(ctx context.Context, req models.Handl
 
 	if req.Accepted {
 
-		err := s.db.AcceptGroupInvite(ctx, sqlc.AcceptGroupInviteParams{
+		err := s.db.AcceptGroupInvite(ctx, ds.AcceptGroupInviteParams{
 			GroupID:    req.GroupId.Int64(),
 			ReceiverID: req.InvitedId.Int64(),
 		})
@@ -374,7 +374,7 @@ func (s *Application) RespondToGroupInvite(ctx context.Context, req models.Handl
 		// }
 
 	} else {
-		err := s.db.DeclineGroupInvite(ctx, sqlc.DeclineGroupInviteParams{
+		err := s.db.DeclineGroupInvite(ctx, ds.DeclineGroupInviteParams{
 			GroupID:    req.GroupId.Int64(),
 			ReceiverID: req.InvitedId.Int64(),
 		})
@@ -402,7 +402,7 @@ func (s *Application) HandleGroupJoinRequest(ctx context.Context, req models.Han
 	}
 
 	if req.Accepted {
-		err = s.db.AcceptGroupJoinRequest(ctx, sqlc.AcceptGroupJoinRequestParams{
+		err = s.db.AcceptGroupJoinRequest(ctx, ds.AcceptGroupJoinRequestParams{
 			GroupID: req.GroupId.Int64(),
 			UserID:  req.RequesterId.Int64(),
 		})
@@ -416,7 +416,7 @@ func (s *Application) HandleGroupJoinRequest(ctx context.Context, req models.Han
 		// }
 
 	} else {
-		err = s.db.RejectGroupJoinRequest(ctx, sqlc.RejectGroupJoinRequestParams{
+		err = s.db.RejectGroupJoinRequest(ctx, ds.RejectGroupJoinRequestParams{
 			GroupID: req.GroupId.Int64(),
 			UserID:  req.RequesterId.Int64(),
 		})
@@ -433,7 +433,7 @@ func (s *Application) LeaveGroup(ctx context.Context, req models.GeneralGroupReq
 		return err
 	}
 
-	err := s.db.LeaveGroup(ctx, sqlc.LeaveGroupParams{
+	err := s.db.LeaveGroup(ctx, ds.LeaveGroupParams{
 		GroupID: req.GroupId.Int64(),
 		UserID:  req.UserId.Int64(),
 	})
@@ -475,7 +475,7 @@ func (s *Application) CreateGroup(ctx context.Context, req *models.CreateGroupRe
 		return 0, err
 	}
 
-	groupId, err := s.db.CreateGroup(ctx, sqlc.CreateGroupParams{
+	groupId, err := s.db.CreateGroup(ctx, ds.CreateGroupParams{
 		GroupOwner:       req.OwnerId.Int64(),
 		GroupTitle:       req.GroupTitle.String(),
 		GroupDescription: req.GroupDescription.String(),
@@ -511,7 +511,7 @@ func (s *Application) UpdateGroup(ctx context.Context, req *models.UpdateGroupRe
 		return err
 	}
 
-	rowsAffected, err := s.db.UpdateGroup(ctx, sqlc.UpdateGroupParams{
+	rowsAffected, err := s.db.UpdateGroup(ctx, ds.UpdateGroupParams{
 		ID:               req.GroupId.Int64(),
 		GroupTitle:       req.GroupTitle.String(),
 		GroupDescription: req.GroupDescription.String(),
@@ -555,7 +555,7 @@ func (s *Application) isGroupOwner(ctx context.Context, req models.GeneralGroupR
 	if err := ct.ValidateStruct(req); err != nil {
 		return false, err
 	}
-	isOwner, err := s.db.IsUserGroupOwner(ctx, sqlc.IsUserGroupOwnerParams{
+	isOwner, err := s.db.IsUserGroupOwner(ctx, ds.IsUserGroupOwnerParams{
 		ID:         req.GroupId.Int64(),
 		GroupOwner: req.UserId.Int64(),
 	})
@@ -572,7 +572,7 @@ func (s *Application) IsGroupMember(ctx context.Context, req models.GeneralGroup
 	if err := ct.ValidateStruct(req); err != nil {
 		return false, err
 	}
-	isMember, err := s.db.IsUserGroupMember(ctx, sqlc.IsUserGroupMemberParams{
+	isMember, err := s.db.IsUserGroupMember(ctx, ds.IsUserGroupMemberParams{
 		GroupID: req.GroupId.Int64(),
 		UserID:  req.UserId.Int64(),
 	})
@@ -590,7 +590,7 @@ func (s *Application) isGroupMembershipPending(ctx context.Context, req models.G
 	if err := ct.ValidateStruct(req); err != nil {
 		return false, err
 	}
-	isPending, err := s.db.IsGroupMembershipPending(ctx, sqlc.IsGroupMembershipPendingParams{
+	isPending, err := s.db.IsGroupMembershipPending(ctx, ds.IsGroupMembershipPendingParams{
 		GroupID: req.GroupId.Int64(),
 		UserID:  req.UserId.Int64(),
 	})

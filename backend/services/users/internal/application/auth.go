@@ -3,7 +3,7 @@ package application
 import (
 	"context"
 	"database/sql"
-	"social-network/services/users/internal/db/sqlc"
+	ds "social-network/services/users/internal/db/dbservice"
 	ct "social-network/shared/go/customtypes"
 	"social-network/shared/go/models"
 
@@ -28,10 +28,10 @@ func (s *Application) RegisterUser(ctx context.Context, req models.RegisterUserR
 
 	var newId ct.Id
 
-	err := s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	err := s.txRunner.RunTx(ctx, func(q *ds.Queries) error {
 
 		// Insert user
-		userId, err := q.InsertNewUser(ctx, sqlc.InsertNewUserParams{
+		userId, err := q.InsertNewUser(ctx, ds.InsertNewUserParams{
 			Username:      req.Username.String(),
 			FirstName:     req.FirstName.String(),
 			LastName:      req.LastName.String(),
@@ -46,7 +46,7 @@ func (s *Application) RegisterUser(ctx context.Context, req models.RegisterUserR
 		newId = ct.Id(userId)
 
 		// Insert auth
-		return q.InsertNewUserAuth(ctx, sqlc.InsertNewUserAuthParams{
+		return q.InsertNewUserAuth(ctx, ds.InsertNewUserAuthParams{
 			UserID:       newId.Int64(),
 			Email:        req.Email.String(),
 			PasswordHash: req.Password.String(),
@@ -68,8 +68,8 @@ func (s *Application) LoginUser(ctx context.Context, req models.LoginRequest) (m
 		return u, err
 	}
 
-	err := s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
-		row, err := q.GetUserForLogin(ctx, sqlc.GetUserForLoginParams{
+	err := s.txRunner.RunTx(ctx, func(q *ds.Queries) error {
+		row, err := q.GetUserForLogin(ctx, ds.GetUserForLoginParams{
 			Username:     req.Identifier.String(),
 			PasswordHash: req.Password.String(),
 		})
@@ -115,7 +115,7 @@ func (s *Application) UpdateUserPassword(ctx context.Context, req models.UpdateP
 		return err
 	}
 
-	return s.txRunner.RunTx(ctx, func(q *sqlc.Queries) error {
+	return s.txRunner.RunTx(ctx, func(q *ds.Queries) error {
 		row, err := q.GetUserPassword(ctx, req.UserId.Int64())
 		if err != nil {
 			return err
@@ -125,7 +125,7 @@ func (s *Application) UpdateUserPassword(ctx context.Context, req models.UpdateP
 			return ErrNotAuthorized
 		}
 
-		err = q.UpdateUserPassword(ctx, sqlc.UpdateUserPasswordParams{
+		err = q.UpdateUserPassword(ctx, ds.UpdateUserPasswordParams{
 			UserID:       req.UserId.Int64(),
 			PasswordHash: req.NewPassword.String(),
 		})
@@ -144,7 +144,7 @@ func (s *Application) UpdateUserEmail(ctx context.Context, req models.UpdateEmai
 		return err
 	}
 
-	err := s.db.UpdateUserEmail(ctx, sqlc.UpdateUserEmailParams{
+	err := s.db.UpdateUserEmail(ctx, ds.UpdateUserEmailParams{
 		UserID: req.UserId.Int64(),
 		Email:  req.Email.String(),
 	})

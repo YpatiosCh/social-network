@@ -79,7 +79,7 @@ func (c *Clients) GetFollowingIds(ctx context.Context, userId int64) ([]int64, e
 func (c *Clients) GetImages(ctx context.Context, imageIds []int64) (map[int64]string, []int64, error) {
 	req := &mediapb.GetImagesRequest{
 		ImgIds:  &mediapb.ImageIds{ImgIds: imageIds},
-		Variant: 1,
+		Variant: 3,
 	}
 	resp, err := c.MediaClient.GetImages(ctx, req)
 	if err != nil {
@@ -97,7 +97,7 @@ func (c *Clients) GetImages(ctx context.Context, imageIds []int64) (map[int64]st
 func (c *Clients) GetImage(ctx context.Context, imageId int64) (string, error) {
 	req := &mediapb.GetImageRequest{
 		ImageId: imageId,
-		Variant: 1,
+		Variant: 3,
 	}
 	resp, err := c.MediaClient.GetImage(ctx, req)
 	if err != nil {

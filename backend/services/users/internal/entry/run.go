@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"social-network/services/users/internal/application"
 	"social-network/services/users/internal/client"
-	"social-network/services/users/internal/db/sqlc"
+	ds "social-network/services/users/internal/db/dbservice"
 	"social-network/services/users/internal/handler"
 	"social-network/shared/gen-go/chat"
 	"social-network/shared/gen-go/media"
@@ -75,11 +75,11 @@ func Run() error {
 		notificationsClient,
 		mediaClient,
 	)
-	pgxTxRunner, err := postgresql.NewPgxTxRunner(pool, sqlc.New(pool))
+	pgxTxRunner, err := postgresql.NewPgxTxRunner(pool, ds.New(pool))
 	if err != nil {
 		log.Fatal("failed to create pgxTxRunner")
 	}
-	app := application.NewApplication(sqlc.New(pool), pgxTxRunner, pool, clients)
+	app := application.NewApplication(ds.New(pool), pgxTxRunner, pool, clients)
 	service := *handler.NewUsersHanlder(app)
 
 	port := ":50051"

@@ -3,24 +3,24 @@ package application
 import (
 	"context"
 	"social-network/services/users/internal/client"
-	"social-network/services/users/internal/db/sqlc"
+	ds "social-network/services/users/internal/db/dbservice"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TxRunner defines the interface for running database transactions
 type TxRunner interface {
-	RunTx(ctx context.Context, fn func(*sqlc.Queries) error) error
+	RunTx(ctx context.Context, fn func(*ds.Queries) error) error
 }
 
 type Application struct {
-	db       sqlc.Querier
+	db       ds.Querier
 	txRunner TxRunner
 	clients  ClientsInterface
 }
 
 // NewApplication constructs a new UserService
-func NewApplication(db sqlc.Querier, txRunner TxRunner, pool *pgxpool.Pool, clients *client.Clients) *Application {
+func NewApplication(db ds.Querier, txRunner TxRunner, pool *pgxpool.Pool, clients *client.Clients) *Application {
 	return &Application{
 		db:       db,
 		txRunner: txRunner,
@@ -38,13 +38,13 @@ type ClientsInterface interface {
 	// DeleteConversationByExactMembers(ctx context.Context, userIds []int64) error
 }
 
-func NewApplicationWithMocks(db sqlc.Querier, clients ClientsInterface) *Application {
+func NewApplicationWithMocks(db ds.Querier, clients ClientsInterface) *Application {
 	return &Application{
 		db:      db,
 		clients: clients,
 	}
 }
-func NewApplicationWithMocksTx(db sqlc.Querier, clients ClientsInterface, txRunner TxRunner) *Application {
+func NewApplicationWithMocksTx(db ds.Querier, clients ClientsInterface, txRunner TxRunner) *Application {
 	return &Application{
 		db:       db,
 		clients:  clients,
