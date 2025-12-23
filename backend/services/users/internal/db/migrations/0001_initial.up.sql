@@ -109,9 +109,10 @@ CREATE TABLE IF NOT EXISTS groups (
     deleted_at TIMESTAMPTZ
 );
 
--- CREATE UNIQUE INDEX groups_unique_title_active
--- ON groups (LOWER(group_title))
--- WHERE deleted_at IS NULL;
+-- Unique constraint on active, case-insensitive titles
+CREATE UNIQUE INDEX groups_unique_title_active
+ON groups (LOWER(group_title))
+WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_groups_owner ON groups(group_owner);
 
