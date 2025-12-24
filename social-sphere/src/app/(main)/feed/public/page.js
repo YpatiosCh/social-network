@@ -13,6 +13,8 @@ export default async function PublicFeedPage() {
     const offset = 0;
     const posts = await getPublicPosts({ limit, offset });
 
+    console.log(posts[0]);
+
     return (
         <div>
             <div className="pt-15 flex flex-col px-70">
