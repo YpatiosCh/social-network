@@ -6,6 +6,7 @@ echo "Running migrations..."
 
 # echo "Running seeds..."
 # /app/seeds/seed.sh || true
+#test
 
 echo "Starting service..."
 exec ./media_service
