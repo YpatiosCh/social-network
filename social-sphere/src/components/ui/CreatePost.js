@@ -1,20 +1,90 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Image as ImageIcon, ChevronDown } from "lucide-react";
 import Tooltip from "@/components/ui/Tooltip";
-// import { isValidImage } from "@/lib/validation";
+import { isValidImage } from "@/lib/validation";
+import { createPost } from "@/actions/posts/create-post";
+import { validateUpload } from "@/actions/auth/validate-upload";
+import { getFollowers } from "@/actions/users/get-followers";
+import { useStore } from "@/store/store";
 
 export default function CreatePost() {
+    const user = useStore((state) => state.user);
     const [content, setContent] = useState("");
-    const [privacy, setPrivacy] = useState("public");
+    const [privacy, setPrivacy] = useState("everyone");
     const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
     const [selectedFollowers, setSelectedFollowers] = useState([]);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [error, setError] = useState("");
+    const [followers, setFollowers] = useState([]);
+    const [followersOffset, setFollowersOffset] = useState(0);
+    const [hasMoreFollowers, setHasMoreFollowers] = useState(true);
+    const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
+    const [followersFetched, setFollowersFetched] = useState(false);
     const fileInputRef = useRef(null);
     const dropdownRef = useRef(null);
+    const followersListRef = useRef(null);
+
+    const FOLLOWERS_LIMIT = 20;
+
+    // Fetch initial followers
+    const fetchInitialFollowers = async () => {
+        if (!user?.id || followersFetched) return;
+
+        setIsLoadingFollowers(true);
+        const followersData = await getFollowers({
+            userId: user.id,
+            limit: FOLLOWERS_LIMIT,
+            offset: 0
+        });
+        setFollowers(followersData || []);
+        setFollowersOffset(FOLLOWERS_LIMIT);
+        setHasMoreFollowers(followersData && followersData.length === FOLLOWERS_LIMIT);
+        setFollowersFetched(true);
+        setIsLoadingFollowers(false);
+    };
+
+    // Load more followers
+    const loadMoreFollowers = useCallback(async () => {
+        if (!user?.id || isLoadingFollowers || !hasMoreFollowers) return;
+
+        setIsLoadingFollowers(true);
+        const moreFollowers = await getFollowers({
+            userId: user.id,
+            limit: FOLLOWERS_LIMIT,
+            offset: followersOffset
+        });
+
+        if (moreFollowers && moreFollowers.length > 0) {
+            setFollowers(prev => [...prev, ...moreFollowers]);
+            setFollowersOffset(prev => prev + FOLLOWERS_LIMIT);
+            setHasMoreFollowers(moreFollowers.length === FOLLOWERS_LIMIT);
+        } else {
+            setHasMoreFollowers(false);
+        }
+        setIsLoadingFollowers(false);
+    }, [user?.id, isLoadingFollowers, hasMoreFollowers, followersOffset]);
+
+    // Handle scroll for infinite loading
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!followersListRef.current) return;
+
+            const { scrollTop, scrollHeight, clientHeight } = followersListRef.current;
+            // Trigger when scrolled to within 10px of bottom
+            if (scrollHeight - scrollTop <= clientHeight + 10) {
+                loadMoreFollowers();
+            }
+        };
+
+        const listElement = followersListRef.current;
+        if (listElement) {
+            listElement.addEventListener('scroll', handleScroll);
+            return () => listElement.removeEventListener('scroll', handleScroll);
+        }
+    }, [loadMoreFollowers]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -29,16 +99,8 @@ export default function CreatePost() {
         };
     }, []);
 
-    // const currentUser =  // Mock current user
     const MAX_CHARS = 5000;
     const MIN_CHARS = 1;
-
-    // Mock followers list (will be replaced with real data)
-    const mockFollowers = [
-        { id: "2", name: "Georgia Toaka", username: "gtoaka" },
-        { id: "4", name: "Watermelon Musk", username: "watermelon_musk" },
-        { id: "5", name: "Trumpet Trump", username: "trumpet" },
-    ];
 
     const handleImageSelect = (e) => {
         const file = e.target.files?.[0];
@@ -62,119 +124,127 @@ export default function CreatePost() {
         reader.readAsDataURL(file);
     };
 
-    // const handleRemoveImage = () => {
-    //     setImageFile(null);
-    //     setImagePreview(null);
-    //     if (fileInputRef.current) {
-    //         fileInputRef.current.value = "";
-    //     }
-    // };
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
-    // const handlePrivacySelect = (newPrivacy) => {
-    //     setPrivacy(newPrivacy);
-    //     setIsPrivacyOpen(false);
-    //     if (newPrivacy !== "private") {
-    //         setSelectedFollowers([]);
-    //     }
-    // };
+    const handlePrivacySelect = (newPrivacy) => {
+        setPrivacy(newPrivacy);
+        setIsPrivacyOpen(false);
+        if (newPrivacy !== "selected") {
+            setSelectedFollowers([]);
+        } else {
+            // Fetch followers only when "selected" is chosen
+            fetchInitialFollowers();
+        }
+    };
 
-    // const toggleFollower = (followerId) => {
-    //     setSelectedFollowers((prev) =>
-    //         prev.includes(followerId)
-    //             ? prev.filter((id) => id !== followerId)
-    //             : [...prev, followerId]
-    //     );
-    // };
+    const toggleFollower = (followerId) => {
+        setSelectedFollowers((prev) =>
+            prev.includes(followerId)
+                ? prev.filter((id) => id !== followerId)
+                : [...prev, followerId]
+        );
+    };
 
-    // const handleSubmit = async (e) => {
-    //     e.preventDefault();
-    //     setError("");
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
 
-    //     // Validation
-    //     if (!content.trim()) {
-    //         setError("Post content is required");
-    //         return;
-    //     }
+        // Validation
+        if (!content.trim()) {
+            setError("Post content is required");
+            return;
+        }
 
-    //     if (content.length < MIN_CHARS) {
-    //         setError(`Post must be at least ${MIN_CHARS} character`);
-    //         return;
-    //     }
+        if (content.length < MIN_CHARS) {
+            setError(`Post must be at least ${MIN_CHARS} character`);
+            return;
+        }
 
-    //     if (content.length > MAX_CHARS) {
-    //         setError(`Post must be at most ${MAX_CHARS} characters`);
-    //         return;
-    //     }
+        if (content.length > MAX_CHARS) {
+            setError(`Post must be at most ${MAX_CHARS} characters`);
+            return;
+        }
 
-    //     if (privacy === "private" && selectedFollowers.length === 0) {
-    //         setError("Please select at least one follower for private posts");
-    //         return;
-    //     }
+        if (privacy === "selected" && selectedFollowers.length === 0) {
+            setError("Please select at least one follower for selected posts");
+            return;
+        }
 
-    //     try {
-    //         // Prepare form data
-    //         const formData = new FormData();
-    //         formData.append("content", content.trim());
-    //         formData.append("privacy", privacy);
+        try {
+            // Prepare post data
+            const postData = {
+                post_body: content.trim(),
+                audience: privacy,
+            };
 
-    //         if (imageFile) {
-    //             formData.append("image", imageFile);
-    //         }
+            // Add image metadata if image is selected
+            if (imageFile) {
+                postData.image_name = imageFile.name;
+                postData.image_size = imageFile.size;
+                postData.image_type = imageFile.type;
+            }
 
-    //         if (privacy === "private") {
-    //             formData.append("allowedUsers", JSON.stringify(selectedFollowers));
-    //         }
+            // Add audience IDs for selected posts
+            if (privacy === "selected") {
+                postData.audience_ids = selectedFollowers.map(id => parseInt(id));
+            }
 
-    //         // Call server action
-    //         const { createPost } = await import("@/services/posts/posts");
-    //         const result = await createPost(formData);
+            // Step 1: Create post with metadata
+            const resp = await createPost(postData);
 
-    //         if (!result.success) {
-    //             setError(result.error || "Failed to create post");
-    //             return;
-    //         }
+            if (!resp.success) {
+                setError(resp.error || "Failed to create post");
+                return;
+            }
 
-    //         // Create optimistic post for UI
-    //         const newPost = {
-    //             ID: result.post.ID,
-    //             BasicUserInfo: {
-    //                 UserID: currentUser.ID,
-    //                 Username: currentUser.Username,
-    //                 Avatar: currentUser.Avatar,
-    //             },
-    //             Content: content.trim(),
-    //             PostImage: imagePreview,
-    //             CreatedAt: "Just now",
-    //             NumOfComments: 0,
-    //             NumOfHearts: 0,
-    //             IsHearted: false,
-    //             Visibility: privacy,
-    //             LastComment: null,
-    //         };
+            // Step 2: Upload image if needed
+            if (imageFile && resp.FileId && resp.UploadUrl) {
+                const uploadRes = await fetch(resp.UploadUrl, {
+                    method: "PUT",
+                    body: imageFile,
+                });
 
-    //         // Notify parent component
-    //         if (onPostCreated) {
-    //             onPostCreated(newPost);
-    //         }
+                if (!uploadRes.ok) {
+                    setError("Failed to upload image");
+                    return;
+                }
 
-    //         // Reset form
-    //         setContent("");
-    //         setPrivacy("public");
-    //         setSelectedFollowers([]);
-    //         handleRemoveImage();
-    //     } catch (err) {
-    //         console.error("Failed to create post:", err);
-    //         setError("Failed to create post. Please try again.");
-    //     }
-    // };
+                // Step 3: Validate the upload
+                const validateResp = await validateUpload(resp.FileId);
+                if (!validateResp.success) {
+                    setError("Failed to validate image upload");
+                    return;
+                }
+            }
 
-    // const handleCancel = () => {
-    //     setContent("");
-    //     setPrivacy("public");
-    //     setSelectedFollowers([]);
-    //     handleRemoveImage();
-    //     setError("");
-    // };
+            // Reset form
+            setContent("");
+            setPrivacy("everyone");
+            setSelectedFollowers([]);
+            handleRemoveImage();
+
+            // Refresh the page to show the new post
+            window.location.reload();
+
+        } catch (err) {
+            console.error("Failed to create post:", err);
+            setError("Failed to create post. Please try again.");
+        }
+    };
+
+    const handleCancel = () => {
+        setContent("");
+        setPrivacy("everyone");
+        setSelectedFollowers([]);
+        handleRemoveImage();
+        setError("");
+    };
 
     const charCount = content.length;
     const isOverLimit = charCount > MAX_CHARS;
@@ -182,7 +252,7 @@ export default function CreatePost() {
 
     return (
         <div className="bg-background rounded-2xl p-3">
-            <form>
+            <form onSubmit={handleSubmit}>
                 {/* Textarea with character counter */}
                 <div className="relative">
                     <textarea
@@ -208,8 +278,8 @@ export default function CreatePost() {
                 </div>
 
                 {/* Image Preview */}
-                {/* {imagePreview && (
-                    <div className="relative inline-block">
+                {imagePreview && (
+                    <div className="relative inline-block mt-3">
                         <img
                             src={imagePreview}
                             alt="Upload preview"
@@ -223,7 +293,7 @@ export default function CreatePost() {
                             <X size={16} />
                         </button>
                     </div>
-                )} */}
+                )}
 
                 {/* Error Message */}
                 {error && (
@@ -232,29 +302,50 @@ export default function CreatePost() {
                     </div>
                 )}
 
-                {/* Follower Multi-Select for Private */}
-                {privacy === "private" && (
+                {/* Follower Multi-Select for Selected */}
+                {privacy === "selected" && (
                     <div className="border border-(--border) rounded-xl p-4 space-y-2 bg-(--muted)/5">
                         <p className="text-xs font-medium text-(--muted)">
                             Select followers who can see this post:
                         </p>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                            {mockFollowers.map((follower) => (
-                                <label
-                                    key={follower.id}
-                                    className="flex items-center gap-2 cursor-pointer hover:bg-(--muted)/10 rounded-lg px-2 py-1.5 transition-colors"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedFollowers.includes(follower.id)}
-                                        onChange={() => toggleFollower(follower.id)}
-                                        className="rounded border-gray-300"
-                                    />
-                                    <span className="text-sm">
-                                        {follower.name} (@{follower.username})
-                                    </span>
-                                </label>
-                            ))}
+                        <div
+                            ref={followersListRef}
+                            className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar"
+                        >
+                            {followers.length > 0 ? (
+                                <>
+                                    {followers.map((follower) => (
+                                        <label
+                                            key={follower.UserId}
+                                            className="flex items-center gap-2 cursor-pointer hover:bg-(--muted)/10 rounded-lg px-2 py-1.5 transition-colors"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedFollowers.includes(String(follower.UserId))}
+                                                onChange={() => toggleFollower(String(follower.UserId))}
+                                                className="rounded border-gray-300"
+                                            />
+                                            <span className="text-sm">
+                                                @{follower.Username}
+                                            </span>
+                                        </label>
+                                    ))}
+                                    {isLoadingFollowers && (
+                                        <div className="flex justify-center py-2">
+                                            <div className="w-4 h-4 border-2 border-(--accent) border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    )}
+                                    {!isLoadingFollowers && !hasMoreFollowers && followers.length > FOLLOWERS_LIMIT && (
+                                        <p className="text-xs text-(--muted) text-center py-1">
+                                            All followers loaded
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="text-xs text-(--muted) text-center py-2">
+                                    {isLoadingFollowers ? "Loading followers..." : "No followers to select"}
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
@@ -283,31 +374,31 @@ export default function CreatePost() {
                                         <Tooltip content="Visible to everyone">
                                             <button
                                                 type="button"
-                                                onClick={() => handlePrivacySelect("public")}
-                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${privacy === "public" ? "bg-(--muted)/10 font-medium" : "hover:bg-(--muted)/5 cursor-pointer"
+                                                onClick={() => handlePrivacySelect("everyone")}
+                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${privacy === "everyone" ? "bg-(--muted)/10 font-medium" : "hover:bg-(--muted)/5 cursor-pointer"
                                                     }`}
                                             >
-                                                Public
+                                                Everyone
                                             </button>
                                         </Tooltip>
-                                        <Tooltip content="Visible to your friends only">
+                                        <Tooltip content="Visible to your followers only">
                                             <button
                                                 type="button"
-                                                onClick={() => handlePrivacySelect("friends")}
-                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${privacy === "friends" ? "bg-(--muted)/10 font-medium" : "hover:bg-(--muted)/5 cursor-pointer"
+                                                onClick={() => handlePrivacySelect("followers")}
+                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${privacy === "followers" ? "bg-(--muted)/10 font-medium" : "hover:bg-(--muted)/5 cursor-pointer"
                                                     }`}
                                             >
-                                                Friends
+                                                Followers
                                             </button>
                                         </Tooltip>
-                                        <Tooltip content="Choose friends">
+                                        <Tooltip content="Choose specific followers">
                                             <button
                                                 type="button"
-                                                onClick={() => handlePrivacySelect("private")}
-                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${privacy === "private" ? "bg-(--muted)/10 font-medium" : "hover:bg-(--muted)/5 cursor-pointer"
+                                                onClick={() => handlePrivacySelect("selected")}
+                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${privacy === "selected" ? "bg-(--muted)/10 font-medium" : "hover:bg-(--muted)/5 cursor-pointer"
                                                     }`}
                                             >
-                                                Private
+                                                Selected
                                             </button>
                                         </Tooltip>
                                     </div>

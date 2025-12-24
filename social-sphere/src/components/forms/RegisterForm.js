@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Upload, X } from "lucide-react";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { register } from "@/actions/auth/register";
@@ -16,6 +16,12 @@ export default function RegisterForm() {
     const [avatarName, setAvatarName] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
     const setUser = useStore((state) => state.setUser);
+    const clearUser = useStore((state) => state.clearUser);
+
+    // Clear any stale user data when register page loads
+    useEffect(() => {
+        clearUser();
+    }, [clearUser]);
 
     // Real-time validation state
     const { errors: fieldErrors, validateField } = useFormValidation();
