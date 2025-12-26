@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 )
 
@@ -14,6 +15,7 @@ var (
 )
 
 func init() {
+	// we create an empty no op telemetry so that we don't panic if this packages logging is called without initalizing it properly
 	telemeter = &telemetry{}
 }
 
@@ -24,6 +26,7 @@ type contextKeys interface {
 
 type telemetry struct {
 	logger      *logging
+	logExporter *otlploghttp.Exporter
 	tracer      *tracing
 	meterer     *metering
 	serviceName string
@@ -60,8 +63,8 @@ func Fatalf(format string, args ...any) {
 	os.Exit(1)
 }
 
-// actually activates the functionality of
-func InitTelemetry(ctx context.Context, serviceName string, contextKeys contextKeys, enableDebug bool, simplePrint bool) func() {
+// actually activates the functionality of open telemetry
+func InitTelemetry(ctx context.Context, serviceName string, contextKeys contextKeys, enableDebug bool, simplePrint bool) (func(), error) {
 
 	logger := NewLogger(serviceName, contextKeys, enableDebug, simplePrint)
 
@@ -76,7 +79,16 @@ func InitTelemetry(ctx context.Context, serviceName string, contextKeys contextK
 	}
 
 	close := initOpenTelemetrySDK(ctx)
-	return close
+
+	logExporter, err := otlploghttp.New(ctx,
+		otlploghttp.WithEndpointURL("http://victorialogs:9428/insert/opentelemetry/v1/logs"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create log exporter: %w", err)
+	}
+	telemeter.logExporter = logExporter
+
+	return close, nil
 }
 
 func initOpenTelemetrySDK(ctx context.Context) func() {

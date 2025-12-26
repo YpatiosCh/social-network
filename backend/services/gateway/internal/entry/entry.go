@@ -149,25 +149,27 @@ type configs struct {
 	ChatGRPCAddr  string `env:"CHAT_GRPC_ADDR"`
 	MediaGRPCAddr string `env:"MEDIA_GRPC_ADDR"`
 
-	HTTPAddr        string `env:"HTTP_ADDR"`
-	ShutdownTimeout int    `env:"SHUTDOWN_TIMEOUT_SECONDS"`
-	EnableDebugLogs bool   `env:"ENABLE_DEBUG_LOGS"`
-	SimplePrint     bool   `env:"ENABLE_SIMPLE_PRINT"`
+	HTTPAddr               string `env:"HTTP_ADDR"`
+	ShutdownTimeout        int    `env:"SHUTDOWN_TIMEOUT_SECONDS"`
+	EnableDebugLogs        bool   `env:"ENABLE_DEBUG_LOGS"`
+	SimplePrint            bool   `env:"ENABLE_SIMPLE_PRINT"`
+	OtelResourceAttributes string `env:"OTEL_RESOURCE_ATTRIBUTES"`
 }
 
 func getConfigs() configs { // sensible defaults
 	cfgs := configs{
-		RedisAddr:       "redis:6379",
-		RedisPassword:   "",
-		RedisDB:         0,
-		UsersGRPCAddr:   "users:50051",
-		PostsGRPCAddr:   "posts:50051",
-		ChatGRPCAddr:    "chat:50051",
-		MediaGRPCAddr:   "media:50051",
-		HTTPAddr:        "0.0.0.0:8081",
-		ShutdownTimeout: 5,
-		EnableDebugLogs: true,
-		SimplePrint:     true,
+		RedisAddr:              "redis:6379",
+		RedisPassword:          "",
+		RedisDB:                0,
+		UsersGRPCAddr:          "users:50051",
+		PostsGRPCAddr:          "posts:50051",
+		ChatGRPCAddr:           "chat:50051",
+		MediaGRPCAddr:          "media:50051",
+		HTTPAddr:               "0.0.0.0:8081",
+		ShutdownTimeout:        5,
+		EnableDebugLogs:        true,
+		SimplePrint:            true,
+		OtelResourceAttributes: "service.name=gateway,service.version=0.1.0",
 	}
 
 	// load environment variables if present
