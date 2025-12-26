@@ -3,8 +3,10 @@ package client
 import (
 	"context"
 	cm "social-network/shared/gen-go/common"
+	"social-network/shared/gen-go/media"
 	mediapb "social-network/shared/gen-go/media"
 	userpb "social-network/shared/gen-go/users"
+	ct "social-network/shared/go/ct"
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -44,9 +46,9 @@ func (c *Clients) IsGroupMember(ctx context.Context, userId, groupId int64) (boo
 	return resp.Value, nil
 }
 
-func (c *Clients) GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*cm.ListUsers, error) {
+func (c *Clients) GetBatchBasicUserInfo(ctx context.Context, userIds ct.Ids) (*cm.ListUsers, error) {
 	req := &cm.UserIds{
-		Values: userIds,
+		Values: userIds.Int64(),
 	}
 	resp, err := c.UserClient.GetBatchBasicUserInfo(ctx, req)
 	if err != nil {
@@ -76,10 +78,10 @@ func (c *Clients) GetFollowingIds(ctx context.Context, userId int64) ([]int64, e
 	return resp.Values, nil
 }
 
-func (c *Clients) GetImages(ctx context.Context, imageIds []int64) (map[int64]string, []int64, error) {
+func (c *Clients) GetImages(ctx context.Context, imageIds ct.Ids, variant media.FileVariant) (map[int64]string, []int64, error) {
 	req := &mediapb.GetImagesRequest{
-		ImgIds:  &mediapb.ImageIds{ImgIds: imageIds},
-		Variant: 3,
+		ImgIds:  &mediapb.ImageIds{ImgIds: imageIds.Int64()},
+		Variant: variant,
 	}
 	resp, err := c.MediaClient.GetImages(ctx, req)
 	if err != nil {
@@ -94,10 +96,10 @@ func (c *Clients) GetImages(ctx context.Context, imageIds []int64) (map[int64]st
 	return resp.DownloadUrls, imagesToDelete, nil
 }
 
-func (c *Clients) GetImage(ctx context.Context, imageId int64) (string, error) {
+func (c *Clients) GetImage(ctx context.Context, imageId int64, variant media.FileVariant) (string, error) {
 	req := &mediapb.GetImageRequest{
 		ImageId: imageId,
-		Variant: 3,
+		Variant: variant,
 	}
 	resp, err := c.MediaClient.GetImage(ctx, req)
 	if err != nil {

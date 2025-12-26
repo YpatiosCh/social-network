@@ -7,7 +7,7 @@ import (
 
 	"social-network/services/media/internal/application"
 	pb "social-network/shared/gen-go/media"
-	ct "social-network/shared/go/customtypes"
+	ct "social-network/shared/go/ct"
 	"social-network/shared/go/mapping"
 
 	"google.golang.org/grpc/codes"

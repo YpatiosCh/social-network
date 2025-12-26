@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	ds "social-network/services/posts/internal/db/dbservice"
-	ct "social-network/shared/go/customtypes"
+	"social-network/shared/gen-go/media"
+	ct "social-network/shared/go/ct"
 	"social-network/shared/go/models"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -31,12 +32,12 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 		return nil, err
 	}
 	posts := make([]models.Post, 0, len(rows))
-	userIDs := make([]int64, 0, len(rows))
-	PostImageIds := make([]int64, 0, len(rows))
+	userIDs := make(ct.Ids, 0, len(rows))
+	PostImageIds := make(ct.Ids, 0, len(rows))
 
 	for _, r := range rows {
 		uid := r.CreatorID
-		userIDs = append(userIDs, uid)
+		userIDs = append(userIDs, ct.Id(uid))
 
 		posts = append(posts, models.Post{
 
@@ -55,7 +56,7 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 		})
 
 		if r.Image > 0 {
-			PostImageIds = append(PostImageIds, r.Image)
+			PostImageIds = append(PostImageIds, ct.Id(r.Image))
 		}
 
 	}
@@ -71,11 +72,11 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 
 	var imageMap map[int64]string
 	if len(PostImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds)
+		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
 	}
 
 	for i := range posts {
-		uid := posts[i].User.UserId.Int64()
+		uid := posts[i].User.UserId
 		if u, ok := userMap[uid]; ok {
 			posts[i].User = u
 		}
@@ -99,12 +100,12 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 	}
 	fmt.Println("public feed rows:", rows)
 	posts := make([]models.Post, 0, len(rows))
-	userIDs := make([]int64, 0, len(rows))
-	PostImageIds := make([]int64, 0, len(rows))
+	userIDs := make(ct.Ids, 0, len(rows))
+	postImageIds := make(ct.Ids, 0, len(rows))
 
 	for _, r := range rows {
 		uid := r.CreatorID
-		userIDs = append(userIDs, uid)
+		userIDs = append(userIDs, ct.Id(uid))
 
 		posts = append(posts, models.Post{
 			PostId: ct.Id(r.ID),
@@ -121,7 +122,7 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 			ImageId:         ct.Id(r.Image),
 		})
 		if r.Image > 0 {
-			PostImageIds = append(PostImageIds, r.Image)
+			postImageIds = append(postImageIds, ct.Id(r.Image))
 		}
 
 	}
@@ -136,17 +137,19 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 	}
 
 	var imageMap map[int64]string
-	if len(PostImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds)
+	fmt.Println("need these images", postImageIds)
+	if len(postImageIds) > 0 {
+		imageMap, _, err = s.clients.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
 	}
-
+	fmt.Println("image map", imageMap)
 	for i := range posts {
-		uid := posts[i].User.UserId.Int64()
+		uid := posts[i].User.UserId
 		if u, ok := userMap[uid]; ok {
 			posts[i].User = u
 		}
 		posts[i].ImageUrl = imageMap[posts[i].ImageId.Int64()]
 	}
+	fmt.Println(posts)
 
 	return posts, nil
 }
@@ -174,12 +177,12 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 	}
 
 	posts := make([]models.Post, 0, len(rows))
-	userIDs := make([]int64, 0, len(rows))
-	PostImageIds := make([]int64, 0, len(rows))
+	userIDs := make(ct.Ids, 0, len(rows))
+	PostImageIds := make(ct.Ids, 0, len(rows))
 
 	for _, r := range rows {
 		uid := r.CreatorID
-		userIDs = append(userIDs, uid)
+		userIDs = append(userIDs, ct.Id(uid))
 
 		posts = append(posts, models.Post{
 			PostId: ct.Id(r.ID),
@@ -196,7 +199,7 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 			ImageId:         ct.Id(r.Image),
 		})
 		if r.Image > 0 {
-			PostImageIds = append(PostImageIds, r.Image)
+			PostImageIds = append(PostImageIds, ct.Id(r.Image))
 		}
 
 	}
@@ -212,11 +215,11 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 
 	var imageMap map[int64]string
 	if len(PostImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds)
+		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
 	}
 
 	for i := range posts {
-		uid := posts[i].User.UserId.Int64()
+		uid := posts[i].User.UserId
 		if u, ok := userMap[uid]; ok {
 			posts[i].User = u
 		}
@@ -257,12 +260,12 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 		return nil, ErrNotFound
 	}
 	posts := make([]models.Post, 0, len(rows))
-	userIDs := make([]int64, 0, len(rows))
-	PostImageIds := make([]int64, 0, len(rows))
+	userIDs := make(ct.Ids, 0, len(rows))
+	PostImageIds := make(ct.Ids, 0, len(rows))
 
 	for _, r := range rows {
 		uid := r.CreatorID
-		userIDs = append(userIDs, uid)
+		userIDs = append(userIDs, ct.Id(uid))
 
 		posts = append(posts, models.Post{
 			PostId: ct.Id(r.ID),
@@ -282,7 +285,7 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 		})
 
 		if r.Image > 0 {
-			PostImageIds = append(PostImageIds, r.Image)
+			PostImageIds = append(PostImageIds, ct.Id(r.Image))
 		}
 	}
 	if len(posts) == 0 {
@@ -296,11 +299,11 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 
 	var imageMap map[int64]string
 	if len(PostImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds)
+		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
 	}
 
 	for i := range posts {
-		uid := posts[i].User.UserId.Int64()
+		uid := posts[i].User.UserId
 		if u, ok := userMap[uid]; ok {
 			posts[i].User = u
 		}

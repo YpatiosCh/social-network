@@ -2,7 +2,7 @@ package dbservice
 
 import (
 	"context"
-	ct "social-network/shared/go/customtypes"
+	ct "social-network/shared/go/ct"
 )
 
 type Querier interface {

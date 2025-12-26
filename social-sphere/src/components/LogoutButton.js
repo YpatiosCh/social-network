@@ -21,10 +21,9 @@ export function LogoutButton() {
                 console.error('error:', resp.error);
             }
 
-            // clear user from state and local storage
-            clearUser();
-
             // Redirect to login using hard navigation to clear all app state
+            // clearUser() is intentionally NOT called here to avoid re-renders
+            // that trigger API calls after the cookie is deleted
             window.location.href = "/login";
 
         } catch (error) {

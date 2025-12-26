@@ -1,67 +1,77 @@
 package tele
 
-// import (
-// 	"context"
-// 	"errors"
-// 	"log/slog"
-// 	"os"
-// )
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"log/slog"
 
-// var ErrUnevenArgs = errors.New("passed arguments aren't even")
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+)
 
-// var (
-// 	DEBUG  = "DEBUG"
-// 	INFO   = "INFO"
-// 	WARN   = "WARN"
-// 	SEVERE = "SEVERE"
-// 	FATAL  = "FATAL"
-// )
+var ErrUnevenArgs = errors.New("passed arguments aren't even")
 
-// //get stack info
-// //extra context info
+type LogLevel struct {
+	tag   string
+	level int
+}
 
-// type logger struct {
-// 	serviceName string
-// 	outputLevel int
-// 	contextKeys []string
-// 	slog        *slog.Logger
-// }
+// TODO
+//get stack info
+//extra context info
 
-// func NewLogger(serviceName string, contextKeys []string) logger {
-// 	slogHandler := &slog.HandlerOptions{
-// 		AddSource: true,
-// 	}
-// 	slog := slog.New(slog.NewJSONHandler(os.Stderr, slogHandler))
-// 	return logger{
-// 		serviceName: serviceName,
-// 		contextKeys: contextKeys,
-// 		slog:        slog,
-// 	}
-// }
+type logging struct {
+	serviceName string
+	enableDebug bool     //if debug prints will be shown or not
+	contextKeys []string //the context keys that will be added to logs as metadata
+	slog        *slog.Logger
+	simplePrint bool //if it should print logs in a simple way, or a super verbose way with all details
+}
 
-// func (l *logger) Info(ctx context.Context, args ...string) {
-// 	l.log(slog.LevelInfo, ctx, args...)
-// }
+func NewLogger(serviceName string, contextKeys contextKeys, enableDebug bool, simplePrint bool) logging {
 
-// func (l *logger) log(level slog.Level, ctx context.Context, msg string, args ...string) error {
-// 	if len(args)%2 != 0 {
-// 		return ErrUnevenArgs
-// 	}
-// 	ctxArgs := l.context2Args(ctx)
-// 	args = append(args, ctxArgs...)
-// 	//maybe not use context
-// 	l.slog.Log(nil, msg, level, args)
-// }
+	logger := otelslog.NewLogger(serviceName, otelslog.WithSource(true))
+	slog.SetDefault(
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	)
+	return logging{
+		serviceName: serviceName,
+		contextKeys: contextKeys.GetKeys(),
+		slog:        logger,
+		enableDebug: enableDebug,
+		simplePrint: simplePrint,
+	}
+}
 
-// func (l *logger) context2Args(ctx context.Context) []string {
-// 	args := []string{}
-// 	for _, key := range l.contextKeys {
-// 		val, ok := ctx.Value(key).(string)
-// 		if !ok {
-// 			continue
-// 		}
-// 		args = append(args, key)
-// 		args = append(args, val)
-// 	}
-// 	return args
-// }
+func (l *logging) log(ctx context.Context, level slog.Level, msg string, args ...any) {
+	if level == slog.LevelDebug && l.enableDebug == false {
+		return
+	}
+
+	if l.simplePrint {
+		fmt.Printf("%s: %s\n", level.String(), msg)
+		return
+	}
+
+	ctxArgs := l.context2Args(ctx)
+	for _, ctxArg := range ctxArgs {
+		args = append(args, ctxArg)
+	}
+
+	//maybe not use context
+	l.slog.Log(ctx, level, msg, args...)
+}
+
+func (l *logging) context2Args(ctx context.Context) []string {
+	args := []string{}
+	for _, key := range l.contextKeys {
+		val, ok := ctx.Value(key).(string)
+		if !ok {
+			continue
+		}
+		args = append(args, key)
+		args = append(args, val)
+	}
+	return args
+}

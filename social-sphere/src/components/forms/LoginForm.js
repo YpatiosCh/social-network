@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { login } from "@/actions/auth/login";
@@ -12,6 +12,12 @@ export default function LoginForm() {
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const setUser = useStore((state) => state.setUser);
+    const clearUser = useStore((state) => state.clearUser);
+
+    // Clear any stale user data when login page loads
+    useEffect(() => {
+        clearUser();
+    }, [clearUser]);
 
     // Real-time validation hook
     const { errors: fieldErrors, validateField } = useFormValidation();

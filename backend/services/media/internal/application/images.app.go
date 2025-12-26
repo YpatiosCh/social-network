@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"social-network/services/media/internal/db/dbservice"
 	"social-network/services/media/internal/mapping"
-	ct "social-network/shared/go/customtypes"
+	ct "social-network/shared/go/ct"
 	"time"
 
 	"github.com/google/uuid"
@@ -180,6 +180,7 @@ func (m *MediaService) GetImages(ctx context.Context,
 ) (downUrls map[ct.Id]string, failedIds []FailedId, err error) {
 
 	fmt.Println("received ids", imgIds)
+	fmt.Println("variant requested", variant)
 	// fmt.Println(imgIds.IsValid())
 	// fmt.Println(variant.IsValid())
 	// fmt.Println(variant == ct.Original)
@@ -192,20 +193,23 @@ func (m *MediaService) GetImages(ctx context.Context,
 	var fms []dbservice.File
 
 	errTx := m.txRunner.RunTx(ctx, func(tx *dbservice.Queries) error {
-
+		fmt.Println("HERE")
 		fms, na, err = tx.GetVariants(ctx, imgIds.Unique(), variant)
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
-		//fmt.Println("variants", fms)
+		fmt.Println("variants", fms)
 		if len(na) != 0 {
 			originals, err := tx.GetFiles(ctx, na)
 			if err != nil {
+				fmt.Println(err)
 				return err
 			}
 			fms = append(fms, originals...)
-			//fmt.Println("fms", fms)
+			fmt.Println("fms", fms)
 		}
+		fmt.Println("NOW HERE")
 		return nil
 	})
 

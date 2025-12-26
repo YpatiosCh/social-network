@@ -6,6 +6,8 @@ import (
 	"social-network/services/posts/internal/client"
 	ds "social-network/services/posts/internal/db/dbservice"
 	cm "social-network/shared/gen-go/common"
+	"social-network/shared/gen-go/media"
+	ct "social-network/shared/go/ct"
 	"social-network/shared/go/models"
 	postgresql "social-network/shared/go/postgre"
 	redis_connector "social-network/shared/go/redis"
@@ -29,8 +31,8 @@ type Application struct {
 
 // UsersBatchClient abstracts the single RPC used by the hydrator to fetch basic user info.
 type UsersBatchClient interface {
-	GetBatchBasicUserInfo(ctx context.Context, userIds []int64) (*cm.ListUsers, error)
-	GetImages(ctx context.Context, imageIds []int64) (map[int64]string, []int64, error)
+	GetBatchBasicUserInfo(ctx context.Context, userIds ct.Ids) (*cm.ListUsers, error)
+	GetImages(ctx context.Context, imageIds ct.Ids, variant media.FileVariant) (map[int64]string, []int64, error)
 }
 
 // RedisCache defines the minimal Redis operations used by the hydrator.
@@ -39,10 +41,10 @@ type RedisCache interface {
 	SetObj(ctx context.Context, key string, value any, exp time.Duration) error
 }
 
-// Hydrator defines the subset of behavior used by application for user hydration.
+// UserRetriever defines the subset of behavior used by application for user hydration.
 type UserRetriever interface {
-	GetUsers(ctx context.Context, userIDs []int64) (map[int64]models.User, error)
-	GetImages(ctx context.Context, imageIds []int64) (map[int64]string, []int64, error)
+	GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id]models.User, error)
+	GetImages(ctx context.Context, imageIds ct.Ids, variant media.FileVariant) (map[int64]string, []int64, error)
 }
 
 // ClientsInterface defines the methods that Application needs from clients.
@@ -50,8 +52,8 @@ type ClientsInterface interface {
 	IsFollowing(ctx context.Context, userId, targetUserId int64) (bool, error)
 	IsGroupMember(ctx context.Context, userId, groupId int64) (bool, error)
 	GetFollowingIds(ctx context.Context, userId int64) ([]int64, error)
-	GetImage(ctx context.Context, imageId int64) (string, error)
-	GetImages(ctx context.Context, imageIds []int64) (map[int64]string, []int64, error)
+	GetImage(ctx context.Context, imageId int64, variant media.FileVariant) (string, error)
+	GetImages(ctx context.Context, imageIds ct.Ids, variant media.FileVariant) (map[int64]string, []int64, error)
 }
 
 // NewApplication constructs a new Application with transaction support

@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"path/filepath"
 	md "social-network/services/media/internal/models"
-	ct "social-network/shared/go/customtypes"
+	ct "social-network/shared/go/ct"
 	"strings"
 	"time"
 

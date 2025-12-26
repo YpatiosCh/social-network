@@ -3,7 +3,7 @@ package dbservice
 import (
 	"context"
 	"database/sql"
-	ct "social-network/shared/go/customtypes"
+	ct "social-network/shared/go/ct"
 )
 
 // No rows is error
@@ -235,6 +235,7 @@ func (q *Queries) GetVariants(
 	if err != nil {
 		return nil, nil, err
 	}
+
 	defer rows.Close()
 
 	fms = make([]File, 0, len(fileIds))
@@ -265,6 +266,10 @@ func (q *Queries) GetVariants(
 
 	if err := rows.Err(); err != nil {
 		return nil, nil, err
+	}
+
+	if len(fms) == 0 {
+		return nil, nil, sql.ErrNoRows
 	}
 
 	return fms, notComplete, nil

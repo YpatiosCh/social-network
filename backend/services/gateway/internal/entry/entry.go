@@ -3,8 +3,6 @@ package entry
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -15,9 +13,10 @@ import (
 	"social-network/shared/gen-go/posts"
 	"social-network/shared/gen-go/users"
 	configutil "social-network/shared/go/configs"
-	contextkeys "social-network/shared/go/context-keys"
+	"social-network/shared/go/ct"
 	"social-network/shared/go/gorpc"
 	redis_connector "social-network/shared/go/redis"
+	tele "social-network/shared/go/telemetry"
 	"syscall"
 	"time"
 )
@@ -27,6 +26,11 @@ func Run() {
 
 	cfgs := getConfigs()
 
+	close := tele.InitTelemetry(ctx, "gateway", ct.CommonKeys(), cfgs.EnableDebugLogs, cfgs.SimplePrint)
+	defer close()
+
+	tele.Info(ctx, "initialized telemetry")
+
 	// Cache
 	CacheService := redis_connector.NewRedisClient(
 		cfgs.RedisAddr,
@@ -34,9 +38,9 @@ func Run() {
 		cfgs.RedisDB,
 	)
 	if err := CacheService.TestRedisConnection(); err != nil {
-		log.Fatalf("connection test failed, ERROR: %v", err)
+		tele.Fatalf("connection test failed, ERROR: %v", err)
 	}
-	fmt.Println("Cache service connection started correctly")
+	tele.Info(ctx, "Cache service connection started correctly")
 
 	//
 	//
@@ -46,37 +50,37 @@ func Run() {
 	UsersService, err := gorpc.GetGRpcClient(
 		users.NewUserServiceClient,
 		cfgs.UsersGRPCAddr,
-		contextkeys.CommonKeys(),
+		ct.CommonKeys(),
 	)
 	if err != nil {
-		log.Fatalf("failed to connect to users service: %v", err)
+		tele.Fatalf("failed to connect to users service: %v", err)
 	}
 
 	PostsService, err := gorpc.GetGRpcClient(
 		posts.NewPostsServiceClient,
 		cfgs.PostsGRPCAddr,
-		contextkeys.CommonKeys(),
+		ct.CommonKeys(),
 	)
 	if err != nil {
-		log.Fatalf("failed to connect to posts service: %v", err)
+		tele.Fatalf("failed to connect to posts service: %v", err)
 	}
 
 	ChatService, err := gorpc.GetGRpcClient(
 		chat.NewChatServiceClient,
 		cfgs.ChatGRPCAddr,
-		contextkeys.CommonKeys(),
+		ct.CommonKeys(),
 	)
 	if err != nil {
-		log.Fatalf("failed to connect to chat service: %v", err)
+		tele.Fatalf("failed to connect to chat service: %v", err)
 	}
 
 	MediaService, err := gorpc.GetGRpcClient(
 		media.NewMediaServiceClient,
 		cfgs.MediaGRPCAddr,
-		contextkeys.CommonKeys(),
+		ct.CommonKeys(),
 	)
 	if err != nil {
-		log.Fatalf("failed to connect to media service: %v", err)
+		tele.Fatalf("failed to connect to media service: %v", err)
 	}
 
 	//
@@ -104,7 +108,7 @@ func Run() {
 
 	srvErr := make(chan error, 1)
 	go func() {
-		log.Printf("Starting server on http://%s\n", server.Addr)
+		tele.Info(ctx, "Starting server", "address", server.Addr)
 		srvErr <- server.ListenAndServe()
 	}()
 
@@ -115,13 +119,13 @@ func Run() {
 	select {
 	case err = <-srvErr:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Failed to listen and serve: %v", err)
+			tele.Fatalf("Failed to listen and serve: %v", err)
 		}
 	case <-ctx.Done():
 		stopSignal()
 	}
 
-	log.Println("Shutting down server...")
+	tele.Info(ctx, "Shutting down server...")
 	shutdownCtx, cancel := context.WithTimeout(
 		context.Background(),
 		time.Duration(cfgs.ShutdownTimeout)*time.Second,
@@ -129,10 +133,10 @@ func Run() {
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("Graceful server Shutdown Failed: %v", err)
+		tele.Fatalf("Graceful server Shutdown Failed: %v", err)
 	}
 
-	log.Println("Server stopped")
+	tele.Info(ctx, "Server stopped")
 }
 
 type configs struct {
@@ -147,6 +151,8 @@ type configs struct {
 
 	HTTPAddr        string `env:"HTTP_ADDR"`
 	ShutdownTimeout int    `env:"SHUTDOWN_TIMEOUT_SECONDS"`
+	EnableDebugLogs bool   `env:"ENABLE_DEBUG_LOGS"`
+	SimplePrint     bool   `env:"ENABLE_SIMPLE_PRINT"`
 }
 
 func getConfigs() configs { // sensible defaults
@@ -160,11 +166,13 @@ func getConfigs() configs { // sensible defaults
 		MediaGRPCAddr:   "media:50051",
 		HTTPAddr:        "0.0.0.0:8081",
 		ShutdownTimeout: 5,
+		EnableDebugLogs: true,
+		SimplePrint:     true,
 	}
 
 	// load environment variables if present
 	if err := configutil.LoadConfigs(&cfgs); err != nil {
-		log.Fatalf("failed to load env variables into config struct: %v", err)
+		tele.Fatalf("failed to load env variables into config struct: %v", err)
 	}
 
 	return cfgs
