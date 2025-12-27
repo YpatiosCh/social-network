@@ -49,7 +49,7 @@ run-all:
 	\
 	DATABASE_URL=postgres://postgres:secret@localhost:5437/social_media?sslmode=disable \
 	MIGRATE_PATH=services/media/internal/db/migrations \
-	SERVICE_PORT=:50055 \
+	GRPC_SERVER_PORT=:50055 \
 	MINIO_ENDPOINT=localhost:9000 \
 	MINIO_ACCESS_KEY=minioadmin \
 	MINIO_SECRET_KEY=minioadmin \
@@ -107,7 +107,7 @@ run-chat:
 run-media:
 	DATABASE_URL=postgres://postgres:secret@localhost:5437/social_media?sslmode=disable \
 	MIGRATE_PATH=services/media/internal/db/migrations \
-	SERVICE_PORT=:50055 \
+	GRPC_SERVER_PORT=:50055 \
 	MINIO_ENDPOINT=localhost:9000 \
 	MINIO_ACCESS_KEY=minioadmin \
 	MINIO_SECRET_KEY=minioadmin \
