@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS images (
     sort_order INT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMPTZ,
+    deleted_at TIMESTAMPTZ
     --CONSTRAINT unique_image_sort_order UNIQUE(parent_id, sort_order)
 );
 
