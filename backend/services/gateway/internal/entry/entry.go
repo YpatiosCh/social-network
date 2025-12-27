@@ -46,14 +46,6 @@ func Run() {
 
 	tele.Info(ctx, "initialized telemetry")
 
-	// go func() {
-	// 	for i := range 10000 {
-	// 		tele.Info(ctx, fmt.Sprint("This is a test? loop:", i), "loop", i)
-	// 		fmt.Println("fmt print test")
-	// 		time.Sleep(time.Second * 3)
-	// 	}
-	// }()
-
 	//
 	//
 	//
