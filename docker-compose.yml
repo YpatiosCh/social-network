@@ -327,6 +327,9 @@ services:
       ENC_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
       JWT_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
       PASSWORD_SECRET: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= 
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=api-gateway,service.namespace=social-network,deployment.environment=dev"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "alloy:4317"
     ports:
       - "8081:8081"
     depends_on:
