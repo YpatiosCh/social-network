@@ -1,8 +1,5 @@
-# Run from backend dir:
-# make -f ../light-infra/Makefile run-migrations
-# make -f ../light-infra/Makefile run-services
 # Run from light-infra
-# docker-up
+# make docker-up
 # make run-migrations
 # make run-all
 
