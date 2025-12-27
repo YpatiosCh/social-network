@@ -7,7 +7,7 @@ import (
 const deleteImage = `-- name: DeleteImage :execrows
 UPDATE images
 SET deleted_at = CURRENT_TIMESTAMP
-WHERE id = $1 AND deleted_at IS NULL
+WHERE parent_id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) DeleteImage(ctx context.Context, id int64) (int64, error) {
