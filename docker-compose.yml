@@ -313,33 +313,6 @@ services:
   #
   #
   # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  # API - GATEWAY: the main entry point for clients, it routes requests to the appropriate services
-  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  api-gateway:
-    networks:
-      - social-network
-    build:
-      context: backend/.
-      dockerfile: services/gateway/Dockerfile
-    container_name: api-gateway
-    environment:
-      <<: *common-env
-      ENC_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
-      JWT_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
-      PASSWORD_SECRET: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= 
-      OTEL_EXPORTER_OTLP_INSECURE: true
-      OTEL_RESOURCE_ATTRIBUTES: "service.name=api-gateway,service.namespace=social-network,deployment.environment=dev"
-      OTEL_EXPORTER_OTLP_ENDPOINT: "alloy:4317"
-    ports:
-      - "8081:8081"
-    depends_on:
-      redis:
-        condition: service_started
-
-  #
-  #
-  #
-  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   # SOCIAL-SPHERE FRONTEND BACKEND: Next.js frontend service, it serves the web application and communicates with the API Gateway
   # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   social-sphere:
@@ -400,6 +373,35 @@ services:
       - "--storage.path=/var/lib/alloy/data"
       - "/etc/alloy/config.alloy"
       
+
+
+  #
+  #
+  #
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  # API - GATEWAY: the main entry point for clients, it routes requests to the appropriate services
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  api-gateway:
+    networks:
+      - social-network
+    build:
+      context: backend/.
+      dockerfile: services/gateway/Dockerfile
+    container_name: api-gateway
+    environment:
+      <<: *common-env
+      ENC_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
+      JWT_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
+      PASSWORD_SECRET: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= 
+      OTEL_EXPORTER_OTLP_INSECURE: true
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=api-gateway,service.namespace=social-network,deployment.environment=dev"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "alloy:4317"
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_started
+
 
 
 volumes:

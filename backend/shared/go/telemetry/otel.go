@@ -14,7 +14,9 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
 //This SDK sets up a bunch of boilerplate about otel stuff
@@ -135,9 +137,18 @@ func NewMeterProvider() (*metric.MeterProvider, error) {
 // }
 
 func NewLoggerProvider(ctx context.Context, collectorAddress string) (*log.LoggerProvider, error) {
+
+	//TODO add service name and set up versioning?
+	resource := resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceName("my_serviceName"),
+		semconv.ServiceVersion("my_version"),
+		semconv.HostName("my_hostName"),
+	)
+
 	logExporter, err := otlploggrpc.New(
 		ctx,
-		otlploggrpc.WithEndpointURL("dns:///"+collectorAddress),
+		otlploggrpc.WithEndpointURL("dns://"+collectorAddress),
 		otlploggrpc.WithInsecure(),
 		otlploggrpc.WithTimeout(5*time.Second),
 	)
@@ -145,8 +156,11 @@ func NewLoggerProvider(ctx context.Context, collectorAddress string) (*log.Logge
 		return nil, fmt.Errorf("failed to create log exporter: %w", err)
 	}
 
+	processor := log.NewBatchProcessor(logExporter)
+
 	loggerProvider := log.NewLoggerProvider(
-		log.WithProcessor(log.NewBatchProcessor(logExporter)),
+		log.WithProcessor(processor),
+		log.WithResource(resource),
 	)
 	return loggerProvider, nil
 }
