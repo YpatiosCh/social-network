@@ -62,7 +62,11 @@ func Run() error {
 	service := handler.NewPostsHandler(app)
 
 	log.Println("Running gRpc service...")
-	startServerFunc, endServerFunc, err := gorpc.CreateGRpcServer[posts.PostsServiceServer](posts.RegisterPostsServiceServer, service, ":50051", ct.CommonKeys())
+	startServerFunc, endServerFunc, err := gorpc.CreateGRpcServer[posts.PostsServiceServer](
+		posts.RegisterPostsServiceServer,
+		service,
+		cfgs.GrpcServerPort,
+		ct.CommonKeys())
 	if err != nil {
 		return err
 	}
@@ -94,10 +98,11 @@ type configs struct {
 	RedisPassword string `env:"REDIS_PASSWORD"`
 	RedisDB       int    `env:"REDIS_DB"`
 
-	UsersGRPCAddr string `env:"USERS_GRPC_ADDR"`
-	PostsGRPCAddr string `env:"POSTS_GRPC_ADDR"`
-	ChatGRPCAddr  string `env:"CHAT_GRPC_ADDR"`
-	MediaGRPCAddr string `env:"MEDIA_GRPC_ADDR"`
+	UsersGRPCAddr  string `env:"USERS_GRPC_ADDR"`
+	PostsGRPCAddr  string `env:"POSTS_GRPC_ADDR"`
+	ChatGRPCAddr   string `env:"CHAT_GRPC_ADDR"`
+	MediaGRPCAddr  string `env:"MEDIA_GRPC_ADDR"`
+	GrpcServerPort string `env:"GRPC_SERVER_PORT"`
 
 	HTTPAddr        string `env:"HTTP_ADDR"`
 	ShutdownTimeout int    `env:"SHUTDOWN_TIMEOUT_SECONDS"`
@@ -114,6 +119,7 @@ func getConfigs() configs { // sensible defaults
 		MediaGRPCAddr:   "media:50051",
 		HTTPAddr:        "0.0.0.0:8081",
 		ShutdownTimeout: 5,
+		GrpcServerPort:  ":50051",
 	}
 
 	// load environment variables if present
