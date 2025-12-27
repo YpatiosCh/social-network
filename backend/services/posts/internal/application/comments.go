@@ -91,8 +91,9 @@ func (s *Application) EditComment(ctx context.Context, req models.EditCommentReq
 			if err != nil {
 				return err
 			}
-		} else {
-			rowsAffected, err := q.DeleteImage(ctx, req.ImageId.Int64())
+		}
+		if req.DeleteImage {
+			rowsAffected, err := q.DeleteImage(ctx, req.CommentId.Int64())
 			if err != nil {
 				return err
 			}

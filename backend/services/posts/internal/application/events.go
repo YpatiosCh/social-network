@@ -126,8 +126,9 @@ func (s *Application) EditEvent(ctx context.Context, req models.EditEventReq) er
 			if err != nil {
 				return err
 			}
-		} else {
-			rowsAffected, err := q.DeleteImage(ctx, req.Image.Int64())
+		}
+		if req.DeleteImage {
+			rowsAffected, err := q.DeleteImage(ctx, req.EventId.Int64())
 			if err != nil {
 				return err
 			}

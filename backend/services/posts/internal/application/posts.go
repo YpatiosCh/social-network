@@ -145,8 +145,9 @@ func (s *Application) EditPost(ctx context.Context, req models.EditPostReq) erro
 				return err
 			}
 		}
+		fmt.Println("delete image", req.DeleteImage)
 		if req.DeleteImage {
-			rowsAffected, err := q.DeleteImage(ctx, req.ImageId.Int64())
+			rowsAffected, err := q.DeleteImage(ctx, req.PostId.Int64())
 			if err != nil {
 				return err
 			}

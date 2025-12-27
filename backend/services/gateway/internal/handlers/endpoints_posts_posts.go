@@ -220,7 +220,8 @@ func (h *Handlers) editPost() http.HandlerFunc {
 			AudienceIds: &common.UserIds{
 				Values: httpReq.AudienceIds.Int64(),
 			},
-			ImageId: ImageId.Int64(),
+			ImageId:     ImageId.Int64(),
+			DeleteImage: httpReq.DeleteImage,
 		}
 
 		_, err := h.PostsService.EditPost(r.Context(), &grpcReq)

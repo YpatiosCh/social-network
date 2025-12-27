@@ -106,10 +106,11 @@ func (h *Handlers) editEvent() http.HandlerFunc {
 		}
 
 		type EditEventJSONRequest struct {
-			EventId   ct.Id            `json:"event_id"`
-			Title     ct.Title         `json:"event_title"`
-			Body      ct.EventBody     `json:"event_body"`
-			EventDate ct.EventDateTime `json:"event_date"`
+			EventId     ct.Id            `json:"event_id"`
+			Title       ct.Title         `json:"event_title"`
+			Body        ct.EventBody     `json:"event_body"`
+			EventDate   ct.EventDateTime `json:"event_date"`
+			DeleteImage bool             `json:"delete_image"`
 
 			ImageName string `json:"image_name"`
 			ImageSize int64  `json:"image_size"`
@@ -157,6 +158,7 @@ func (h *Handlers) editEvent() http.HandlerFunc {
 			Body:        httpReq.Body.String(),
 			EventDate:   httpReq.EventDate.ToProto(),
 			ImageId:     ImageId.Int64(),
+			DeleteImage: httpReq.DeleteImage,
 		}
 
 		_, err := h.PostsService.EditEvent(r.Context(), &grpcReq)
