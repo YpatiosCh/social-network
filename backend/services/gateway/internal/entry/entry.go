@@ -26,6 +26,13 @@ func Run() {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	cfgs := getConfigs()
+	// Inject envs to custom types
+	ct.Cfgs = ct.Configs{
+		PassSecret: os.Getenv("PASSWORD_SECRET"),
+		Salt:       os.Getenv("ENC_KEY"),
+	}
+	fmt.Println("Cfgs PASS", cfgs.PassSecret)
+	fmt.Println("ct Cfgs", ct.Cfgs)
 
 	//
 	//
@@ -39,13 +46,13 @@ func Run() {
 
 	tele.Info(ctx, "initialized telemetry")
 
-	go func() {
-		for i := range 10000 {
-			tele.Info(ctx, fmt.Sprint("This is a test? loop:", i), "loop", i)
-			// fmt.Println("fmt print test")
-			time.Sleep(time.Second * 5)
-		}
-	}()
+	// go func() {
+	// 	for i := range 10000 {
+	// 		tele.Info(ctx, fmt.Sprint("This is a test? loop:", i), "loop", i)
+	// 		fmt.Println("fmt print test")
+	// 		time.Sleep(time.Second * 3)
+	// 	}
+	// }()
 
 	//
 	//
@@ -175,6 +182,8 @@ type configs struct {
 
 	OtelResourceAttributes    string `env:"OTEL_RESOURCE_ATTRIBUTES"`
 	TelemetryCollectorAddress string `env:"TELEMETRY_COLLECTOR_ADDR"`
+	PassSecret                string `env:"PASSWORD_SECRET"`
+	EncrytpionKey             string `env:"ENC_KEY"`
 }
 
 func getConfigs() configs { // sensible defaults
@@ -200,6 +209,10 @@ func getConfigs() configs { // sensible defaults
 
 	// load environment variables if present
 	if err := configutil.LoadConfigs(&cfgs); err != nil {
+<<<<<<< HEAD
+=======
+		fmt.Println(err)
+>>>>>>> e2beefb9a0343bf6331f37ba50e0a3f2e59e3dfd
 		tele.Fatalf("failed to load env variables into config struct: %v", err)
 	}
 
