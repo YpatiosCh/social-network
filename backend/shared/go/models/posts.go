@@ -109,11 +109,12 @@ type CreateCommentReq struct {
 }
 
 type EditCommentReq struct {
-	CreatorId ct.Id
-	CommentId ct.Id          `json:"comment_id"`
-	Body      ct.CommentBody `json:"comment_body" validate:"nullable"`
-	ImageId   ct.Id          `json:"image" validate:"nullable"`
-	ImageUrl  string         `json:"image_url"`
+	CreatorId   ct.Id
+	CommentId   ct.Id          `json:"comment_id"`
+	Body        ct.CommentBody `json:"comment_body" validate:"nullable"`
+	ImageId     ct.Id          `json:"image" validate:"nullable"`
+	ImageUrl    string         `json:"image_url"`
+	DeleteImage bool           `json:"delete_image"`
 }
 
 //-------------------------------------------
@@ -152,6 +153,7 @@ type EditEventReq struct {
 	Body        ct.EventBody     `json:"event_body"`
 	Image       ct.Id            `json:"image" validate:"nullable"`
 	EventDate   ct.EventDateTime `json:"event_date"`
+	DeleteImage bool             `json:"delete_image"`
 }
 
 type RespondToEventReq struct {

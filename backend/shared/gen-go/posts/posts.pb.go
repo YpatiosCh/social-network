@@ -1040,6 +1040,7 @@ type EditCommentReq struct {
 	CommentId     int64                  `protobuf:"varint,2,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
 	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
 	ImageId       int64                  `protobuf:"varint,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	DeleteImage   bool                   `protobuf:"varint,5,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1100,6 +1101,13 @@ func (x *EditCommentReq) GetImageId() int64 {
 		return x.ImageId
 	}
 	return 0
+}
+
+func (x *EditCommentReq) GetDeleteImage() bool {
+	if x != nil {
+		return x.DeleteImage
+	}
+	return false
 }
 
 // EVENTS
@@ -1379,6 +1387,7 @@ type EditEventReq struct {
 	Body          string                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
 	ImageId       int64                  `protobuf:"varint,5,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
 	EventDate     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=event_date,json=eventDate,proto3" json:"event_date,omitempty"`
+	DeleteImage   bool                   `protobuf:"varint,7,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1453,6 +1462,13 @@ func (x *EditEventReq) GetEventDate() *timestamppb.Timestamp {
 		return x.EventDate
 	}
 	return nil
+}
+
+func (x *EditEventReq) GetDeleteImage() bool {
+	if x != nil {
+		return x.DeleteImage
+	}
+	return false
 }
 
 type RespondToEventReq struct {
@@ -1607,14 +1623,15 @@ const file_posts_proto_rawDesc = "" +
 	"creator_id\x18\x01 \x01(\x03R\tcreatorId\x12\x1b\n" +
 	"\tparent_id\x18\x02 \x01(\x03R\bparentId\x12\x12\n" +
 	"\x04body\x18\x03 \x01(\tR\x04body\x12\x19\n" +
-	"\bimage_id\x18\x04 \x01(\x03R\aimageId\"}\n" +
+	"\bimage_id\x18\x04 \x01(\x03R\aimageId\"\xa0\x01\n" +
 	"\x0eEditCommentReq\x12\x1d\n" +
 	"\n" +
 	"creator_id\x18\x01 \x01(\x03R\tcreatorId\x12\x1d\n" +
 	"\n" +
 	"comment_id\x18\x02 \x01(\x03R\tcommentId\x12\x12\n" +
 	"\x04body\x18\x03 \x01(\tR\x04body\x12\x19\n" +
-	"\bimage_id\x18\x04 \x01(\x03R\aimageId\"\xfc\x03\n" +
+	"\bimage_id\x18\x04 \x01(\x03R\aimageId\x12!\n" +
+	"\fdelete_image\x18\x05 \x01(\bR\vdeleteImage\"\xfc\x03\n" +
 	"\x05Event\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\x03R\aeventId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
@@ -1645,7 +1662,7 @@ const file_posts_proto_rawDesc = "" +
 	"\bgroup_id\x18\x04 \x01(\x03R\agroupId\x12\x19\n" +
 	"\bimage_id\x18\x05 \x01(\x03R\aimageId\x129\n" +
 	"\n" +
-	"event_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\teventDate\"\xcc\x01\n" +
+	"event_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\teventDate\"\xef\x01\n" +
 	"\fEditEventReq\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\x03R\aeventId\x12!\n" +
 	"\frequester_id\x18\x02 \x01(\x03R\vrequesterId\x12\x14\n" +
@@ -1653,7 +1670,8 @@ const file_posts_proto_rawDesc = "" +
 	"\x04body\x18\x04 \x01(\tR\x04body\x12\x19\n" +
 	"\bimage_id\x18\x05 \x01(\x03R\aimageId\x129\n" +
 	"\n" +
-	"event_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\teventDate\"g\n" +
+	"event_date\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\teventDate\x12!\n" +
+	"\fdelete_image\x18\a \x01(\bR\vdeleteImage\"g\n" +
 	"\x11RespondToEventReq\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\x03R\aeventId\x12!\n" +
 	"\fresponder_id\x18\x02 \x01(\x03R\vresponderId\x12\x14\n" +

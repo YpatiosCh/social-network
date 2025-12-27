@@ -333,10 +333,11 @@ func (s *PostsHandler) EditComment(ctx context.Context, req *pb.EditCommentReq) 
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
 	}
 	err := s.Application.EditComment(ctx, models.EditCommentReq{
-		CreatorId: ct.Id(req.CreatorId),
-		CommentId: ct.Id(req.CommentId),
-		Body:      ct.CommentBody(req.Body),
-		ImageId:   ct.Id(req.ImageId),
+		CreatorId:   ct.Id(req.CreatorId),
+		CommentId:   ct.Id(req.CommentId),
+		Body:        ct.CommentBody(req.Body),
+		ImageId:     ct.Id(req.ImageId),
+		DeleteImage: req.GetDeleteImage(),
 	})
 	if err != nil {
 		fmt.Println("Error in EditComment:", err)
@@ -447,6 +448,7 @@ func (s *PostsHandler) EditEvent(ctx context.Context, req *pb.EditEventReq) (*em
 		Body:        ct.EventBody(req.Body),
 		Image:       ct.Id(req.ImageId),
 		EventDate:   ct.EventDateTime(req.EventDate.AsTime()),
+		DeleteImage: req.GetDeleteImage(),
 	})
 	if err != nil {
 		fmt.Println("Error in EditEvent:", err)

@@ -217,6 +217,7 @@ message EditCommentReq {
     int64 comment_id = 2;
     string body = 3;
     int64 image_id = 4;
+    bool delete_image=5;
 }
 
 // EVENTS
@@ -256,6 +257,7 @@ message EditEventReq {
     string body = 4;
     int64 image_id = 5;
     google.protobuf.Timestamp event_date = 6;
+    bool delete_image=7;
 }
 
 message RespondToEventReq {

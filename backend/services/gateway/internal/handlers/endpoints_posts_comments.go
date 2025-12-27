@@ -163,8 +163,9 @@ func (h *Handlers) editComment() http.HandlerFunc {
 		}
 
 		type EditCommentJSONRequest struct {
-			CommentId ct.Id          `json:"comment_id"`
-			Body      ct.CommentBody `json:"comment_body"`
+			CommentId   ct.Id          `json:"comment_id"`
+			Body        ct.CommentBody `json:"comment_body"`
+			DeleteImage bool           `json:"delete_image"`
 
 			ImageName string `json:"image_name"`
 			ImageSize int64  `json:"image_size"`
@@ -206,10 +207,11 @@ func (h *Handlers) editComment() http.HandlerFunc {
 		}
 
 		grpcReq := posts.EditCommentReq{
-			CreatorId: int64(claims.UserId),
-			CommentId: httpReq.CommentId.Int64(),
-			Body:      httpReq.Body.String(),
-			ImageId:   ImageId.Int64(),
+			CreatorId:   int64(claims.UserId),
+			CommentId:   httpReq.CommentId.Int64(),
+			Body:        httpReq.Body.String(),
+			ImageId:     ImageId.Int64(),
+			DeleteImage: httpReq.DeleteImage,
 		}
 
 		_, err := h.PostsService.EditComment(r.Context(), &grpcReq)
