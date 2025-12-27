@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { Heart, MessageCircle, Pencil, Trash2, MoreHorizontal, Share2, Globe, Lock, Users, User, ChevronDown } from "lucide-react";
 import PostImage from "./PostImage";
-import DeleteConfirmModal from "./DeleteConfirmModal";
+import Modal from "./Modal";
 import { useStore } from "@/store/store";
 import { editPost } from "@/actions/posts/edit-post";
 import { deletePost } from "@/actions/posts/delete-post";
 import { validateUpload } from "@/actions/auth/validate-upload";
 import { getFollowers } from "@/actions/users/get-followers";
+import { getRelativeTime } from "@/lib/time";
+import { toggleReaction } from "@/actions/posts/toggle-reaction";
+import Tooltip from "./Tooltip";
 
 export default function PostCard({ post }) {
     const user = useStore((state) => state.user);
@@ -37,6 +40,10 @@ export default function PostCard({ post }) {
     const [selectedFollowers, setSelectedFollowers] = useState([]);
     const [followers, setFollowers] = useState([]);
     const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
+    const [relativeTime, setRelativeTime] = useState("");
+    const [likedByUser, setLikedByUser] = useState(post.liked_by_user);
+    const [reactionsCount, setReactionsCount] = useState(post.reactions_count);
+    const [isReactionPending, setIsReactionPending] = useState(false);
     const composerRef = useRef(null);
     const cardRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -61,6 +68,18 @@ export default function PostCard({ post }) {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+
+    // Update relative time on client side to avoid hydration mismatch
+    useEffect(() => {
+        setRelativeTime(getRelativeTime(post.created_at));
+
+        // Optional: Update every minute to keep it current
+        const interval = setInterval(() => {
+            setRelativeTime(getRelativeTime(post.created_at));
+        }, 60000); // Update every 60 seconds
+
+        return () => clearInterval(interval);
+    }, [post.created_at]);
 
     // useEffect(() => {
     //     const lastComment = post.LastComment;
@@ -212,11 +231,7 @@ export default function PostCard({ post }) {
                 editData.delete_image = true;
             }
 
-            console.log("edit data to backend motherfuckers: ", editData);
-
             const resp = await editPost(editData);
-
-            console.log("WHAT I GOT BACK", resp)
 
             if (!resp.success) {
                 setError(resp.error || "Failed to edit post");
@@ -241,14 +256,12 @@ export default function PostCard({ post }) {
                     return;
                 }
 
-                console.log("ID" , resp.FileId);
-                console.log("New URL", validateResp.download_url)
                 setImage(validateResp.download_url)
             }
 
             setPostContent(postDraft);
             setIsEditingPost(false);
-            //window.location.reload();
+            window.location.reload();
 
         } catch (err) {
             console.error("Failed to edit post:", err);
@@ -278,13 +291,46 @@ export default function PostCard({ post }) {
 
             // Successfully deleted - force reload
             window.location.reload();
-        
+
 
         } catch (err) {
             console.error("Failed to delete post:", err);
             setError("Failed to delete post. Please try again.");
             setIsDeleting(false);
             setShowDeleteModal(false);
+        }
+    };
+
+    const handleHeartClick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isReactionPending) return;
+
+        // Optimistic update
+        const previousLiked = likedByUser;
+        const previousCount = reactionsCount;
+
+        setLikedByUser(!likedByUser);
+        setReactionsCount(likedByUser ? reactionsCount - 1 : reactionsCount + 1);
+        setIsReactionPending(true);
+
+        try {
+            const resp = await toggleReaction(post.post_id);
+
+            if (!resp.success) {
+                // Revert on error
+                setLikedByUser(previousLiked);
+                setReactionsCount(previousCount);
+                console.error("Failed to toggle reaction:", resp.error);
+            }
+        } catch (err) {
+            // Revert on error
+            setLikedByUser(previousLiked);
+            setReactionsCount(previousCount);
+            console.error("Failed to toggle reaction:", err);
+        } finally {
+            setIsReactionPending(false);
         }
     };
 
@@ -357,19 +403,19 @@ export default function PostCard({ post }) {
     return (
         <div
             ref={cardRef}
-            className="group bg-background border border-(--border) rounded-2xl overflow-hidden transition-all hover:border-(--muted)/40 hover:shadow-sm mb-6"
+            className="group bg-background border border-(--border) rounded-2xl transition-all hover:border-(--muted)/40 hover:shadow-sm mb-6"
         >
             {/* Header */}
             <div className="p-5 flex items-start justify-between">
                 <div className="flex items-center gap-3">
                     <Link href={`/profile/${post.post_user.id}`} className="w-10 h-10 rounded-full bg-(--muted)/10 flex items-center justify-center overflow-hidden shrink-0">
-                        { post.post_user.avatar_url ? (<div className="w-10 h-10 rounded-full overflow-hidden border border-(--border)">
+                        {post.post_user.avatar_url ? (<div className="w-10 h-10 rounded-full overflow-hidden border border-(--border)">
                             <img
                                 src={post.post_user.avatar_url}
                                 alt="Avatar"
                                 className="w-full h-full object-cover"
                             />
-                        </div>) : ( 
+                        </div>) : (
                             <User className="w-5 h-5 text-(--muted)" />)}
                     </Link>
                     <div>
@@ -379,27 +425,30 @@ export default function PostCard({ post }) {
                             </h3>
                         </Link>
                         <div className="flex items-center gap-2 text-xs text-(--muted) mt-0.5">
-                            <span>{post.created_at}</span>
+                            <span>{relativeTime || "..."}</span>
                         </div>
                     </div>
                 </div>
 
                 {isOwnPost && !isEditingPost && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                            onClick={handleStartEditPost}
-                            className="p-2 text-(--muted) hover:text-(--accent) hover:bg-(--accent)/5 rounded-full transition-colors"
-                            title="Edit Post"
-                        >
-                            <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={handleDeleteClick}
-                            className="p-2 text-(--muted) hover:text-red-500 hover:bg-red-500/5 rounded-full transition-colors"
-                            title="Delete Post"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                        <Tooltip content="Edit Post">
+                            <button
+                                onClick={handleStartEditPost}
+                                className="p-2 text-(--muted) hover:text-(--accent) hover:bg-(--accent)/5 rounded-full transition-colors"
+                            >
+                                <Pencil className="w-4 h-4" />
+                            </button>
+                        </Tooltip>
+
+                        <Tooltip content="Delete Post">
+                            <button
+                                onClick={handleDeleteClick}
+                                className="p-2 text-(--muted) hover:text-red-500 hover:bg-red-500/5 rounded-full transition-colors"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </Tooltip>
                     </div>
                 )}
             </div>
@@ -543,7 +592,7 @@ export default function PostCard({ post }) {
                                 onClick={() => fileInputRef.current?.click()}
                                 className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors"
                             >
-                                Change Image
+                                {image ? "change image" : "Upload Image"}
                             </button>
 
                             <div className="flex items-center gap-2">
@@ -583,33 +632,36 @@ export default function PostCard({ post }) {
                 )}
             </div>
 
-            
-            {post?.image_url && (
+
+            {post?.image_url && !isEditingPost && (
                 <PostImage src={image} alt="He" />
             )}
 
             {/* Actions Footer */}
-            <div className="px-5 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <button
-                            className="flex items-center gap-2 text-(--muted) hover:text-red-500 transition-colors group/heart"
+            {!isEditingPost && (
+                <div className="px-5 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <button
+                                onClick={handleHeartClick}
+                                disabled={isReactionPending}
+                                className="flex items-center gap-2 text-(--muted) hover:text-red-500 transition-colors group/heart disabled:opacity-50"
+                            >
+                                <Heart className={`w-5 h-5 transition-transform group-hover/heart:scale-110 ${likedByUser ? "fill-red-500 text-red-500" : ""}`} />
+                                <span className="text-sm font-medium">{reactionsCount}</span>
+                            </button>
 
-                        >
-                            <Heart className={`w-5 h-5 transition-transform group-hover/heart:scale-110 ${post.liked_by_user ? "fill-red-500 text-red-500" : ""}`} />
-                            <span className="text-sm font-medium">{post.reactions_count}</span>
-                        </button>
+                            <button
+                                className={`flex items-center gap-2 transition-colors group/comment ${isExpanded ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
 
-                        <button
-                            className={`flex items-center gap-2 transition-colors group/comment ${isExpanded ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
-
-                        >
-                            <MessageCircle className={`w-5 h-5 transition-transform group-hover/comment:scale-110 ${isExpanded ? "fill-(--accent)/10" : ""}`} />
-                            <span className="text-sm font-medium">{post.comments_count}</span>
-                        </button>
+                            >
+                                <MessageCircle className={`w-5 h-5 transition-transform group-hover/comment:scale-110 ${isExpanded ? "fill-(--accent)/10" : ""}`} />
+                                <span className="text-sm font-medium">{post.comments_count}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Expanded Section: Comments + Composer */}
             {/* {isExpanded && (
@@ -750,11 +802,16 @@ export default function PostCard({ post }) {
             )} */}
 
             {/* Delete Confirmation Modal */}
-            <DeleteConfirmModal
+            <Modal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
+                title="Delete Post"
+                description="Are you sure you want to delete this post? This action cannot be undone."
                 onConfirm={handleDeleteConfirm}
-                isDeleting={isDeleting}
+                confirmText="Delete"
+                cancelText="Cancel"
+                isLoading={isDeleting}
+                loadingText="Deleting..."
             />
         </div>
     );

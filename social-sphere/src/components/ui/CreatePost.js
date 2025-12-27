@@ -351,7 +351,7 @@ export default function CreatePost() {
                 )}
 
                 {/* Bottom Controls Row */}
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                     {/* Left side: Privacy and Image Upload */}
                     <div className="flex items-center gap-2">
                         {/* Privacy Selector */}
