@@ -209,10 +209,6 @@ func getConfigs() configs { // sensible defaults
 
 	// load environment variables if present
 	if err := configutil.LoadConfigs(&cfgs); err != nil {
-<<<<<<< HEAD
-=======
-		fmt.Println(err)
->>>>>>> e2beefb9a0343bf6331f37ba50e0a3f2e59e3dfd
 		tele.Fatalf("failed to load env variables into config struct: %v", err)
 	}
 
