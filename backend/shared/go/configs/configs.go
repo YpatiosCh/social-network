@@ -61,7 +61,12 @@ func LoadConfigs(localConfig any) error {
 				return fmt.Errorf("%w (%s): %v", ErrBadConversion, tagVal, err)
 			}
 			valField.SetFloat(v)
-
+		case reflect.Bool:
+			v, err := strconv.ParseBool(envVal)
+			if err != nil {
+				return fmt.Errorf("%w (%s): %v", ErrBadConversion, tagVal, err)
+			}
+			valField.SetBool(v)
 		default:
 			return fmt.Errorf("unsupported kind %s on field %s", valField.Kind(), typeField.Name)
 		}
