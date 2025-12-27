@@ -15,6 +15,7 @@ import (
 	"social-network/shared/gen-go/users"
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
+	rds "social-network/shared/go/redis"
 
 	"social-network/shared/go/gorpc"
 	postgresql "social-network/shared/go/postgre"
@@ -53,8 +54,11 @@ func Run() error {
 		log.Fatalf("failed to connect to media service: %v", err)
 	}
 
+	redisConnector := rds.NewRedisClient(cfgs.RedisAddr, cfgs.RedisPassword, cfgs.RedisDB)
+
 	clients := client.NewClients(UsersService, MediaService)
-	app, err := application.NewApplication(ds.New(pool), pool, clients)
+
+	app, err := application.NewApplication(ds.New(pool), pool, clients, redisConnector)
 	if err != nil {
 		return fmt.Errorf("failed to create posts application: %v", err)
 	}
