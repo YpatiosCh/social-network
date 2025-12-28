@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"social-network/services/media/internal/entry"
+	tele "social-network/shared/go/telemetry"
 )
 
 func main() {
 	err := entry.Run()
 	if err != nil {
-		fmt.Println(err)
+		tele.Error(context.Background(), "media main error:"+err.Error())
 	}
 }

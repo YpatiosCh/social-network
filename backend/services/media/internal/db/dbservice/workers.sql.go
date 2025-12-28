@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	tele "social-network/shared/go/telemetry"
 	"time"
 )
 
@@ -37,6 +38,6 @@ func (q *Queries) MarkStaleFilesFailed(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Number of files marked as failed:", tag)
+	tele.Warn(ctx, "Number of files marked as failed, tag: "+fmt.Sprint(tag), "tag", tag)
 	return nil
 }

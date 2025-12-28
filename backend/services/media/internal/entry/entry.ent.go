@@ -120,7 +120,7 @@ func Run() error {
 		if err != nil {
 			log.Fatal("server failed to start")
 		}
-		fmt.Println("server finished")
+		tele.Info(ctx, "server finished")
 	}()
 
 	// wait here for process termination signal to initiate graceful shutdown
