@@ -81,11 +81,27 @@ func (l *logging) log(ctx context.Context, level slog.Level, msg string, args ..
 		args = append(args, ctxArgs)
 	}
 
-	if l.hasPrefix {
-		fmt.Printf("[%s]: %s - %s - args: %s\n", l.prefix, level.String(), msg, fmt.Sprint(args...))
-	} else {
-		fmt.Printf("[%s]: %s - %s - args: %s\n", l.serviceName, level.String(), msg, fmt.Sprint(args...))
+	if len(args) == 0 {
+		if l.hasPrefix {
+			fmt.Printf("[%s]: %s - %s\n", l.prefix, level.String(), msg)
+		} else {
+			fmt.Printf("[%s]: %s - %s - args: %s\n", l.serviceName, level.String(), msg, fmt.Sprint(args...))
+		}
 	}
+
+	var prefix string
+	if l.hasPrefix {
+		prefix = l.prefix
+	} else {
+		prefix = l.serviceName
+	}
+
+	var argsPart string
+	if len(args) > 0 {
+		argsPart = fmt.Sprintf(" - args: %s", fmt.Sprint(args...))
+	}
+
+	fmt.Printf("[%s]: %s - %s%s\n", prefix, level.String(), msg, argsPart)
 
 }
 
