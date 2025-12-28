@@ -2,11 +2,11 @@ package application
 
 import (
 	"context"
-	"fmt"
 	ds "social-network/services/posts/internal/db/dbservice"
 	"social-network/shared/gen-go/media"
 	ct "social-network/shared/go/ct"
 	"social-network/shared/go/models"
+	tele "social-network/shared/go/telemetry"
 )
 
 func (s *Application) CreateComment(ctx context.Context, req models.CreateCommentReq) (err error) {
@@ -98,7 +98,7 @@ func (s *Application) EditComment(ctx context.Context, req models.EditCommentReq
 				return err
 			}
 			if rowsAffected != 1 {
-				fmt.Println("image not found")
+				tele.Warn(ctx, "EditComment: image to be deleted not found", "request", req)
 			}
 		}
 		return nil
