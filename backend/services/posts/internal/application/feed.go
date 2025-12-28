@@ -139,7 +139,7 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 	var imageMap map[int64]string
 	fmt.Println("need these images", postImageIds)
 	if len(postImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
+		imageMap, _, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
 	}
 	fmt.Println("image map", imageMap)
 	for i := range posts {

@@ -221,7 +221,7 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 
 	var imageMap map[int64]string
 	if len(EventImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, EventImageIds, media.FileVariant_MEDIUM)
+		imageMap, _, err = s.mediaRetriever.GetImages(ctx, EventImageIds, media.FileVariant_MEDIUM)
 	}
 
 	for i := range events {
