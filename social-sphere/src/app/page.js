@@ -14,6 +14,7 @@ export default function LandingPage() {
                             <Link
                                 href="/login"
                                 className="text-sm link-muted"
+                                prefetch={false}
                             >
                                 Sign In
                             </Link>

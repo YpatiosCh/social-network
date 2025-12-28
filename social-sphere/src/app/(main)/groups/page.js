@@ -47,7 +47,7 @@ export default function GroupsPage() {
     }, []);
 
     const GroupCard = ({ group }) => (
-        <Link href={`/groups/${group.group_id}`} className="block group">
+        <Link href={`/groups/${group.group_id}`} prefetch={false} className="block group">
             <div className="bg-background border border-(--border) rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:border-(--accent)/20 h-full flex flex-col">
                 <div className="relative h-32 bg-(--muted)/10">
                     {group.group_image ? (
@@ -58,6 +58,7 @@ export default function GroupsPage() {
                         //     src={group.group_image}
                         //     alt={group.group_title}
                         //     fill
+                        //     prefetch={false}
                         //     className="object-cover transition-transform duration-500 group-hover:scale-105"
                         // />
                     ) : (
