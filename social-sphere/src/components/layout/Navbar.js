@@ -122,6 +122,7 @@ export default function Navbar() {
                         <Link
                             href="/feed/public"
                             className="hidden sm:flex items-center shrink-0"
+                            prefetch={false}
                         >
                             <span className="hidden md:block text-base font-medium tracking-tight text-foreground hover:text-(--muted) transition-colors">
                                 SocialSphere
@@ -159,6 +160,7 @@ export default function Navbar() {
                                                 <Link
                                                     key={result.id}
                                                     href={`/profile/${result.id}`}
+                                                    prefetch={false}
                                                     onClick={() => {
                                                         setShowSearchResults(false);
                                                         setSearchQuery("");
@@ -201,6 +203,7 @@ export default function Navbar() {
                                     <Tooltip key={item.href} content={item.label}>
                                         <Link
                                             href={item.href}
+                                            prefetch={false}
                                             className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${active
                                                 ? "bg-(--accent)/10 text-(--accent)"
                                                 : "text-(--muted) hover:text-foreground hover:bg-(--muted)/10"
@@ -222,6 +225,7 @@ export default function Navbar() {
                                     <Tooltip key={item.href} content={item.label}>
                                         <Link
                                             href={item.href}
+                                            prefetch={false}
                                             className={`p-2.5 rounded-full transition-all ${active
                                                 ? "bg-(--accent)/10 text-(--accent)"
                                                 : "text-(--muted) hover:text-foreground hover:bg-(--muted)/10"
@@ -298,6 +302,7 @@ export default function Navbar() {
                                         <div className="p-1.5">
                                             <Link
                                                 href={`/profile/${user.id}`}
+                                                prefetch={false}
                                                 onClick={() => setIsDropdownOpen(false)}
                                                 className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl hover:bg-(--muted)/10 transition-colors text-foreground"
                                             >
@@ -306,6 +311,7 @@ export default function Navbar() {
                                             </Link>
                                             <Link
                                                 href={`/profile/${user.id}/settings`}
+                                                prefetch={false}
                                                 onClick={() => setIsDropdownOpen(false)}
                                                 className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl hover:bg-(--muted)/10 transition-colors text-foreground"
                                             >

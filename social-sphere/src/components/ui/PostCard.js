@@ -13,6 +13,8 @@ import { validateUpload } from "@/actions/auth/validate-upload";
 import { getFollowers } from "@/actions/users/get-followers";
 import { getRelativeTime } from "@/lib/time";
 import { toggleReaction } from "@/actions/posts/toggle-reaction";
+import { getComments } from "@/actions/posts/get-comments";
+import { createComment } from "@/actions/posts/create-comment";
 import Tooltip from "./Tooltip";
 
 export default function PostCard({ post }) {
@@ -44,9 +46,13 @@ export default function PostCard({ post }) {
     const [likedByUser, setLikedByUser] = useState(post.liked_by_user);
     const [reactionsCount, setReactionsCount] = useState(post.reactions_count);
     const [isReactionPending, setIsReactionPending] = useState(false);
+    const [commentsCount, setCommentsCount] = useState(post.comments_count);
+    const [commentImageFile, setCommentImageFile] = useState(null);
+    const [commentImagePreview, setCommentImagePreview] = useState(null);
     const composerRef = useRef(null);
     const cardRef = useRef(null);
     const fileInputRef = useRef(null);
+    const commentFileInputRef = useRef(null);
     const dropdownRef = useRef(null);
     const router = useRouter();
 
@@ -81,40 +87,69 @@ export default function PostCard({ post }) {
         return () => clearInterval(interval);
     }, [post.created_at]);
 
-    // useEffect(() => {
-    //     const lastComment = post.LastComment;
-    //     if (lastComment) {
-    //         setComments([lastComment]);
-    //         const total = Number(post.NumOfComments ?? 0);
-    //         setHasMore(total > 1);
-    //     } else {
-    //         setComments([]);
-    //         setHasMore(false);
-    //     }
-    //     setLoading(false);
-    // }, [post.ID, post.LastComment, post.NumOfComments]);
+    useEffect(() => {
+        if (isExpanded && composerRef.current) {
+            composerRef.current.focus();
+        }
+    }, [isExpanded]);
 
-    // useEffect(() => {
-    //     if (isExpanded && composerRef.current) {
-    //         composerRef.current.focus();
-    //     }
-    // }, [isExpanded]);
+    // Fetch comments when expanded
+    useEffect(() => {
+        if (isExpanded && comments.length === 0) {
+            fetchLastComment();
+        }
+    }, [isExpanded]);
 
-    // useEffect(() => {
-    //     const handleClickOutside = (event) => {
-    //         if (cardRef.current && !cardRef.current.contains(event.target)) {
-    //             setIsExpanded(false);
-    //         }
-    //     };
+    const fetchLastComment = async () => {
+        setLoading(true);
+        try {
+            const result = await getComments({
+                postId: post.post_id,
+                limit: 1,
+                offset: 0
+            });
 
-    //     if (isExpanded) {
-    //         document.addEventListener("mousedown", handleClickOutside);
-    //     }
+            console.log("Comment", result.comments)
 
-    //     return () => {
-    //         document.removeEventListener("mousedown", handleClickOutside);
-    //     };
-    // }, [isExpanded]);
+            if (result.success && result.comments) {
+                setComments(result.comments);
+                // Check if there are more comments to load
+                setHasMore(commentsCount > 1);
+            }
+        } catch (error) {
+            console.error("Failed to fetch last comment:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLoadMore = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (loadingMore) return;
+
+        setLoadingMore(true);
+        try {
+            const result = await getComments({
+                postId: post.post_id,
+                limit: 3,
+                offset: comments.length
+            });
+
+            if (result.success && result.comments) {
+                // Backend returns newest first, so reverse to get oldest first
+                // Then prepend them above the existing comments (which has newest at bottom)
+                const reversedComments = [...result.comments].reverse();
+                setComments((prev) => [...reversedComments, ...prev]);
+                // Check if there are still more to load
+                setHasMore(comments.length + result.comments.length < commentsCount);
+            }
+        } catch (error) {
+            console.error("Failed to load more comments:", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     const fetchFollowers = async () => {
         if (!user?.id || isLoadingFollowers) return;
@@ -334,6 +369,109 @@ export default function PostCard({ post }) {
         }
     };
 
+    const handleToggleComments = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsExpanded(!isExpanded);
+    };
+
+    const handleSubmitComment = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!draftComment.trim()) return;
+
+        try {
+            const commentData = {
+                postId: post.post_id,
+                commentBody: draftComment.trim()
+            };
+
+            // Handle image upload if present
+            if (commentImageFile) {
+                commentData.imageName = commentImageFile.name;
+                commentData.imageSize = commentImageFile.size;
+                commentData.imageType = commentImageFile.type;
+            }
+
+            const resp = await createComment(commentData);
+
+            if (!resp.success) {
+                setError(resp.error || "Failed to create comment");
+                return;
+            }
+
+            // If there's an image, upload it
+            if (commentImageFile && resp.FileId && resp.UploadUrl) {
+                const uploadRes = await fetch(resp.UploadUrl, {
+                    method: "PUT",
+                    body: commentImageFile,
+                });
+
+                if (!uploadRes.ok) {
+                    setError("Failed to upload comment image");
+                    return;
+                }
+
+                const validateResp = await validateUpload(resp.FileId);
+                if (!validateResp.success) {
+                    setError("Failed to validate comment image upload");
+                    return;
+                }
+            }
+
+            // Success! Clear form and refresh
+            setDraftComment("");
+            setCommentImageFile(null);
+            setCommentImagePreview(null);
+            if (commentFileInputRef.current) {
+                commentFileInputRef.current.value = "";
+            }
+            // Increment comment count
+            setCommentsCount((prev) => prev + 1);
+            // Refresh to show the new comment
+            setComments([]);
+            fetchLastComment();
+        } catch (err) {
+            console.error("Failed to create comment:", err);
+            setError("Failed to create comment. Please try again.");
+        }
+    };
+
+    const handleCancelComposer = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDraftComment("");
+        setCommentImageFile(null);
+        setCommentImagePreview(null);
+        if (commentFileInputRef.current) {
+            commentFileInputRef.current.value = "";
+        }
+    };
+
+    const handleCommentImageSelect = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setCommentImageFile(file);
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setCommentImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleRemoveCommentImage = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCommentImageFile(null);
+        setCommentImagePreview(null);
+        if (commentFileInputRef.current) {
+            commentFileInputRef.current.value = "";
+        }
+    };
+
     // const handleStartEdit = (comment) => {
     //     setEditingCommentId(comment.CommentId);
     //     setEditingText(comment.Body);
@@ -408,7 +546,7 @@ export default function PostCard({ post }) {
             {/* Header */}
             <div className="p-5 flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                    <Link href={`/profile/${post.post_user.id}`} className="w-10 h-10 rounded-full bg-(--muted)/10 flex items-center justify-center overflow-hidden shrink-0">
+                    <Link href={`/profile/${post.post_user.id}`} prefetch={false} className="w-10 h-10 rounded-full bg-(--muted)/10 flex items-center justify-center overflow-hidden shrink-0">
                         {post.post_user.avatar_url ? (<div className="w-10 h-10 rounded-full overflow-hidden border border-(--border)">
                             <img
                                 src={post.post_user.avatar_url}
@@ -419,7 +557,7 @@ export default function PostCard({ post }) {
                             <User className="w-5 h-5 text-(--muted)" />)}
                     </Link>
                     <div>
-                        <Link href={`/profile/${post.post_user.id}`}>
+                        <Link href={`/profile/${post.post_user.id}`} prefetch={false}>
                             <h3 className="font-semibold text-foreground hover:underline decoration-2 underline-offset-2">
                                 @{post.post_user.username}
                             </h3>
@@ -615,7 +753,7 @@ export default function PostCard({ post }) {
                         </div>
                     </div>
                 ) : (
-                    <Link href={`/posts/${post.post_id}`}>
+                    <Link href={`/posts/${post.post_id}`} prefetch={false}>
                         <p className="text-[15px] leading-relaxed text-(--foreground)/90 whitespace-pre-wrap">
                             {postContent}
                         </p>
@@ -647,16 +785,16 @@ export default function PostCard({ post }) {
                                 disabled={isReactionPending}
                                 className="flex items-center gap-2 text-(--muted) hover:text-red-500 transition-colors group/heart disabled:opacity-50"
                             >
-                                <Heart className={`w-5 h-5 transition-transform group-hover/heart:scale-110 ${likedByUser ? "fill-red-500 text-red-500" : ""}`} />
+                                <Heart className={`w-5 h-5 transition-transform group-hover/heart:scale-110 cursor-pointer ${likedByUser ? "fill-red-500 text-red-500" : ""}`} />
                                 <span className="text-sm font-medium">{reactionsCount}</span>
                             </button>
 
                             <button
-                                className={`flex items-center gap-2 transition-colors group/comment ${isExpanded ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
-
+                                onClick={handleToggleComments}
+                                className={`flex items-center gap-2 transition-colors group/comment cursor-pointer ${isExpanded ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
                             >
                                 <MessageCircle className={`w-5 h-5 transition-transform group-hover/comment:scale-110 ${isExpanded ? "fill-(--accent)/10" : ""}`} />
-                                <span className="text-sm font-medium">{post.comments_count}</span>
+                                <span className="text-sm font-medium">{commentsCount}</span>
                             </button>
                         </div>
                     </div>
@@ -664,89 +802,60 @@ export default function PostCard({ post }) {
             )}
 
             {/* Expanded Section: Comments + Composer */}
-            {/* {isExpanded && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-200"> */}
-            {/* Comments List
-                    {comments.length > 0 && (
+            {isExpanded && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Comments List */}
+                    {loading ? (
+                        <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-8 text-center">
+                            <p className="text-sm text-(--muted)">Loading comments...</p>
+                        </div>
+                    ) : comments.length > 0 ? (
                         <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-4">
+                            {/* Load More Button */}
                             {hasMore && (
                                 <button
                                     onClick={handleLoadMore}
                                     disabled={loadingMore}
-                                    className="w-full text-left text-xs font-medium text-(--accent) hover:underline mb-4 pl-11 transition-colors"
+                                    className="w-full text-left text-xs font-medium text-(--muted) hover:text-(--accent) mb-4 pl-11 transition-colors disabled:opacity-50 cursor-pointer"
                                 >
-                                    {loadingMore ? "Loading..." : "View previous comments"}
+                                    {loadingMore ? "Loading..." : "Load more comments"}
                                 </button>
                             )}
 
-                            <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                                {comments.map((comment, index) => {
-                                    const isOwner = currentUser && String(comment.Creator?.UserID) === String(currentUser.ID);
-                                    const isEditing = editingCommentId === comment.CommentId;
+                            <div className="flex flex-col gap-4">
+                                {comments.map((comment) => {
+                                    const isOwner = user && String(comment.user?.id) === String(user.id);
                                     return (
-                                        <div key={comment.CommentId || index} className="flex gap-3 group/comment-item">
-                                            <Link href={`/profile/${comment.Creator.UserID}`} className="shrink-0">
-                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-(--border)">
-                                                    <img src={comment.Creator.Avatar} alt={comment.Creator.Username} className="w-full h-full object-cover" />
+                                        <div key={comment.comment_id} className="flex gap-3 group/comment-item">
+                                            <Link href={`/profile/${comment.user.id}`} prefetch={false} className="shrink-0">
+                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-(--border) bg-(--muted)/10 flex items-center justify-center">
+                                                    {comment.user.avatar_url ? (
+                                                        <img src={comment.user.avatar_url} alt={comment.user.username} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <User className="w-4 h-4 text-(--muted)" />
+                                                    )}
                                                 </div>
                                             </Link>
                                             <div className="flex-1 min-w-0">
                                                 <div className="bg-white dark:bg-black/20 rounded-2xl rounded-tl-none px-4 py-2 border border-(--border)">
                                                     <div className="flex items-center justify-between mb-1">
-                                                        <Link href={`/profile/${comment.Creator.UserID}`}>
-                                                            <span className="text-xs font-bold hover:underline">@{comment.Creator.Username}</span>
+                                                        <Link href={`/profile/${comment.user.id}`} prefetch={false}>
+                                                            <span className="text-xs font-bold hover:underline">@{comment.user.username}</span>
                                                         </Link>
-                                                        <span className="text-[10px] text-(--muted)">{comment.CreatedAt}</span>
+                                                        <span className="text-[10px] text-(--muted)">{getRelativeTime(comment.created_at)}</span>
                                                     </div>
-
-                                                    {isEditing ? (
-                                                        <div className="space-y-2 mt-2">
-                                                            <textarea
-                                                                className="w-full rounded-lg border border-(--muted)/30 px-3 py-2 text-sm bg-transparent focus:outline-none focus:border-(--accent)"
-                                                                rows={2}
-                                                                value={editingText}
-                                                                onChange={(e) => setEditingText(e.target.value)}
+                                                    <p className="text-sm text-(--foreground)/90 leading-relaxed whitespace-pre-wrap">
+                                                        {comment.comment_body}
+                                                    </p>
+                                                    {/* Comment Image */}
+                                                    {comment.image_url && (
+                                                        <div className="mt-2">
+                                                            <img
+                                                                src={comment.image_url}
+                                                                alt="Comment attachment"
+                                                                className="max-w-full max-h-48 rounded-lg border border-(--border) object-cover"
                                                             />
-                                                            <div className="flex justify-end gap-2">
-                                                                <button
-                                                                    type="button"
-                                                                    className="text-xs text-(--muted) hover:text-foreground"
-                                                                    onClick={handleCancelEdit}
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    className="text-xs font-medium text-(--accent)"
-                                                                    onClick={() => handleSaveEdit(comment.CommentId)}
-                                                                >
-                                                                    Save
-                                                                </button>
-                                                            </div>
                                                         </div>
-                                                    ) : (
-                                                        <p className="text-sm text-(--foreground)/90 leading-relaxed">
-                                                            {comment.Body}
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex items-center gap-4 mt-1 pl-2">
-                                                    <button className="text-[10px] font-medium text-(--muted) hover:text-red-500 transition-colors flex items-center gap-1">
-                                                        <Heart className="w-3 h-3" />
-                                                        {comment.ReactionsCount > 0 && comment.ReactionsCount}
-                                                    </button>
-                                                    {isOwner && !isEditing && (
-                                                        <button
-                                                            className="text-[10px] font-medium text-(--muted) hover:text-(--accent) transition-colors opacity-0 group-hover/comment-item:opacity-100"
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                e.stopPropagation();
-                                                                handleStartEdit(comment);
-                                                            }}
-                                                        >
-                                                            Edit
-                                                        </button>
                                                     )}
                                                 </div>
                                             </div>
@@ -755,51 +864,89 @@ export default function PostCard({ post }) {
                                 })}
                             </div>
                         </div>
+                    ) : (
+                        <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-8 text-center">
+                            <p className="text-sm text-(--muted)">No comments yet. Be the first to comment!</p>
+                        </div>
                     )}
 
                     {/* Comment Composer */}
-            {/* <div className="border-t border-(--border) p-4 bg-(--muted)/5">
+                    <div className="border-t border-(--border) p-4 bg-(--muted)/5">
                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-(--muted)/10 shrink-0">
-                                {currentUser?.Avatar && (
-                                    <img src={currentUser.Avatar} alt="My Avatar" className="w-full h-full object-cover" />
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-(--muted)/10 shrink-0 flex items-center justify-center">
+                                {user?.avatar_url ? (
+                                    <img src={user.avatar_url} alt="My Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-4 h-4 text-(--muted)" />
                                 )}
                             </div>
                             <div className="flex-1 space-y-2">
                                 <textarea
                                     ref={composerRef}
                                     value={draftComment}
-                                    onChange={handleDraftChange}
+                                    onChange={(e) => setDraftComment(e.target.value)}
                                     rows={1}
                                     className="w-full rounded-2xl border border-(--muted)/30 px-4 py-2.5 text-sm bg-transparent focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all resize-none min-h-[42px]"
                                     placeholder="Write a comment..."
                                 />
-                                <div className="flex justify-end gap-2">
+
+                                {/* Image Preview */}
+                                {commentImagePreview && (
+                                    <div className="relative inline-block">
+                                        <img
+                                            src={commentImagePreview}
+                                            alt="Comment image preview"
+                                            className="max-w-full max-h-32 rounded-xl border border-(--border)"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveCommentImage}
+                                            className="absolute -top-2 -right-2 bg-background text-(--muted) hover:text-red-500 rounded-full p-1.5 border border-(--border) shadow-sm transition-colors"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center justify-between gap-2">
+                                    <input
+                                        ref={commentFileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/gif"
+                                        onChange={handleCommentImageSelect}
+                                        className="hidden"
+                                    />
                                     <button
                                         type="button"
-                                        onClick={handleCancelComposer}
+                                        onClick={() => commentFileInputRef.current?.click()}
                                         className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors"
                                     >
-                                        Cancel
+                                        {commentImageFile ? "Change Image" : "Add Image"}
                                     </button>
-                                    <button
-                                        type="button"
-                                        disabled={!draftComment.trim()}
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            // TODO: wire up createComment
-                                        }}
-                                        className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50"
-                                    >
-                                        Reply
-                                    </button>
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelComposer}
+                                            className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={!draftComment.trim()}
+                                            onClick={handleSubmitComment}
+                                            className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50"
+                                        >
+                                            Reply
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            )} */}
+            )}
 
             {/* Delete Confirmation Modal */}
             <Modal
