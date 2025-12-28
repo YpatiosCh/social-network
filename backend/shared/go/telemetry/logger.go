@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"time"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel/log/global"
@@ -81,12 +82,14 @@ func (l *logging) log(ctx context.Context, level slog.Level, msg string, args ..
 		args = append(args, ctxArgs)
 	}
 
+	time := fmt.Sprint(time.Now().Format("15:04:05.000"))
 	if len(args) == 0 {
 		if l.hasPrefix {
-			fmt.Printf("[%s]: %s - %s\n", l.prefix, level.String(), msg)
+			fmt.Printf("%s [%s]: %s - %s\n", time, l.prefix, level.String(), msg)
 		} else {
-			fmt.Printf("[%s]: %s - %s - args: %s\n", l.serviceName, level.String(), msg, fmt.Sprint(args...))
+			fmt.Printf("%s [%s]: %s - %s - args: %s\n", time, l.serviceName, level.String(), msg, fmt.Sprint(args...))
 		}
+		return
 	}
 
 	var prefix string
@@ -101,7 +104,7 @@ func (l *logging) log(ctx context.Context, level slog.Level, msg string, args ..
 		argsPart = fmt.Sprintf(" - args: %s", fmt.Sprint(args...))
 	}
 
-	fmt.Printf("[%s]: %s - %s%s\n", prefix, level.String(), msg, argsPart)
+	fmt.Printf("%s [%s]: %s - %s%s\n", time, prefix, level.String(), msg, argsPart)
 
 }
 

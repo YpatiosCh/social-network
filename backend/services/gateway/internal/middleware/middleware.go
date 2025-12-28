@@ -146,13 +146,13 @@ const (
 func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, durationSeconds int64) *MiddleSystem {
 	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
 		ctx := r.Context()
-		tele.Debug(ctx, "in ratelimit, type: ", rateLimitType)
+		tele.Debug(ctx, "in ratelimit, type: "+fmt.Sprint(rateLimitType))
 		rateLimitKey := ""
 		switch rateLimitType {
 		case IPLimit:
 			remoteIp, err := getRemoteIpKey(r)
 			if err != nil {
-				tele.Debug(ctx, "rate limited remoteIp:", remoteIp)
+				tele.Debug(ctx, "rate limited remoteIp:"+remoteIp)
 				utils.ErrorJSON(ctx, w, http.StatusNotAcceptable, "your IP is absolutely WACK")
 				return false, nil
 			}
@@ -164,7 +164,7 @@ func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, duratio
 				utils.ErrorJSON(ctx, w, http.StatusNotAcceptable, "how the hell did you end up here without a user id?")
 				return false, nil
 			}
-			tele.Debug(ctx, "rate limited userId:", userId)
+			tele.Debug(ctx, "rate limited userId:"+fmt.Sprint(userId))
 			rateLimitKey = fmt.Sprintf("%s:%s:id:%d", m.serviceName, m.endpoint, userId)
 		default:
 			panic("bad rate limit type argument!")
@@ -172,7 +172,7 @@ func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, duratio
 
 		ok, err := m.ratelimiter.Allow(ctx, rateLimitKey, limit, durationSeconds)
 		if err != nil {
-			tele.Debug(ctx, "rate limited userId:", rateLimitKey)
+			tele.Debug(ctx, "rate limited userId:"+fmt.Sprint(rateLimitKey))
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "you broke the rate limiter")
 			return false, nil
 		}

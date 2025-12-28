@@ -43,6 +43,9 @@ func testAuthFlow(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("register failed: %w, body: %s", err, bodyToString(resp))
 	}
+	if resp.StatusCode != 200 {
+
+	}
 	// fmt.Printf("Register: %d\n", resp.StatusCode)
 
 	email, _ := (*registerData)["email"].(string)
