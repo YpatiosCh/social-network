@@ -37,6 +37,6 @@ func (q *Queries) MarkStaleFilesFailed(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	tele.Warn(ctx, "Number of files marked as failed, tag: "+fmt.Sprint(tag), "tag", tag)
+	tele.Warn(ctx, "Number of files marked as failed. @1 ", "tag", tag)
 	return nil
 }

@@ -91,6 +91,7 @@ func (m *MiddleSystem) EnrichContext() *MiddleSystem {
 	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
 		r = utils.RequestWithValue(r, ct.ReqID, utils.GenUUID())
 		r = utils.RequestWithValue(r, ct.TraceId, utils.GenUUID())
+		r = utils.RequestWithValue(r, ct.IP, r.RemoteAddr)
 		return true, r
 	})
 	return m
@@ -105,14 +106,14 @@ func (m *MiddleSystem) Auth() *MiddleSystem {
 		// tele.Info(ctx, "Cookies received:", r.Cookies())
 		cookie, err := r.Cookie("jwt")
 		if err != nil {
-			tele.Warn(ctx, "no cookie")
+			tele.Warn(ctx, "no cookie found")
 			utils.ErrorJSON(ctx, w, http.StatusUnauthorized, "missing auth cookie")
 			return false, nil
 		}
 		// tele.Info(ctx, "JWT cookie value:", cookie.Value)
 		claims, err := security.ParseAndValidate(cookie.Value)
 		if err != nil {
-			tele.Warn(ctx, "unauthorized")
+			tele.Warn(ctx, "unauthorized request at @1", "endpoint", r.URL)
 			utils.ErrorJSON(ctx, w, http.StatusUnauthorized, err.Error())
 			return false, nil
 		}
@@ -160,7 +161,7 @@ func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, duratio
 		case UserLimit:
 			userId, ok := ctx.Value(ct.UserId).(int64)
 			if !ok {
-				tele.Warn(ctx, "err or no userId:", userId, " ok:", ok)
+				tele.Warn(ctx, "err or missing userId. @1 @2", "userId", userId, "found_ctx_value", ok)
 				utils.ErrorJSON(ctx, w, http.StatusNotAcceptable, "how the hell did you end up here without a user id?")
 				return false, nil
 			}

@@ -98,7 +98,7 @@ func (s *Application) EditComment(ctx context.Context, req models.EditCommentReq
 				return err
 			}
 			if rowsAffected != 1 {
-				tele.Warn(ctx, "EditComment: image to be deleted not found", "request", req)
+				tele.Warn(ctx, "EditComment: image to be deleted not found. @1", "request", req)
 			}
 		}
 		return nil

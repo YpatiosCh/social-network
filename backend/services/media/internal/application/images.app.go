@@ -208,7 +208,7 @@ func (m *MediaService) GetImages(ctx context.Context,
 	for _, fm := range fms {
 		if err := validateFileStatus(fm); err != nil {
 			failedIds = append(failedIds, FailedId{Id: fm.Id, Status: fm.Status})
-			tele.Warn(ctx, "failed to validate file status", "error", err.Error())
+			tele.Warn(ctx, "failed to validate file status. @1", "error", err.Error())
 			continue
 		}
 		url, err := m.S3.GenerateDownloadURL(ctx, fm.Bucket, fm.ObjectKey, fm.Visibility.SetExp())

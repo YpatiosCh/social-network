@@ -17,7 +17,7 @@ func (h *Handlers) testHandler() http.HandlerFunc {
 		})
 
 		if err != nil {
-			tele.Warn(ctx, "failed to send test ACK: ", "error", err.Error())
+			tele.Warn(ctx, "failed to send test ACK. @1", "error", err.Error())
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "failed to send logout ACK")
 			return
 		}

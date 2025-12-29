@@ -165,7 +165,7 @@ func (s *Application) EditPost(ctx context.Context, req models.EditPostReq) erro
 				return err
 			}
 			if rowsAffected != 1 {
-				tele.Warn(ctx, "EditPost: image to be deleted not found", "request", req)
+				tele.Warn(ctx, "EditPost: image to be deleted not found. @1", "request", req)
 			}
 		}
 		// edit audience
@@ -178,7 +178,7 @@ func (s *Application) EditPost(ctx context.Context, req models.EditPostReq) erro
 			return err
 		}
 		if rowsAffected != 1 {
-			tele.Warn(ctx, "EditPost: no audience change", "request", req)
+			tele.Warn(ctx, "EditPost: no audience change. @1", "request", req)
 		}
 
 		// edit audience ids
