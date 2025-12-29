@@ -59,7 +59,7 @@ func WriteJSON(ctx context.Context, w http.ResponseWriter, code int, v any) erro
 	tele.Info(ctx, "responding with json", "content", v)
 	b, err := json.Marshal(v)
 	if err != nil {
-		tele.Error(ctx, "ERROR WHILE WRITING JSON:", "error", err.Error())
+		tele.Error(ctx, "ERROR WHILE WRITING JSON! @1", "error", err.Error())
 		return err
 	}
 
