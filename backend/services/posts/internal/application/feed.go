@@ -72,7 +72,7 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 
 	var imageMap map[int64]string
 	if len(PostImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
+		imageMap, _, err = s.mediaRetriever.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
 	}
 
 	for i := range posts {
@@ -214,7 +214,7 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 
 	var imageMap map[int64]string
 	if len(PostImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
+		imageMap, _, err = s.mediaRetriever.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
 	}
 
 	for i := range posts {
@@ -298,7 +298,7 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 
 	var imageMap map[int64]string
 	if len(PostImageIds) > 0 {
-		imageMap, _, err = s.clients.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
+		imageMap, _, err = s.mediaRetriever.GetImages(ctx, PostImageIds, media.FileVariant_MEDIUM)
 	}
 
 	for i := range posts {
