@@ -146,7 +146,7 @@ func (s *Application) EditEvent(ctx context.Context, req models.EditEventReq) er
 				return err
 			}
 			if rowsAffected != 1 {
-				tele.Warn(ctx, "EditEvent: image to be deleted not found", "request", req)
+				tele.Warn(ctx, "EditEvent: image to be deleted not found @1", "request", req)
 			}
 		}
 		return nil

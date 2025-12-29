@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	tele "social-network/shared/go/telemetry"
 	"time"
@@ -24,7 +23,7 @@ func main() {
 		if err == nil {
 			break
 		}
-		tele.Warn(ctx, fmt.Sprintf("DB not ready yet (attempt %d): %v", i+1, err), "error", err.Error())
+		tele.Warn(ctx, "DB not ready yet @1, @2 ", "attempt", i+1, "error", err.Error())
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {

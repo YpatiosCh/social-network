@@ -71,7 +71,7 @@ func NewMinIOConn(ctx context.Context, cfgs configs.FileService, endpoint string
 
 	err = minioClient.SetBucketLifecycle(ctx, cfgs.Buckets.Originals, lcfg)
 	if err != nil {
-		tele.Error(ctx, "Error setting lifecycle: "+err.Error(), "error", err.Error())
+		tele.Error(ctx, "Error setting lifecycle. @1", "error", err.Error())
 		// We might still continue
 	}
 

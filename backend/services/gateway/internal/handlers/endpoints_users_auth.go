@@ -37,7 +37,7 @@ func (h *Handlers) loginHandler() http.HandlerFunc {
 
 		httpReq.Password, err = httpReq.Password.Hash()
 		if err != nil {
-			tele.Error(ctx, "failed to hash password", "error", err.Error())
+			tele.Error(ctx, "failed to hash password. @1", "error", err.Error())
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "could not hash password")
 			return
 		}
@@ -152,7 +152,7 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 
 		hashedPass, err := httpReq.Password.Hash()
 		if err != nil {
-			tele.Error(ctx, "failed to hash password", "error", err.Error())
+			tele.Error(ctx, "failed to hash password. @1", "error", err.Error())
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "could not hash password")
 			return
 		}
@@ -333,14 +333,14 @@ func (s *Handlers) updateUserPassword() http.HandlerFunc {
 
 		oldPassword, err := ct.Password(body.OldPassword).Hash()
 		if err != nil {
-			tele.Error(ctx, "failed to hash password", "error", err.Error())
+			tele.Error(ctx, "failed to hash password @1", "error", err.Error())
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "could not hash password")
 			return
 		}
 
 		newPassword, err := ct.Password(body.NewPassword).Hash()
 		if err != nil {
-			tele.Error(ctx, "failed to hash password", "error", err.Error())
+			tele.Error(ctx, "failed to hash password @1", "error", err.Error())
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "could not hash password")
 			return
 		}

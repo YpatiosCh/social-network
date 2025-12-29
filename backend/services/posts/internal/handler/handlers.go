@@ -30,7 +30,7 @@ func (s *PostsHandler) GetPostById(ctx context.Context, req *pb.GenericReq) (*pb
 		EntityId:    ct.Id(req.EntityId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetPostById", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetPostById. @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get post: %v", err)
 	}
 	return &pb.Post{
@@ -70,7 +70,7 @@ func (s *PostsHandler) CreatePost(ctx context.Context, req *pb.CreatePostReq) (*
 		ImageId:     ct.Id(req.ImageId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in CreatePost", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in CreatePost. @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to create post: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -86,7 +86,7 @@ func (s *PostsHandler) DeletePost(ctx context.Context, req *pb.GenericReq) (*emp
 		EntityId:    ct.Id(req.EntityId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in DeletePost", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in DeletePost. @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to delete post: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -107,7 +107,7 @@ func (s *PostsHandler) EditPost(ctx context.Context, req *pb.EditPostReq) (*empt
 		DeleteImage: req.GetDeleteImage(),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in EditPost", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in EditPost. @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to edit post: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -123,7 +123,7 @@ func (s *PostsHandler) GetMostPopularPostInGroup(ctx context.Context, req *pb.Si
 		Id: ct.Id(req.Id),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetMostPopularPostInGroup", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetMostPopularPostInGroup. @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get post: %v", err)
 	}
 	return &pb.Post{
@@ -159,7 +159,7 @@ func (s *PostsHandler) GetPersonalizedFeed(ctx context.Context, req *pb.GetPerso
 		Offset:      ct.Offset(req.Offset),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetPersonalizedFeed", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetPersonalizedFeed. @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get personalized feed: %v", err)
 	}
 	pbPosts := make([]*pb.Post, 0, len(posts))
@@ -199,7 +199,7 @@ func (s *PostsHandler) GetPublicFeed(ctx context.Context, req *pb.GenericPaginat
 		Offset:      ct.Offset(req.Offset),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetPublicFeed", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetPublicFeed @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get public feed: %v", err)
 	}
 	pbPosts := make([]*pb.Post, 0, len(posts))
@@ -240,7 +240,7 @@ func (s *PostsHandler) GetUserPostsPaginated(ctx context.Context, req *pb.GetUse
 		Offset:      ct.Offset(req.Offset),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetUserPostsPaginated", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetUserPostsPaginated @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get user posts: %v", err)
 	}
 	pbPosts := make([]*pb.Post, 0, len(posts))
@@ -281,7 +281,7 @@ func (s *PostsHandler) GetGroupPostsPaginated(ctx context.Context, req *pb.GetGr
 		Offset:      ct.Offset(req.Offset),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetGroupPostsPaginated", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetGroupPostsPaginated @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get group posts: %v", err)
 	}
 	pbPosts := make([]*pb.Post, 0, len(posts))
@@ -322,7 +322,7 @@ func (s *PostsHandler) CreateComment(ctx context.Context, req *pb.CreateCommentR
 		ImageId:   ct.Id(req.ImageId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in CreateComment", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in CreateComment @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to create comment: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -341,7 +341,7 @@ func (s *PostsHandler) EditComment(ctx context.Context, req *pb.EditCommentReq) 
 		DeleteImage: req.GetDeleteImage(),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in EditComment", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in EditComment @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to edit comment: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -357,7 +357,7 @@ func (s *PostsHandler) DeleteComment(ctx context.Context, req *pb.GenericReq) (*
 		EntityId:    ct.Id(req.EntityId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in DeleteComment", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in DeleteComment @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to delete comment: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -375,7 +375,7 @@ func (s *PostsHandler) GetCommentsByParentId(ctx context.Context, req *pb.Entity
 		Offset:      ct.Offset(req.Offset),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetCommentsByParentId", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetCommentsByParentId @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get comments: %v", err)
 	}
 	pbComments := make([]*pb.Comment, 0, len(comments))
@@ -415,7 +415,7 @@ func (s *PostsHandler) CreateEvent(ctx context.Context, req *pb.CreateEventReq) 
 		EventDate: ct.EventDateTime(req.EventDate.AsTime()),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in CreateEvent", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in CreateEvent @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to create event: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -431,7 +431,7 @@ func (s *PostsHandler) DeleteEvent(ctx context.Context, req *pb.GenericReq) (*em
 		EntityId:    ct.Id(req.EntityId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in DeleteEvent", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in DeleteEvent @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to delete event: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -452,7 +452,7 @@ func (s *PostsHandler) EditEvent(ctx context.Context, req *pb.EditEventReq) (*em
 		DeleteImage: req.GetDeleteImage(),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in EditEvent", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in EditEvent @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to edit event: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -470,7 +470,7 @@ func (s *PostsHandler) GetEventsByGroupId(ctx context.Context, req *pb.EntityIdP
 		Offset:      ct.Offset(req.Offset),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in GetEventsByGroupId", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in GetEventsByGroupId @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to get events: %v", err)
 	}
 	pbEvents := make([]*pb.Event, 0, len(events))
@@ -516,7 +516,7 @@ func (s *PostsHandler) RespondToEvent(ctx context.Context, req *pb.RespondToEven
 		Going:       req.Going,
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in RespondToEvent", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in RespondToEvent @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to respond to event: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -533,7 +533,7 @@ func (s *PostsHandler) RemoveEventResponse(ctx context.Context, req *pb.GenericR
 		EntityId:    ct.Id(req.EntityId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in RemoveEventResponse", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in RemoveEventResponse @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to remove event response: %v", err)
 	}
 	return &emptypb.Empty{}, nil
@@ -548,7 +548,7 @@ func (s *PostsHandler) SuggestUsersByPostActivity(ctx context.Context, req *pb.S
 		Id: ct.Id(req.Id),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in SuggestUsersByPostActivity", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in SuggestUsersByPostActivity @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to suggest users: %v", err)
 	}
 	pbUsers := make([]*cm.User, 0, len(users))
@@ -573,7 +573,7 @@ func (s *PostsHandler) ToggleOrInsertReaction(ctx context.Context, req *pb.Gener
 		EntityId:    ct.Id(req.EntityId),
 	})
 	if err != nil {
-		tele.Error(ctx, "Error in ToggleOrInsertReaction", "request", req, "error", err.Error())
+		tele.Error(ctx, "Error in ToggleOrInsertReaction @1 @2", "request", req, "error", err.Error())
 		return nil, status.Errorf(codes.Internal, "failed to react to post: %v", err)
 	}
 	return &emptypb.Empty{}, nil

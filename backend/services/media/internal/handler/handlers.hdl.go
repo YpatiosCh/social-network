@@ -67,7 +67,7 @@ func (m *MediaHandler) UploadImage(ctx context.Context,
 		variants,
 	)
 	if err != nil {
-		tele.Error(ctx, "failed to generate upload image url", "request:", req, "error:", err.Error())
+		tele.Error(ctx, "failed to generate upload image url. @1 @2", "request:", req, "error:", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
 			return nil, status.Errorf(codes.InvalidArgument, "failed to generate upload url: %v", err.(*ct.Error).Public())
 		}

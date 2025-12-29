@@ -1,243 +1,134 @@
-# retrieveusers package
+# retrieveusers
+
+This document outlines how to integrate and use the `retrieveusers` package in any Go service to efficiently fetch user information.
+
 ## Overview
 
-The retrieveusers package provides a batched, cached user lookup mechanism for services that store only user IDs locally but need to return basic user information in API responses.
+The `retrieveusers` package provides a `UserRetriever` struct that fetches user details (ID, Username, Avatar ID) and their corresponding avatar URLs. It optimizes performance by:
+1.  **Caching**: Checking Redis for existing user data.
+2.  **Batching**: Fetching missing data via batch gRPC calls to the Users Service.
+3.  **Media Integration**: Automatically resolving avatar image URLs using the `retrievemedia` package.
 
-## Responsibilities
+## Prerequisites
 
-The package is responsible for:
+To use `retrieveusers`, your service needs specific dependencies available, typically initialized during startup:
 
-- Retrieving basic user information by ID
+1.  **Users Service Client**: A gRPC client capable of making batch user info requests (`GetBatchBasicUserInfo`).
+2.  **Redis Client**: A shared Redis client wrapper (`*redis_connector.RedisClient`).
+3.  **Media Retriever**: An instance of `*retrievemedia.MediaRetriever` (used for fetching image URLs).
 
-- Deduplicating lookup requests
+## Integration Steps
 
-- Using Redis as a read-through cache
+### 1. Import the Package
 
-- Falling back to the Users service via a batch RPC
-
-- Returning results as a map[int64]models.User
-
-The package does not:
-
-- Mutate caller-owned data structures
-
-- Know about posts, comments, conversations, or domain models
-
-- Perform authorization checks
-
-- Expose transport-specific details to callers
-
-## Data model
-
-The retriever returns the following user model:
-
-```
-type User struct {
-    UserId   ct.Id
-    Username ct.Username
-    AvatarId ct.Id
-}
+```go
+import "social-network/backend/shared/go/retrieveusers"
 ```
 
-This represents the minimal user projection required by non-Users services.
+### 2. Initialize `UserRetriever`
 
-## Architecture
-```
-Caller
-  |
-  |-- collect user IDs
-  |
-  |-- UserRetriever.GetUsers(ctx, ids)
-          |
-          |-- Redis (cache hit)
-          |-- Users service (batch RPC, cache miss)
-          |-- Redis (write-through)
-  |
-  |-- caller assigns users into response objects
-```
+Instantiate `UserRetriever` in your application constructor or dependency injection setup. It is commonly stored alongside other service clients.
 
-## Public API
-```UserRetriever```
-```
-type UserRetriever struct {
-    clients UsersBatchClient
-    cache   RedisCache
-    ttl     time.Duration
-}
-```
-```Constructor```
-```
+**Signature:**
+```go
 func NewUserRetriever(
     clients UsersBatchClient,
-    cache RedisCache,
+    cache *redis_connector.RedisClient,
+    mediaRetriever *retrievemedia.MediaRetriever,
     ttl time.Duration,
 ) *UserRetriever
 ```
-### Parameters
-|Name|	Description|
-|--|--|
-|clients|	Abstraction over the Users service batch RPC
-|cache|	Redis-compatible cache implementation
-|ttl	|Cache TTL for user entries
 
+**Example Initialization (in `application.go` or similar):**
 
-```GetUsers```
-```
-func (r *UserRetriever) GetUsers(
-    ctx context.Context,
-    ids []int64,
-) (map[int64]models.User, error)
-```
-### Behavior
+```go
+// application.go
 
-- Deduplicates input IDs
-
-- Attempts to retrieve users from Redis
-
-- Fetches missing users via a single batch RPC
-
-- Caches retrieved users with the configured TTL
-
-- Returns a map keyed by user ID
-
-### Guarantees
-
-- At most one RPC call per invocation
-
-- Redis is always checked before RPC
-
-- Order of input IDs is preserved by the caller, not the retriever
-
-## Required interfaces
-### UsersBatchClient
-
-The caller must supply a client that implements:
-```
-type UsersBatchClient interface {
-    GetBatchBasicUserInfo(
-        ctx context.Context,
-        userIds []int64,
-    ) (*userpb.ListUsers, error)
-}
-```
-
-This allows each service to use its own Users client implementation.
-
-### RedisCache
-
-The cache must implement:
-```
-type RedisCache interface {
-    GetObj(ctx context.Context, key string, dest any) error
-    SetObj(ctx context.Context, key string, value any, exp time.Duration) error
-}
-```
-
-Any Redis adapter matching this contract may be used.
-
-## Service integration
-### Application wiring
-```
-cache := redis_connector.NewRedisClient("localhost:6379", "", 0)
-
-userRetriever := retrieveusers.NewUserRetriever(
-    clients,        // UsersBatchClient
-    cache,          // RedisCache
-    3*time.Minute,  // TTL
-)
-
-app := &Application{
-    db:          db,
-    clients:     clients,
-    userFetcher: userRetriever,
-}
-```
-### Usage patterns
-## Hydrating a slice of user IDs
-```
-userMap, err := s.userFetcher.GetUsers(ctx, ids)
-if err != nil {
-    return nil, err
+type Application struct {
+    // ... other fields
+    userRetriever *retrieveusers.UserRetriever
 }
 
-users := make([]models.User, 0, len(ids))
-for _, id := range ids {
-    if u, ok := userMap[id]; ok {
-        users = append(users, u)
+func NewApplication(
+    // ... config
+    redisClient *redis_connector.RedisClient,
+    usersClient myservice.UsersClient, // Impelements UsersBatchClient
+    mediaRetriever *retrievemedia.MediaRetriever,
+) *Application {
+    
+    // Valid cache duration, e.g., 5 minutes
+    userCacheTTL := 5 * time.Minute
+
+    return &Application{
+        // ...
+        userRetriever: retrieveusers.NewUserRetriever(
+            usersClient, 
+            redisClient, 
+            mediaRetriever, 
+            userCacheTTL,
+        ),
     }
 }
 ```
-## Hydrating posts
-```
-var ids []int64
-for _, p := range posts {
-    ids = append(ids, p.User.UserId.Int64())
-}
 
-userMap, err := s.userFetcher.GetUsers(ctx, ids)
-if err != nil {
-    return nil, err
-}
+### 3. Usage
 
-for i := range posts {
-    uid := posts[i].User.UserId.Int64()
-    posts[i].User = userMap[uid]
-}
+Use the `GetUsers` method to enrich data with user details. It takes a list of User IDs and returns a map of User objects.
+
+**Method Signature:**
+```go
+func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id]models.User, error)
 ```
 
-## Hydrating nested users (e.g. conversations)
-```
-var ids []int64
-for _, c := range conversations {
-    for _, m := range c.Members {
-        ids = append(ids, m.UserId.Int64())
+**Example Usage (Generic Enrichment):**
+
+```go
+func (a *Application) GetItems(ctx context.Context, args AnyArgs) ([]ItemDTO, error) {
+    // 1. Fetch raw items from DB/Source
+    items, err := a.db.GetItems(ctx, args)
+    if err != nil {
+        return nil, err
     }
-}
 
-userMap, err := s.userFetcher.GetUsers(ctx, ids)
-if err != nil {
-    return nil, err
-}
-
-for i := range conversations {
-    for j := range conversations[i].Members {
-        uid := conversations[i].Members[j].UserId.Int64()
-        conversations[i].Members[j] = userMap[uid]
+    // 2. Collect unique User IDs from items
+    var userIds ct.Ids
+    for _, item := range items {
+        userIds = append(userIds, ct.Id(item.CreatorID))
     }
+
+    // 3. Retrieve User Info (Map: UserID -> User Model)
+    userMap, err := a.userRetriever.GetUsers(ctx, userIds)
+    if err != nil {
+        // Handle error (log it, return partial data, or fail)
+        return nil, err
+    }
+
+    // 4. Enrich items with User data
+    result := make([]ItemDTO, 0, len(items))
+    for _, item := range items {
+        dto := ItemDTO{
+            ID:   item.ID,
+            Data: item.Data,
+        }
+        
+        // Attach user info if found
+        if user, found := userMap[ct.Id(item.CreatorID)]; found {
+            dto.CreatorName = string(user.Username)
+            dto.AvatarURL   = user.AvatarURL
+        }
+        
+        result = append(result, dto)
+    }
+
+    return result, nil
 }
 ```
-### Error handling semantics
 
-|Condition	|Behavior
-|--|--|
-|Redis miss	|Fetch from Users service
-|Redis failure	|Return error
-|Users service failure|	Return error
-|Cache write failure|	Logged, ignored
-|Missing user ID|	Silently skipped
+## Internal Workflow
 
-### Design rationale
-
-- Map-based return avoids implicit mutation
-
-- Batch-only API prevents N+1 RPC calls
-
-- Service-local clients avoid shared dependencies
-
-- Minimal interface contracts enable easy mocking
-
-### Testing guidance
-
-Mock only:
-
-```UsersBatchClient```
-
-```RedisCache```
-
-The retriever contains no domain logic and can be tested independently from application code.
-
-### Summary
-
-retrieveusers provides a reusable, efficient, and decoupled mechanism for resolving user IDs into basic user data across services.
-
-It intentionally avoids domain coupling and object mutation, allowing callers to retain full control over response assembly.
+When `GetUsers` is called:
+1.  **Redis Check**: It looks for keys like `basic_user_info:<id>`.
+2.  **Fetch Missing**: If keys are missing, it calls `clients.GetBatchBasicUserInfo` for those specific IDs.
+3.  **Cache Update**: New user data is cached in Redis with the configured TTL.
+4.  **Fetch Media**: It extracts `AvatarId` from the users and calls `mediaRetriever.GetImages` to resolve the actual image URLs (which also has its own caching layer).
+5.  **Merge**: Returns the complete map of `models.User` with populated `AvatarURL`s.

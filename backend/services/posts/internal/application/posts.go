@@ -88,6 +88,19 @@ func (s *Application) DeletePost(ctx context.Context, req models.GenericReq) err
 		return err
 	}
 
+	accessCtx := accessContext{
+		requesterId: req.RequesterId.Int64(),
+		entityId:    req.EntityId.Int64(),
+	}
+
+	hasAccess, err := s.hasRightToView(ctx, accessCtx)
+	if err != nil {
+		return err
+	}
+	if !hasAccess {
+		return ErrNotAllowed
+	}
+
 	rowsAffected, err := s.db.DeletePost(ctx, ds.DeletePostParams{
 		ID:        int64(req.EntityId),
 		CreatorID: req.RequesterId.Int64(),
@@ -152,7 +165,7 @@ func (s *Application) EditPost(ctx context.Context, req models.EditPostReq) erro
 				return err
 			}
 			if rowsAffected != 1 {
-				tele.Warn(ctx, "EditPost: image to be deleted not found", "request", req)
+				tele.Warn(ctx, "EditPost: image to be deleted not found. @1", "request", req)
 			}
 		}
 		// edit audience
@@ -165,7 +178,7 @@ func (s *Application) EditPost(ctx context.Context, req models.EditPostReq) erro
 			return err
 		}
 		if rowsAffected != 1 {
-			tele.Warn(ctx, "EditPost: no audience change", "request", req)
+			tele.Warn(ctx, "EditPost: no audience change. @1", "request", req)
 		}
 
 		// edit audience ids
