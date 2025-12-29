@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,15 +48,20 @@ func newLogger(serviceName string, contextKeys contextKeys, enableDebug bool, si
 
 	logger := slog.New(handler)
 
-	return &logging{
+	if prefix == "" {
+		prefix = serviceName
+	}
+
+	logging := &logging{
 		serviceName: serviceName,
 		contextKeys: contextKeys.GetKeys(),
 		slog:        logger,
 		enableDebug: enableDebug,
 		simplePrint: simplePrint,
 		prefix:      prefix,
-		hasPrefix:   "" != prefix,
 	}
+
+	return logging
 }
 
 func newBasicLogger() *logging {
@@ -69,7 +76,40 @@ func (l *logging) log(ctx context.Context, level slog.Level, msg string, args ..
 		return
 	}
 
+	argsAlreadyPrinted := make([]bool, (len(args)/2)*2)
+	var messageBuilder strings.Builder
 	callerInfo := functionCallers()
+	var max byte = byte(min(9, len(args)/2))
+
+	for i := 0; i < len(msg); i++ {
+		curr := msg[i]
+		if curr == '@' {
+			if i == len(msg) {
+				break
+			}
+			next := msg[i+1] - '0'
+			if next >= 1 && next <= 9 && next <= max {
+				i++
+				key, ok := args[(next-1)*2].(string)
+				if ok == false {
+					key = "bad_key!"
+				}
+				messageBuilder.WriteRune('(')
+				messageBuilder.WriteString(key)
+				messageBuilder.WriteString(": ")
+				val, ok := args[(next-1)*2+1].(string)
+				if ok == false {
+					val = formatArg(args[(next-1)*2+1])
+				}
+				messageBuilder.WriteString(val)
+				messageBuilder.WriteRune(')')
+				argsAlreadyPrinted[(next-1)*2] = true
+				argsAlreadyPrinted[(next-1)*2+1] = true
+				continue
+			}
+		}
+		messageBuilder.WriteByte(curr)
+	}
 
 	ctxArgs := []slog.Attr{}
 	if ctx == nil {
@@ -78,34 +118,34 @@ func (l *logging) log(ctx context.Context, level slog.Level, msg string, args ..
 		ctxArgs = l.context2Attributes(ctx)
 	}
 
-	var prefix string
-	if l.hasPrefix {
-		prefix = l.prefix
-	} else {
-		prefix = l.serviceName
-	}
-
+	message := messageBuilder.String()
 	l.slog.Log(
 		ctx,
 		level,
-		msg,
+		message,
 		slog.GroupAttrs("customArgs", kvPairsToAttrs(args)...),
 		slog.GroupAttrs("context", ctxArgs...),
 		slog.String("callers", callerInfo),
-		slog.String("prefix", prefix),
+		slog.String("prefix", l.prefix),
 	)
 
-	if !l.simplePrint {
+	if !l.simplePrint && len(ctxArgs) > 0 {
 		args = append(args, ctxArgs)
 	}
 
-	var argsPart string
+	messageBuilder.Reset()
+	messageBuilder.WriteString(time.Now().Format("15:04:05.000"))
+	messageBuilder.WriteString(" [")
+	messageBuilder.WriteString(l.prefix)
+	messageBuilder.WriteString("]: ")
+	messageBuilder.WriteString(level.String())
+	messageBuilder.WriteRune(' ')
+	messageBuilder.WriteString(message)
 	if len(args) > 0 {
-		argsPart = fmt.Sprintf(" - args: %s", formatArgs(args...))
+		formatArgs(&messageBuilder, argsAlreadyPrinted, args...)
 	}
-
-	time := fmt.Sprint(time.Now().Format("15:04:05.000"))
-	fmt.Printf("%s [%s]: %s - %s%s\n", time, prefix, level.String(), msg, argsPart)
+	messageBuilder.WriteRune('\n')
+	fmt.Fprint(os.Stdout, messageBuilder.String())
 }
 
 func kvPairsToAttrs(pairs []any) []slog.Attr {
@@ -120,10 +160,17 @@ func kvPairsToAttrs(pairs []any) []slog.Attr {
 	return attrs
 }
 
-func formatArgs(args ...any) any {
-	parts := make([]any, 0, len(args))
+func formatArgs(builder *strings.Builder, alreadyPrinted []bool, args ...any) {
+	prefixPrinted := false
+	for i, arg := range args {
+		if alreadyPrinted[i] {
+			continue
+		}
+		if prefixPrinted == false {
+			builder.WriteString(" args: ")
+			prefixPrinted = true
+		}
 
-	for _, arg := range args {
 		v := reflect.ValueOf(arg)
 
 		// Handle pointers
@@ -132,13 +179,34 @@ func formatArgs(args ...any) any {
 		}
 
 		if v.Kind() == reflect.Struct {
-			parts = append(parts, fmt.Sprintf("%#v", arg))
+			fmt.Fprintf(builder, "%#v ", arg)
 		} else {
-			parts = append(parts, fmt.Sprint(arg))
+			fmt.Fprint(builder, arg)
 		}
+
+		if i%2 == 0 {
+			builder.WriteString(":")
+		} else {
+			builder.WriteString(" ")
+		}
+
 	}
 
-	return fmt.Sprint(parts...)
+}
+
+func formatArg(arg any) string {
+	v := reflect.ValueOf(arg)
+
+	// Handle pointers
+	if v.Kind() == reflect.Pointer && !v.IsNil() {
+		v = v.Elem()
+	}
+
+	if v.Kind() == reflect.Struct {
+		return fmt.Sprintf("%#v", arg)
+	}
+
+	return fmt.Sprint(arg)
 }
 
 func (l *logging) context2Attributes(ctx context.Context) []slog.Attr {
@@ -154,7 +222,8 @@ func (l *logging) context2Attributes(ctx context.Context) []slog.Attr {
 }
 
 func functionCallers() string {
-	var callers = []string{}
+	var builder strings.Builder
+	builder.Grow(150)
 	pc := make([]uintptr, 3)
 	n := runtime.Callers(4, pc)
 	if n == 0 {
@@ -164,15 +233,17 @@ func functionCallers() string {
 	frames := runtime.CallersFrames(pc)
 	for {
 		frame, more := frames.Next()
-		if strings.Contains(frame.Function, "runtime_test") {
-			break
-		}
-		start := strings.LastIndex(frame.Func.Name(), "/")
-		callers = append(callers, fmt.Sprintf("by %s at %d ", frame.Func.Name()[start+1:], frame.Line))
+		name := frame.Func.Name()
+		start := strings.LastIndex(name, "/")
+		builder.WriteString("by ")
+		builder.WriteString(name[start+1:])
+		builder.WriteString(" at ")
+		builder.WriteString(strconv.Itoa(frame.Line))
+		builder.WriteString("\n")
 		if !more {
 			break
 		}
 	}
 
-	return strings.Join(callers, "\n")
+	return builder.String()
 }

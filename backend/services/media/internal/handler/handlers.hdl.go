@@ -67,7 +67,7 @@ func (m *MediaHandler) UploadImage(ctx context.Context,
 		variants,
 	)
 	if err != nil {
-		tele.Error(ctx, "failed to generate upload image url", "request:", req, "error:", err.(*ct.Error).Error())
+		tele.Error(ctx, "failed to generate upload image url. @1 @2", "request:", req, "error:", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
 			return nil, status.Errorf(codes.InvalidArgument, "failed to generate upload url: %v", err.(*ct.Error).Public())
 		}
@@ -106,7 +106,7 @@ func (m *MediaHandler) GetImage(ctx context.Context,
 	if err != nil {
 		tele.Error(ctx, "get image error", "request", req, "error", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to get generate download url: %v", err.(*ct.Error).Public())
+			return nil, status.Errorf(codes.InvalidArgument, "failed to get generate download url. @1", "error", err.(*ct.Error).Public())
 		}
 		if errors.Is(err, application.ErrFailed) {
 			return nil, status.Errorf(codes.NotFound, "failed to get generate download url: %v", err.(*ct.Error).Public())
@@ -142,7 +142,7 @@ func (m *MediaHandler) GetImages(ctx context.Context,
 	if err != nil {
 		tele.Error(ctx, "get images error", "request", req, "error", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to generate download urls: %v", err.(*ct.Error).Public())
+			return nil, status.Errorf(codes.InvalidArgument, "failed to generate download urls: @1", "error", err.(*ct.Error).Public())
 		}
 		if errors.Is(err, application.ErrNotFound) {
 			return nil, status.Errorf(codes.NotFound, "failed to generated download urls: %v", err.(*ct.Error).Public())
@@ -188,7 +188,7 @@ func (m *MediaHandler) ValidateUpload(ctx context.Context,
 	if err != nil {
 		tele.Error(ctx, "validate image error", "request", req, "error", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to validate upload: %v", err.(*ct.Error).Public())
+			return nil, status.Errorf(codes.InvalidArgument, "failed to validate upload. @1", "error", err.(*ct.Error).Public())
 		}
 
 		if errors.Is(err, application.ErrNotFound) {

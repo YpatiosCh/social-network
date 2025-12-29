@@ -28,6 +28,9 @@ func Run() error {
 
 	cfgs := getConfigs()
 
+	//
+	//
+	//
 	// TELEMETRY
 	closeTelemetry, err := tele.InitTelemetry(ctx, "posts", "PST", cfgs.TelemetryCollectorAddress, ct.CommonKeys(), cfgs.EnableDebugLogs, cfgs.SimplePrint)
 	if err != nil {
@@ -37,6 +40,10 @@ func Run() error {
 
 	tele.Info(ctx, "initialized telemetry")
 
+	//
+	//
+	//
+	// DATABASE
 	dbUrl := os.Getenv("DATABASE_URL")
 	pool, err := postgresql.NewPool(ctx, dbUrl)
 	if err != nil {
@@ -45,6 +52,10 @@ func Run() error {
 	defer pool.Close()
 	tele.Info(ctx, "Connected to posts-db database")
 
+	//
+	//
+	//
+	// GRPC CLIENTS
 	UsersService, err := gorpc.GetGRpcClient(
 		users.NewUserServiceClient,
 		cfgs.UsersGRPCAddr,
@@ -63,6 +74,10 @@ func Run() error {
 		tele.Fatalf("failed to connect to media service: %v", err)
 	}
 
+	//
+	//
+	//
+	// REDIS
 	redisConnector := rds.NewRedisClient(cfgs.RedisAddr, cfgs.RedisPassword, cfgs.RedisDB)
 
 	clients := client.NewClients(UsersService, MediaService)
@@ -73,8 +88,12 @@ func Run() error {
 	}
 
 	service := handler.NewPostsHandler(app)
-
 	tele.Info(ctx, "Running gRpc service...")
+
+	//
+	//
+	//
+	// GRPC SERVER
 	startServerFunc, endServerFunc, err := gorpc.CreateGRpcServer[posts.PostsServiceServer](
 		posts.RegisterPostsServiceServer,
 		service,
@@ -90,9 +109,13 @@ func Run() error {
 		if err != nil {
 			tele.Fatal("server failed to start")
 		}
-		fmt.Println("server finished")
+		tele.Info(ctx, "server finished")
 	}()
 
+	//
+	//
+	//
+	// SHUTDOWN
 	// wait here for process termination signal to initiate graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
