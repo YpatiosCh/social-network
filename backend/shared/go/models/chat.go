@@ -100,7 +100,7 @@ type GetNextMessagesResp struct {
 
 type GetUserConversationsParams struct {
 	UserId       ct.Id
-	GroupId      ct.Id
+	GroupId      ct.Id `validation:"nullable"`
 	Limit        ct.Limit
 	Offset       ct.Offset
 	HydrateUsers bool

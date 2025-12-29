@@ -6,13 +6,10 @@ import (
 	md "social-network/shared/go/models"
 )
 
-// Initiates the conversation by groupId. Group Id should be a not null value
+// Initiates the conversation by groupId. Group Id should be a not null value.
 // Use as a preparation for adding members
 func (q *Queries) CreateGroupConv(ctx context.Context,
 	groupId ct.Id) (convId ct.Id, err error) {
-	if err := groupId.Validate(); err != nil {
-		return convId, err
-	}
 	row := q.db.QueryRow(ctx, createGroupConv, groupId)
 	err = row.Scan(&convId)
 	return convId, err

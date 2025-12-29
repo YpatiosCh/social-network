@@ -98,7 +98,7 @@ func (i Id) Value() (driver.Value, error) {
 
 func (e Id) Validate() error {
 	if !e.isValid() {
-		return errors.Join(ErrValidation, errors.New("id must be positive got: "+fmt.Sprint(e)))
+		return fmt.Errorf("%w id must be positive got: %v", ErrValidation, e)
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"social-network/services/chat/internal/db/dbservice"
+	ce "social-network/services/chat/internal/errors"
 	ct "social-network/shared/go/ct"
 	md "social-network/shared/go/models"
 )
@@ -13,21 +14,29 @@ import (
 // Returns NULL if a duplicate DM exists (sql will error if RETURNING finds no rows).
 func (c *ChatService) CreatePrivateConversation(ctx context.Context,
 	params md.CreatePrivateConvParams) (convId ct.Id, err error) {
+
+	errMsg := fmt.Sprintf("create private conversation: user ids: %d, %d", params.UserA, params.UserB)
+
 	if err := ct.ValidateStruct(params); err != nil {
-		return 0, err
+		return 0, ct.Wrap(ce.ErrInvalid, err, errMsg)
 	}
 
 	convId, err = c.Queries.CreatePrivateConv(ctx, params)
 	if err == sql.ErrNoRows {
-		return 0, fmt.Errorf("conversation already exists")
+		return 0, ct.Wrap(ce.ErrAlreadyExists, err, errMsg)
+	} else if err != nil {
+		return 0, ct.Wrap(ce.ErrInternal, err, errMsg)
 	}
-	return convId, err
+	return convId, nil
 }
 
 func (c *ChatService) CreateGroupConversation(ctx context.Context,
 	params md.CreateGroupConvParams) (convId ct.Id, err error) {
+
+	errMsg := fmt.Sprintf("create group conversation: group id: %d, user ids: %d", params.GroupId, params.UserIds)
+
 	if err := ct.ValidateStruct(params); err != nil {
-		return 0, err
+		return 0, ct.Wrap(ce.ErrInvalid, err, errMsg)
 	}
 
 	err = c.txRunner.RunTx(ctx,
@@ -50,18 +59,22 @@ func (c *ChatService) CreateGroupConversation(ctx context.Context,
 // Returns 0 rows if conversation doesn't exist, members don’t match exactly, conversation has extra or missing members.
 func (c *ChatService) DeleteConversationByExactMembers(ctx context.Context,
 	ids ct.Ids) (conv md.ConversationDeleteResp, err error) {
+	errMsg := fmt.Sprintf("delete conversation by exact members: ids: %d", ids)
+
 	if err := ids.Validate(); err != nil {
-		return conv, err
+		return conv, ct.Wrap(ce.ErrInvalid, err, errMsg)
 	}
+
 	conv, err = c.Queries.DeleteConversationByExactMembers(ctx, ids)
 	if err != nil {
-		return conv, err
+		return conv, ct.Wrap(ce.ErrInternal, err, errMsg)
 	}
 
 	if conv == (md.ConversationDeleteResp{}) {
-		err = fmt.Errorf("conversation not found")
+		return conv, ct.Wrap(ce.ErrNotFound, fmt.Errorf("db response is empty"), errMsg)
 	}
-	return conv, err
+
+	return conv, nil
 }
 
 // Fetches paginated conversation details, conversation members Ids and unread messages count for a user and a group
@@ -71,13 +84,16 @@ func (c *ChatService) DeleteConversationByExactMembers(ctx context.Context,
 func (c *ChatService) GetUserConversations(ctx context.Context,
 	arg md.GetUserConversationsParams,
 ) (conversations []md.GetUserConversationsResp, err error) {
+
+	errMsg := fmt.Sprintf("get user conversations: arg: %#v", arg)
+
 	if err := ct.ValidateStruct(arg); err != nil {
-		return nil, err
+		return nil, ct.Wrap(ce.ErrInvalid, err, errMsg)
 	}
 
 	resp, err := c.Queries.GetUserConversations(ctx, arg)
 	if err != nil {
-		return conversations, err
+		return conversations, ct.Wrap(ce.ErrInternal, err, errMsg)
 	}
 
 	if !arg.HydrateUsers {
@@ -92,8 +108,9 @@ func (c *ChatService) GetUserConversations(ctx context.Context,
 
 	usersMap, err := c.Clients.UserIdsToMap(ctx, allMemberIDs)
 	if err != nil {
-		return nil, err
+		return nil, ct.Wrap(ce.ErrUsersService, err, errMsg)
 	}
+
 	return ConvertConversations(ctx, usersMap, resp)
 }
 

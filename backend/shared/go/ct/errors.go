@@ -13,7 +13,7 @@ type Error struct {
 	msg  string // Context: Func, args etc.
 }
 
-var ErrUnknownClass = errors.New("unknown classification error")
+var ErrUnknownClass = errors.New("unknown classification error") // kind is nil
 
 // Returns a string with all available fields of err
 func (e *Error) Error() string {

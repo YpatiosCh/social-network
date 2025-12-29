@@ -112,15 +112,48 @@ const (
 		FROM conversations
 		WHERE group_id = $1
 		AND deleted_at IS NULL
+		LIMIT 1
+	),
+	validated AS (
+		SELECT
+			id AS conversation_id,
+			cardinality($2::bigint[]) AS requested_count
+		FROM convo
 	),
 	insert_members AS (
 		INSERT INTO conversation_members (conversation_id, user_id)
-		SELECT (SELECT id FROM convo), unnest($2::bigint[])
+		SELECT
+			validated.conversation_id,
+			u.user_id
+		FROM validated
+		JOIN unnest($2::bigint[]) AS u(user_id)
+			ON validated.requested_count > 0
 		ON CONFLICT (conversation_id, user_id) DO NOTHING
-		RETURNING conversation_id
+		RETURNING 1
 	)
-	SELECT id FROM convo
+	SELECT
+		validated.conversation_id,
+		validated.requested_count,
+		COUNT(insert_members.*) AS inserted_count
+	FROM validated
+	LEFT JOIN insert_members ON TRUE
+	GROUP BY validated.conversation_id, validated.requested_count;
 `
+	// 	addMembersToGroupConversation = `
+	// 	WITH convo AS (
+	// 		SELECT id
+	// 		FROM conversations
+	// 		WHERE group_id = $1
+	// 		AND deleted_at IS NULL
+	// 	),
+	// 	insert_members AS (
+	// 		INSERT INTO conversation_members (conversation_id, user_id)
+	// 		SELECT (SELECT id FROM convo), unnest($2::bigint[])
+	// 		ON CONFLICT (conversation_id, user_id) DO NOTHING
+	// 		RETURNING conversation_id
+	// 	)
+	// 	SELECT id FROM convo
+	// `
 
 	// MEMBERS
 	getConversationMembers = `
