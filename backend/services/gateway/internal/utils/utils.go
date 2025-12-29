@@ -92,7 +92,7 @@ func ErrorJSON(ctx context.Context, w http.ResponseWriter, code int, msg string)
 	tele.Warn(ctx, "Sending error response @1, @2", "code", code, "error_message", msg)
 	err := WriteJSON(ctx, w, code, map[string]string{"error": msg})
 	if err != nil {
-		tele.Warn(ctx, "Failed to send error message: @1, @2, @3\n", "error_message", msg, "code", code, "error", err.Error()))
+		tele.Warn(ctx, "Failed to send error message: @1, @2, @3\n", "error_message", msg, "code", code, "error", err.Error())
 	}
 }
 
