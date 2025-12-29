@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type Clients interface {
+type S3Service interface {
 	GenerateDownloadURL(
 		ctx context.Context,
 		bucket string,

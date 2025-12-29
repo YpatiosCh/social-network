@@ -46,7 +46,7 @@ func (m *MediaService) processPendingVariants(ctx context.Context) error {
 	}
 
 	for _, v := range variants {
-		size, err := m.Clients.GenerateVariant(ctx,
+		size, err := m.S3.GenerateVariant(ctx,
 			v.SrcBucket,
 			v.SrcObjectKey,
 			v.Bucket,

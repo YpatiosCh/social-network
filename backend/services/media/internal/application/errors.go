@@ -17,62 +17,10 @@ var (
 	ErrInternal      = errors.New("internal error")
 )
 
-type MediaError struct {
-	Kind error  // Classification: ErrNotFound, ErrInternal, etc.
-	Err  error  // Cause: wrapped original error.
-	Msg  string // Context: Func, args etc.
-}
-
-func (e *MediaError) Error() string {
-	switch {
-	case e.Msg != "" && e.Err != nil:
-		return fmt.Sprintf("%s: %s: %v", e.Kind, e.Msg, e.Err)
-	case e.Msg != "":
-		return fmt.Sprintf("%s: %s", e.Kind, e.Msg)
-	case e.Err != nil:
-		return fmt.Sprintf("%s: %v", e.Kind, e.Err)
-	default:
-		return e.Kind.Error()
-	}
-}
-
-func (e *MediaError) Unwrap() error {
-	return e.Err
-}
-
-// TODO: Check cases of nil kind
-func Wrap(kind error, err error, msg ...string) error {
-	if err == nil {
-		return nil
-	}
-
-	// If it's already a MediaError, just add context
-	var me *MediaError
-	if errors.As(err, &me) && kind == nil {
-		if len(msg) > 0 {
-			return &MediaError{
-				Kind: me.Kind, // preserve classification
-				Msg:  msg[0],
-				Err:  err,
-			}
-		}
-		return err
-	}
-
-	// Fresh classification
-	e := &MediaError{
-		Kind: kind,
-		Err:  err,
-	}
-	if len(msg) > 0 {
-		e.Msg = msg[0]
-	}
-	return e
-}
-
 // Maps a file status to application errors and returns error.
 // Caller decides if adding extra info about the file
 func validateFileStatus(fm dbservice.File) error {
+	ErrValidateStatus := errors.New("validate status error")
 	errMsg := fmt.Sprintf(
 		"file id %v file name %v status %v",
 		fm.Id,
@@ -85,15 +33,15 @@ func validateFileStatus(fm dbservice.File) error {
 	}
 
 	if err := fm.Status.Validate(); err != nil {
-		return Wrap(ErrFailed, err, errMsg)
+		return ct.Wrap(ErrFailed, err, errMsg)
 	}
 
 	if fm.Status == ct.Failed {
-		return Wrap(ErrFailed, nil, errMsg)
+		return ct.Wrap(ErrFailed, ErrValidateStatus, errMsg)
 	}
 
 	if fm.Status == ct.Pending || fm.Status == ct.Processing {
-		return Wrap(ErrNotValidated, nil, errMsg)
+		return ct.Wrap(ErrNotValidated, ErrValidateStatus, errMsg)
 	}
 
 	return nil
@@ -107,10 +55,10 @@ func mapDBError(err error) error {
 	}
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return Wrap(ErrNotFound, err)
+		return ct.Wrap(ErrNotFound, err)
 	}
 
-	return Wrap(ErrInternal, err)
+	return ct.Wrap(ErrInternal, err)
 }
 
 // validateUploadRequest validates all inputs required to create an image upload.

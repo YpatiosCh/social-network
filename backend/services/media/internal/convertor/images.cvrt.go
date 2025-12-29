@@ -66,6 +66,7 @@ func (i *ImageConvertor) ConvertImageToVariant(
 	return out, nil
 }
 
+// Extracts orientation meta data and applies it to image
 func decodeWithOrientation(buf []byte) (image.Image, error) {
 	img, _, err := image.Decode(bytes.NewReader(buf))
 	if err != nil {
@@ -178,6 +179,8 @@ func transformImage(
 	return dst
 }
 
+// Returns and image.Image object resized to the variant specs. If the image dimentions
+// are smaller that the variant specs then the object is returned as is.
 func resizeForVariant(src image.Image, variant ct.FileVariant) image.Image {
 	maxWidth, maxHeight := variantToSize(variant)
 	bounds := src.Bounds()

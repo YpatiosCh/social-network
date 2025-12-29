@@ -304,3 +304,86 @@ if err != nil {
 **Marshal/Unmarshal**: Standard string.
 
 **Usage**: Group/chat titles.
+
+
+### Error
+
+**Description**: Custom error type that includes classification, cause, and context. It implements the error interface and supports error wrapping and classification.
+
+**Validation**: N/A (not a Validator).
+
+**Marshal/Unmarshal**: N/A.
+
+**Usage**: For structured error handling with kinds like ErrNotFound, ErrInternal, etc. Supports errors.Is and errors.As.
+
+**Methods**: 
+#### Wrap():
+Wrap creates a MediaError that classifies and optionally wraps an existing error.
+
+Usage:
+  - kind: the classification of the error (e.g., ErrFailed, ErrNotFound). If nil, ErrUnknownClass is used.
+  - err: the underlying error to wrap; if nil, Wrap returns nil.
+  - msg: optional context message describing where or why the error occurred.
+Behavior:
+  - If `err` is already a MediaError and `kind` is nil, it preserves the original Kind and optionally adds a new message.
+  - Otherwise, it creates a new MediaError with the specified Kind, Err, and message.
+  - The resulting MediaError supports errors.Is (matches Kind) and errors.As (type assertion) and preserves the wrapped cause.
+  - If kind is nil and the err is not media error or lacks kind then kind is set to ErrUnknownClass.
+
+It is recommended to only use nil kind if the underlying error is of type MediaError and its kind is not nil.   
+   
+Example:
+```go
+if err != nil {
+    return Wrap(ErrReqValidation, err, "upload image:")
+}
+```
+
+#### Public:
+Returns a string containing only the kind field of Error. Recommeded use for APIs and handler respones
+```go
+err.(*ct.Error).Public()
+```
+
+#### Error():
+Verbose and detailed string of error.
+Behavior:
+  - If `err` is already a MediaError and `kind` is nil, it preserves the original Kind and optionally adds a new message.
+  - Otherwise, it creates a new MediaError with the specified Kind, Err, and message.
+  - The resulting MediaError supports errors.Is (matches Kind) and errors.As (type assertion) and preserves the wrapped cause.
+  - If kind is nil and the err is not media error or lacks kind then kind is set to ErrUnknownClass.
+
+*It is recommended to only use nil kind if the underlying error is of type MediaError and its kind is not nil.*
+
+
+### FileVisibility
+
+**Description**: Represents the visibility level of a file. It can be either "private" or "public".
+
+**Validation**: Must be "private" or "public".
+
+**Marshal/Unmarshal**: Standard string. Implements JSON marshal/unmarshal and database Scan/Value.
+
+**Usage**: File access control. Private files expire in 3 minutes, public in 6 hours.
+
+
+### FileVariant
+
+**Description**: Represents the variant or size of a file. It can be "original", "thumb", "small", "medium", or "large".
+
+**Validation**: Must be one of the defined variants.
+
+**Marshal/Unmarshal**: Standard string. Implements JSON marshal/unmarshal and database Scan/Value.
+
+**Usage**: Image resizing variants for media files.
+
+
+### UploadStatus
+
+**Description**: Represents the status of a file upload process. It can be "pending", "processing", "complete", or "failed".
+
+**Validation**: Must be one of the defined statuses.
+
+**Marshal/Unmarshal**: Standard string. Implements JSON marshal/unmarshal and database Scan/Value.
+
+**Usage**: Tracking file upload progress.

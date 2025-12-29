@@ -19,7 +19,7 @@ type TxRunner interface {
 // Holds logic for requests and calls
 type MediaService struct {
 	Pool     *pgxpool.Pool
-	Clients  Clients
+	S3       S3Service
 	Queries  dbservice.Querier
 	txRunner TxRunner
 	Cfgs     configs.Config
@@ -45,7 +45,7 @@ func NewMediaService(
 	}
 	return &MediaService{
 		Pool:     pool,
-		Clients:  clients,
+		S3:       clients,
 		Queries:  queries,
 		txRunner: txRunner,
 		Cfgs:     cfgs,

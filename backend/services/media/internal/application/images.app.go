@@ -36,11 +36,7 @@ func (m *MediaService) UploadImage(ctx context.Context,
 		exp,
 		variants,
 	); err != nil {
-		return 0, "", Wrap(
-			ErrReqValidation,
-			err,
-			"upload image:",
-		)
+		return 0, "", ct.Wrap(ErrReqValidation, err)
 	}
 
 	objectKey := uuid.NewString()
@@ -62,7 +58,7 @@ func (m *MediaService) UploadImage(ctx context.Context,
 			})
 
 			if err != nil {
-				return Wrap(
+				return ct.Wrap(
 					ErrInternal,
 					err,
 					fmt.Sprintf(
@@ -85,7 +81,7 @@ func (m *MediaService) UploadImage(ctx context.Context,
 					Variant:    v,
 				})
 				if err != nil {
-					return Wrap(
+					return ct.Wrap(
 						ErrInternal,
 						err,
 						fmt.Sprintf(
@@ -95,9 +91,9 @@ func (m *MediaService) UploadImage(ctx context.Context,
 				}
 			}
 
-			url, err = m.Clients.GenerateUploadURL(ctx, orignalsBucket, objectKey, exp)
+			url, err = m.S3.GenerateUploadURL(ctx, orignalsBucket, objectKey, exp)
 			if err != nil {
-				return Wrap(
+				return ct.Wrap(
 					ErrInternal,
 					err,
 					fmt.Sprintf(
@@ -125,7 +121,7 @@ func (m *MediaService) GetImage(
 	errMsg := fmt.Sprintf("get image err: id: %d variant: %s", imgId, variant)
 
 	if err := ct.ValidateBatch(imgId, variant); err != nil {
-		return "", Wrap(ErrReqValidation, err, errMsg)
+		return "", ct.Wrap(ErrReqValidation, err, errMsg)
 	}
 
 	var fm dbservice.File
@@ -150,14 +146,14 @@ func (m *MediaService) GetImage(
 	})
 
 	if err != nil {
-		return "", Wrap(nil, err, errMsg)
+		return "", ct.Wrap(nil, err, errMsg)
 	}
 
-	u, err := m.Clients.GenerateDownloadURL(
+	u, err := m.S3.GenerateDownloadURL(
 		ctx, fm.Bucket, fm.ObjectKey, fm.Visibility.SetExp(),
 	)
 	if err != nil {
-		return "", Wrap(ErrInternal, err, errMsg)
+		return "", ct.Wrap(ErrInternal, err, errMsg)
 	}
 
 	return u.String(), nil
@@ -181,7 +177,7 @@ func (m *MediaService) GetImages(ctx context.Context,
 	errMsg := fmt.Sprintf("get images: ids: %v variant: %s", imgIds, variant)
 
 	if err := ct.ValidateBatch(imgIds, variant); err != nil {
-		return nil, nil, Wrap(ErrReqValidation, err, errMsg)
+		return nil, nil, ct.Wrap(ErrReqValidation, err, errMsg)
 	}
 
 	var missingVariants ct.Ids
@@ -215,7 +211,7 @@ func (m *MediaService) GetImages(ctx context.Context,
 			tele.Warn(ctx, "failed to validate file status", "error", err.Error())
 			continue
 		}
-		url, err := m.Clients.GenerateDownloadURL(ctx, fm.Bucket, fm.ObjectKey, fm.Visibility.SetExp())
+		url, err := m.S3.GenerateDownloadURL(ctx, fm.Bucket, fm.ObjectKey, fm.Visibility.SetExp())
 		if err != nil {
 			return nil, nil, errors.Join(
 				ErrInternal,
@@ -243,12 +239,12 @@ func (m *MediaService) ValidateUpload(ctx context.Context,
 	errMsg := fmt.Sprintf("validate upload: file id: %d", fileId)
 
 	if err := fileId.Validate(); err != nil {
-		return url, Wrap(ErrReqValidation, err, errMsg)
+		return url, ct.Wrap(ErrReqValidation, err, errMsg)
 	}
 
 	fileMeta, err := m.Queries.GetFileById(ctx, fileId)
 	if err != nil {
-		return "", Wrap(nil, mapDBError(err), errMsg)
+		return "", ct.Wrap(nil, mapDBError(err), errMsg)
 	}
 
 	if fileMeta.Status == ct.Failed {
@@ -256,14 +252,14 @@ func (m *MediaService) ValidateUpload(ctx context.Context,
 	}
 
 	if fileMeta.Status != ct.Complete {
-		if errOuter := m.Clients.ValidateUpload(ctx, mapping.DbToModel(fileMeta)); errOuter != nil {
-			if err := m.Clients.DeleteFile(ctx, fileMeta.Bucket, fileMeta.ObjectKey); err != nil {
-				return url, Wrap(ErrFailed, errors.Join(errOuter, err), errMsg)
+		if errOuter := m.S3.ValidateUpload(ctx, mapping.DbToModel(fileMeta)); errOuter != nil {
+			if err := m.S3.DeleteFile(ctx, fileMeta.Bucket, fileMeta.ObjectKey); err != nil {
+				return url, ct.Wrap(ErrFailed, errors.Join(errOuter, err), errMsg)
 			}
 			if err := m.Queries.UpdateFileStatus(ctx, fileId, ct.Failed); err != nil {
-				return url, Wrap(ErrFailed, errors.Join(errOuter, err), errMsg)
+				return url, ct.Wrap(ErrFailed, errors.Join(errOuter, err), errMsg)
 			}
-			return url, Wrap(ErrFailed, errors.Join(errOuter, err), errMsg)
+			return url, ct.Wrap(ErrFailed, errors.Join(errOuter, err), errMsg)
 		}
 
 		if err := m.Queries.UpdateFileStatus(ctx, fileId, ct.Complete); err != nil {
@@ -274,7 +270,7 @@ func (m *MediaService) ValidateUpload(ctx context.Context,
 	}
 
 	if returnURL {
-		u, err := m.Clients.GenerateDownloadURL(ctx,
+		u, err := m.S3.GenerateDownloadURL(ctx,
 			fileMeta.Bucket,
 			fileMeta.ObjectKey,
 			fileMeta.Visibility.SetExp(),

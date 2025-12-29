@@ -67,11 +67,11 @@ func (m *MediaHandler) UploadImage(ctx context.Context,
 		variants,
 	)
 	if err != nil {
-		tele.Error(ctx, "failed to generate upload image url", "request:", req, "error:", err)
+		tele.Error(ctx, "failed to generate upload image url", "request:", req, "error:", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to generate upload url: %v", err)
+			return nil, status.Errorf(codes.InvalidArgument, "failed to generate upload url: %v", err.(*ct.Error).Public())
 		}
-		return nil, status.Errorf(codes.Internal, "failed to generate upload url: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to generate upload url: %v", err.(*ct.Error).Public())
 	}
 	res := &pb.UploadImageResponse{
 		FileId:    int64(fileId),
@@ -104,17 +104,17 @@ func (m *MediaHandler) GetImage(ctx context.Context,
 	// Call application
 	downUrl, err := m.Application.GetImage(ctx, ct.Id(req.ImageId), mapping.PbToCtFileVariant(req.Variant))
 	if err != nil {
-		tele.Error(ctx, "get image error", "request", req, "error", err)
+		tele.Error(ctx, "get image error", "request", req, "error", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to get generate download url: %v", err)
+			return nil, status.Errorf(codes.InvalidArgument, "failed to get generate download url: %v", err.(*ct.Error).Public())
 		}
 		if errors.Is(err, application.ErrFailed) {
-			return nil, status.Errorf(codes.NotFound, "failed to get generate download url: %v", err)
+			return nil, status.Errorf(codes.NotFound, "failed to get generate download url: %v", err.(*ct.Error).Public())
 		}
 		if errors.Is(err, application.ErrNotValidated) {
-			return nil, status.Errorf(codes.FailedPrecondition, "failed to get generate download url: %v", err)
+			return nil, status.Errorf(codes.FailedPrecondition, "failed to get generate download url: %v", err.(*ct.Error).Public())
 		}
-		return nil, status.Errorf(codes.Internal, "failed to get generate download url: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to get generate download url: %v", err.(*ct.Error).Public())
 	}
 
 	res := &pb.GetImageResponse{
@@ -140,14 +140,14 @@ func (m *MediaHandler) GetImages(ctx context.Context,
 	// Call application
 	downUrls, failedIds, err := m.Application.GetImages(ctx, ids, mapping.PbToCtFileVariant(req.Variant))
 	if err != nil {
-		tele.Error(ctx, "get images error", "request", req, "error", err)
+		tele.Error(ctx, "get images error", "request", req, "error", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to generate download urls: %v", err)
+			return nil, status.Errorf(codes.InvalidArgument, "failed to generate download urls: %v", err.(*ct.Error).Public())
 		}
 		if errors.Is(err, application.ErrNotFound) {
-			return nil, status.Errorf(codes.NotFound, "failed to generated download urls: %v", err)
+			return nil, status.Errorf(codes.NotFound, "failed to generated download urls: %v", err.(*ct.Error).Public())
 		}
-		return nil, status.Errorf(codes.Internal, "failed to generated download urls: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to generated download urls: %v", err.(*ct.Error).Public())
 	}
 
 	// Build response
@@ -186,20 +186,20 @@ func (m *MediaHandler) ValidateUpload(ctx context.Context,
 	// Call application
 	url, err := m.Application.ValidateUpload(ctx, ct.Id(req.FileId), req.ReturnUrl)
 	if err != nil {
-		tele.Error(ctx, "validate image error", "request", req, "error", err)
+		tele.Error(ctx, "validate image error", "request", req, "error", err.(*ct.Error).Error())
 		if errors.Is(err, application.ErrReqValidation) {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to validate upload: %v", err)
+			return nil, status.Errorf(codes.InvalidArgument, "failed to validate upload: %v", err.(*ct.Error).Public())
 		}
 
 		if errors.Is(err, application.ErrNotFound) {
-			return nil, status.Errorf(codes.NotFound, "failed to validate upload: %v", err)
+			return nil, status.Errorf(codes.NotFound, "failed to validate upload: %v", err.(*ct.Error).Public())
 		}
 
 		if errors.Is(err, application.ErrFailed) {
-			return nil, status.Errorf(codes.FailedPrecondition, "file is invalid: %v", err)
+			return nil, status.Errorf(codes.FailedPrecondition, "file is invalid: %v", err.(*ct.Error).Public())
 		}
 
-		return nil, status.Errorf(codes.Internal, "failed to validate upload: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to validate upload: %v", err.(*ct.Error).Public())
 	}
 	res := &pb.ValidateUploadResponse{DownloadUrl: url}
 	tele.Info(ctx, "validate image success", "request", req, "response", res)

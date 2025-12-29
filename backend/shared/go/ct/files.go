@@ -11,8 +11,8 @@ import (
 // FileVisibility
 // =======================
 
-// Describes file visibility
-// private, public
+// FileVisibility represents the visibility level of a file.
+// It can be either "private" or "public".
 type FileVisibility string
 
 const (
@@ -107,11 +107,11 @@ func (v FileVisibility) SetExp() time.Duration {
 }
 
 // =======================
-// ImgVariant
+// FileVariant
 // =======================
 
-// Describes the type of file
-// original, thumb, small, medium, large
+// FileVariant represents the variant or size of a file.
+// It can be "original", "thumb", "small", "medium", or "large".
 type FileVariant string
 
 const (
