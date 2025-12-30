@@ -19,12 +19,12 @@ import (
 
 func StartTest(ctx context.Context, cfgs configs.Configs) error {
 	var wg sync.WaitGroup
-	// wg.Go(func() { utils.HandleErr("api-gateway auth flow", ctx, testAuthFlow) })
-	// time.Sleep(time.Second) //sleeping so that ratelimiting caused by the next tests doesn't affect the above test
+	wg.Go(func() { utils.HandleErr("api-gateway auth flow", ctx, testAuthFlow) })
+	time.Sleep(time.Second) //sleeping so that ratelimiting caused by the next tests doesn't affect the above test
 	wg.Go(func() { utils.HandleErr("api-gateway posts flow", ctx, testPostsFlow) })
-	// time.Sleep(time.Second)
-	// wg.Go(func() { utils.HandleErr("api-gateway random register", ctx, randomRegister) })
-	// wg.Go(func() { utils.HandleErr("api-gateway random login", ctx, randomLogin) })
+	time.Sleep(time.Second)
+	wg.Go(func() { utils.HandleErr("api-gateway random register", ctx, randomRegister) })
+	wg.Go(func() { utils.HandleErr("api-gateway random login", ctx, randomLogin) })
 
 	wg.Wait()
 	return nil
