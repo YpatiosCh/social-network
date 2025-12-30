@@ -47,10 +47,7 @@ func (c *Clients) IsGroupMember(ctx context.Context, userId, groupId int64) (boo
 	return resp.Value, nil
 }
 
-func (c *Clients) GetBatchBasicUserInfo(ctx context.Context, userIds ct.Ids) (*cm.ListUsers, error) {
-	req := &cm.UserIds{
-		Values: userIds.Int64(),
-	}
+func (c *Clients) GetBatchBasicUserInfo(ctx context.Context, req *cm.UserIds) (*cm.ListUsers, error) {
 	resp, err := c.UserClient.GetBatchBasicUserInfo(ctx, req)
 	if err != nil {
 		return nil, err

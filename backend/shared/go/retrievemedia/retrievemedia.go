@@ -36,15 +36,17 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 
 	// Redis lookup for images
 	for _, imageId := range uniqueImageIds {
-		var imageURL string
+		// var imageURL string
 		// Cache key: img_<variant_string>:<id>
 		// We use the string representation of the variant for clarity in Redis
 		// or just the enum value. The existing retrieveusers used "img_thumbnail:<id>".
 		// To keep it clean and robust, let's use the variant name.
 		key := fmt.Sprintf("img_%s:%d", variant.String(), imageId)
 
-		if err := h.cache.GetObj(ctx, key, &imageURL); err == nil {
-			images[imageId.Int64()] = imageURL
+		imageURL, err := h.cache.GetStr(ctx, key)
+		if err == nil {
+			fmt.Println("Got Image from redis")
+			images[imageId.Int64()] = imageURL.(string)
 		} else {
 			missingImages = append(missingImages, imageId)
 		}
@@ -76,7 +78,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 		// Cache the new results
 		for id, url := range resp.DownloadUrls {
 			key := fmt.Sprintf("img_%s:%d", variant.String(), id)
-			_ = h.cache.SetObj(ctx, key, url, h.ttl)
+			_ = h.cache.SetStr(ctx, key, url, h.ttl)
 		}
 	}
 
