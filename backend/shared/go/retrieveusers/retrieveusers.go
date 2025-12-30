@@ -43,7 +43,15 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 	// Redis lookup
 	for _, id := range ids {
 		var u models.User
-		if err := h.cache.GetObj(ctx, fmt.Sprintf("basic_user_info:%d", id), &u); err == nil {
+
+		key, err := ct.BasicUserInfo.Construct(id)
+		if err != nil {
+			fmt.Printf("RETRIEVE USERS - failed to construct redis key for id %v: %v\n", id, err)
+			missing = append(missing, id)
+			continue
+		}
+
+		if err := h.cache.GetObj(ctx, key, &u); err == nil {
 			users[id] = u
 			fmt.Println("RETRIEVE USERS - found user on redis:", u)
 		} else {
@@ -65,11 +73,17 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 				AvatarId: ct.Id(u.Avatar),
 			}
 			users[user.UserId] = user
-			_ = h.cache.SetObj(ctx,
-				fmt.Sprintf("basic_user_info:%d", u.UserId),
-				user,
-				h.ttl,
-			)
+
+			key, err := ct.BasicUserInfo.Construct(user.UserId)
+			if err == nil {
+				_ = h.cache.SetObj(ctx,
+					key,
+					user,
+					h.ttl,
+				)
+			} else {
+				fmt.Printf("RETRIEVE USERS - failed to construct redis key for user %v: %v\n", user.UserId, err)
+			}
 		}
 	}
 	//========================== STEP 2 : get avatars from media ===============================================

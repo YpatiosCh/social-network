@@ -52,16 +52,6 @@ func (c *Clients) GetBatchBasicUserInfo(ctx context.Context, req *cm.UserIds) (*
 	return resp, nil
 }
 
-func (c *Clients) GetBasicUserInfo(ctx context.Context, userId int64) (*cm.User, error) {
-	req := &wrapperspb.Int64Value{Value: userId}
-
-	resp, err := c.UserClient.GetBasicUserInfo(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
 func (c *Clients) GetFollowingIds(ctx context.Context, userId int64) ([]int64, error) {
 	req := &wrapperspb.Int64Value{Value: userId}
 

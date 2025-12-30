@@ -34,14 +34,21 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 	images := make(map[int64]string, len(uniqueImageIds))
 	var missingImages ct.Ids
 
+	ctVariant, err := toCtVariant(variant)
+	if err != nil {
+		// If variant is invalid, we probably can't do anything meaningful.
+		// Returning error or empty map? Returning error seems safest.
+		return nil, nil, fmt.Errorf("invalid variant: %w", err)
+	}
+
 	// Redis lookup for images
 	for _, imageId := range uniqueImageIds {
-		// var imageURL string
-		// Cache key: img_<variant_string>:<id>
-		// We use the string representation of the variant for clarity in Redis
-		// or just the enum value. The existing retrieveusers used "img_thumbnail:<id>".
-		// To keep it clean and robust, let's use the variant name.
-		key := fmt.Sprintf("img_%s:%d", variant.String(), imageId)
+		key, err := ct.Image.Construct(ctVariant, imageId)
+		if err != nil {
+			fmt.Printf("RETRIEVE MEDIA - failed to construct redis key for image %v: %v\n", imageId, err)
+			missingImages = append(missingImages, imageId)
+			continue
+		}
 
 		imageURL, err := h.cache.GetStr(ctx, key)
 		if err == nil {
@@ -77,12 +84,33 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 
 		// Cache the new results
 		for id, url := range resp.DownloadUrls {
-			key := fmt.Sprintf("img_%s:%d", variant.String(), id)
-			_ = h.cache.SetStr(ctx, key, url, h.ttl)
+			key, err := ct.Image.Construct(ctVariant, ct.Id(id)) // id in map is int64
+			if err == nil {
+				_ = h.cache.SetStr(ctx, key, url, h.ttl)
+			} else {
+				fmt.Printf("RETRIEVE MEDIA - failed to construct redis key for caching image %v: %v\n", id, err)
+			}
 		}
 	}
 
 	return images, imagesToDelete, nil
+}
+
+func toCtVariant(v media.FileVariant) (ct.FileVariant, error) {
+	switch v {
+	case media.FileVariant_THUMBNAIL:
+		return ct.ImgThumbnail, nil
+	case media.FileVariant_SMALL:
+		return ct.ImgSmall, nil
+	case media.FileVariant_MEDIUM:
+		return ct.ImgMedium, nil
+	case media.FileVariant_LARGE:
+		return ct.ImgLarge, nil
+	case media.FileVariant_ORIGINAL:
+		return ct.Original, nil
+	default:
+		return "", fmt.Errorf("unknown media variant: %v", v)
+	}
 }
 
 // GetImage returns a single image url, using cache + batch RPC.
