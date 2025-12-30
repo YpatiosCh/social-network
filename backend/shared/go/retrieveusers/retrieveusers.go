@@ -44,7 +44,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 	for _, id := range ids {
 		var u models.User
 
-		key, err := ct.BasicUserInfo.Construct(id)
+		key, err := ct.BasicUserInfoKey{Id: id}.String()
 		if err != nil {
 			fmt.Printf("RETRIEVE USERS - failed to construct redis key for id %v: %v\n", id, err)
 			missing = append(missing, id)
@@ -74,7 +74,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 			}
 			users[user.UserId] = user
 
-			key, err := ct.BasicUserInfo.Construct(user.UserId)
+			key, err := ct.BasicUserInfoKey{Id: user.UserId}.String()
 			if err == nil {
 				_ = h.cache.SetObj(ctx,
 					key,

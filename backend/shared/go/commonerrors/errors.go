@@ -1,4 +1,4 @@
-package ct
+package commonerrors
 
 import (
 	"errors"

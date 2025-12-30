@@ -43,7 +43,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 
 	// Redis lookup for images
 	for _, imageId := range uniqueImageIds {
-		key, err := ct.Image.Construct(ctVariant, imageId)
+		key, err := ct.ImageKey{Id: imageId, Variant: ctVariant}.String()
 		if err != nil {
 			fmt.Printf("RETRIEVE MEDIA - failed to construct redis key for image %v: %v\n", imageId, err)
 			missingImages = append(missingImages, imageId)
@@ -84,7 +84,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 
 		// Cache the new results
 		for id, url := range resp.DownloadUrls {
-			key, err := ct.Image.Construct(ctVariant, ct.Id(id)) // id in map is int64
+			key, err := ct.ImageKey{Id: ct.Id(id), Variant: ctVariant}.String()
 			if err == nil {
 				_ = h.cache.SetStr(ctx, key, url, h.ttl)
 			} else {
