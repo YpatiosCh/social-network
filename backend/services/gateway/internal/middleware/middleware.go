@@ -80,7 +80,7 @@ func (m *MiddleSystem) AllowedMethod(methods ...string) *MiddleSystem {
 
 		// method not allowed
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		tele.Debug(ctx, "method not allowed")
+		tele.Debug(ctx, "method not allowed. received @1, @2", "method", r.Method, "required", methods)
 		return false, nil
 	})
 	return m

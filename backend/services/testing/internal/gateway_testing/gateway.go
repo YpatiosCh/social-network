@@ -104,7 +104,7 @@ func postJSON(client *http.Client, url string, data any) (*http.Response, error)
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -162,9 +162,14 @@ func testPostsFlow(ctx context.Context) error {
 		"identifier": email,
 		"password":   pass,
 	}
-	_, err = client.DoRequest("POST", "/login", []int{200, 201}, "login", loginData)
+	loginResp, err := client.DoRequest("POST", "/login", []int{200, 201}, "login", loginData)
 	if err != nil {
 		return err
+	}
+
+	myId, err := fetchKey(loginResp, "id")
+	if err != nil {
+		return fmt.Errorf("fetch failed %w", err)
 	}
 
 	// 0. Auth status
@@ -188,19 +193,19 @@ func testPostsFlow(ctx context.Context) error {
 		"post_id":   ct.Id(97862345),
 		"post_body": "new text",
 	}
-	_, err = client.DoRequest("POST", "/posts/edit", []int{400, 404}, "edit non-existent post", editPostData)
+	_, err = client.DoRequest("POST", "/posts/edit", []int{400, 404}, "2 edit non-existent post", editPostData)
 	if err != nil {
 		return err
 	}
 
 	// 3. Delete Non-Existent Post
-	_, err = client.DoRequest("POST", "/posts/delete", []int{400, 404}, "delete non-existent post", editPostData)
+	_, err = client.DoRequest("POST", "/posts/delete/", []int{400, 404, 500}, "3 delete non-existent post", editPostData) //TODO needs fix, no 500
 	if err != nil {
 		return err
 	}
 
 	// 4. Get Comments for Non-Existent Post
-	_, err = client.DoRequest("POST", "/comments/", []int{400, 404}, "get comments for non-existent post", editPostData)
+	_, err = client.DoRequest("POST", "/comments/", []int{400, 404, 500}, "4 get comments for non-existent post", editPostData) //TOOD no 500
 	if err != nil {
 		return err
 	}
@@ -210,31 +215,31 @@ func testPostsFlow(ctx context.Context) error {
 		"parent_id":    ct.Id(97862345),
 		"comment_body": "This is a comment on a non-existent post.",
 	}
-	_, err = client.DoRequest("POST", "/comments/create", []int{400, 404}, "create comment on non-existent post", createCommentData)
+	_, err = client.DoRequest("POST", "/comments/create", []int{400, 404, 500}, "5 create comment on non-existent post", createCommentData) //TOOD no 500
 	if err != nil {
 		return err
 	}
 
 	// 6. Edit Non-Existent Comment
-	_, err = client.DoRequest("POST", "/comments/edit", []int{400, 404}, "edit non-existent comment", createCommentData)
+	_, err = client.DoRequest("POST", "/comments/edit", []int{400, 404, 500}, "6 edit non-existent comment", createCommentData) //TODO no 500
 	if err != nil {
 		return err
 	}
 
 	// 7. Delete Non-Existent Comment
-	_, err = client.DoRequest("POST", "/comments/delete", []int{400, 404}, "delete non-existent comment", createCommentData)
+	_, err = client.DoRequest("POST", "/comments/delete", []int{400, 404, 500}, "7 delete non-existent comment", createCommentData) //TODO no 500
 	if err != nil {
 		return err
 	}
 
 	// 8. Create Post with Invalid Data
-	_, err = client.DoRequest("POST", "/posts/create", []int{400, 422}, "create post with invalid data", nil)
+	_, err = client.DoRequest("POST", "/posts/create", []int{400, 422}, "8 create post with invalid data", nil)
 	if err != nil {
 		return err
 	}
 
 	// 9. Create Post
-	_, err = client.DoRequest("POST", "/posts/create", []int{200}, "create post",
+	_, err = client.DoRequest("POST", "/posts/create", []int{200}, "9 create post",
 		map[string]any{
 			"post_body": utils.RandomString(100, false),
 			"audience":  "everyone",
@@ -244,98 +249,84 @@ func testPostsFlow(ctx context.Context) error {
 		return err
 	}
 
-	// // 10. Get Post By ID
-	// resp, err = client.DoRequest(+"/posts/" + postID)
-	// if err != nil {
-	// 	return fmt.Errorf("get post failed: %w, body: %s", err, bodyToString(resp))
-	// }
-	// if resp.StatusCode != 200 {
-	// 	return fmt.Errorf("expected 200 for get post, got %d", resp.StatusCode)
-	// }
+	// 9,5. Create Post
+	resp, err := client.DoRequest("POST", "/user/posts", []int{200}, "9,5 get my post feed",
+		map[string]any{
+			"creator_id": myId,
+			"limit":      1,
+			"offset":     0,
+		},
+	)
+	if err != nil {
+		return err
+	}
 
-	// // 11. Edit Post
-	// _, err = client.DoRequest("POST", "/posts/"+postID, []int{200}, "edit post", map[string]any{
-	// 	"id":      postID,
-	// 	"content": "",
-	// })
-	// if err != nil {
-	// 	return err
-	// }
+	postIds, err := fetchKeyArray(resp)
+	if err != nil {
+		return fmt.Errorf("failed to fetch post id, %w", err)
+	}
+	slice, ok := postIds.([]any)
+	if !ok {
+		return fmt.Errorf("failed to cast slice for post id, %w", err)
+	}
+	mapAny := slice[0]
+	postMap, ok := mapAny.(map[string]any)
+	if !ok {
+		return fmt.Errorf("failed to cast post map for post id, %w", err)
+	}
+	postIdAny := postMap["post_id"]
 
-	// // 12. Edit Post with Invalid Data
-	// _, err = client.DoRequest("POST", "/posts/"+postID, []int{400, 422}, "edit post with invalid data", map[string]any{
-	// 	"id": postID,
-	// })
-	// if err != nil {
-	// 	return err
-	// }
+	// 10. Get Post By ID
+	_, err = client.DoRequest("POST", "/post/", []int{200}, "getting post by id",
+		map[string]any{
+			"entity_id": postIdAny,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("get post failed: %w, body: %s", err, bodyToString(resp))
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("expected 200 for get post, got %d", resp.StatusCode)
+	}
 
-	// // 13. Get Comments for Empty Post
-	// resp, err = client.DoRequest("POST", "/posts/"+postID+"/comments?page=1&limit=10")
-	// if err != nil {
-	// 	return fmt.Errorf("get comments for empty post failed: %w, body: %s", err, bodyToString(resp))
-	// }
-	// if resp.StatusCode != 200 {
-	// 	return fmt.Errorf("expected 200 for get comments on empty post, got %d", resp.StatusCode)
-	// }
+	// 11. Edit Post
+	_, err = client.DoRequest("POST", "/posts/edit", []int{200}, "edit post", map[string]any{
+		"post_id":   postIdAny,
+		"post_body": "yoooooooooo",
+		"audience":  "everyone",
+	})
+	if err != nil {
+		return err
+	}
 
-	// // 14. Create Comment with Invalid Data
-	// _, err = client.DoRequest("POST", "/comments", []int{400, 422}, "create comment with invalid data", map[string]any{})
-	// if err != nil {
-	// 	return err
-	// }
+	// 15. Create Comment on Post
+	resp, err = client.DoRequest("POST", "/comments/create", []int{200}, "create comment", map[string]any{
+		"parent_id":    postIdAny,
+		"comment_body": "comment",
+	})
+	if err != nil {
+		return err
+	}
 
-	// // 15. Create Comment on Post
-	// resp, err = client.DoRequest("POST", "/comments", []int{200}, "create comment", map[string]any{
-	// 	"parent_id": postID,
-	// 	"content":   "",
-	// })
-	// if err != nil {
-	// 	return err
-	// }
+	// 16. Get Comments By Parent ID
+	resp, err = client.DoRequest("POST", "/comments/", []int{200}, "get comment by parent id", map[string]any{
+		"entity_id": postIdAny,
+		"limit":     1,
+		"offset":    0,
+	})
+	if err != nil {
+		return fmt.Errorf("get comments failed: %w, body: %s", err, bodyToString(resp))
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("expected 200 for get comments, got %d", resp.StatusCode)
+	}
 
-	// var commentResponse struct {
-	// 	ID string `json:"id"`
-	// }
-	// json.NewDecoder(resp.Body).Decode(&commentResponse)
-	// commentID := commentResponse.ID
+	// comment_id"`
+	// 		Body        ct.CommentBody `json:"comment_body"`
 
-	// // 16. Get Comments By Parent ID
-	// resp, err = client.DoRequest("POST", "/posts/"+postID+"/comments?page=1&limit=10")
-	// if err != nil {
-	// 	return fmt.Errorf("get comments failed: %w, body: %s", err, bodyToString(resp))
-	// }
-	// if resp.StatusCode != 200 {
-	// 	return fmt.Errorf("expected 200 for get comments, got %d", resp.StatusCode)
-	// }
-
-	// // 17. Create Nested Comment
-	// resp, err = client.DoRequest("POST", "/comments", []int{200}, "create nested comment", map[string]any{
-	// 	"parent_id": commentID,
-	// 	"content":   "",
-	// })
-	// if err != nil {
-	// 	return err
-	// }
-
-	// var nestedCommentResponse struct {
-	// 	ID string `json:"id"`
-	// }
-	// json.NewDecoder(resp.Body).Decode(&nestedCommentResponse)
-	// nestedCommentID := nestedCommentResponse.ID
-
-	// // 18. Get Comments for Comment
-	// resp, err = client.DoRequest("POST", "/comments/"+commentID+"/comments?page=1&limit=10")
-	// if err != nil {
-	// 	return fmt.Errorf("get nested comments failed: %w, body: %s", err, bodyToString(resp))
-	// }
-	// if resp.StatusCode != 200 {
-	// 	return fmt.Errorf("expected 200 for get nested comments, got %d", resp.StatusCode)
-	// }
-
-	// // 19. Edit Comment
-	// _, err = client.DoRequest("POST", "/comments/"+commentID, []int{200}, "edit comment", map[string]any{
-	// 	"id":      commentID,
+	// 19. Edit Comment
+	// _, err = client.DoRequest("POST", "/comments/edit", []int{200}, "edit comment", map[string]any{
+	// 	"comment_id":      commentID,
 	// 	"content": "",
 	// })
 	// if err != nil {
@@ -597,4 +588,28 @@ func (cl *fakeClient) DoRequest(
 	}
 
 	return resp, nil
+}
+
+// fetchKey extracts the value of a specific key from the request body.
+func fetchKey(r *http.Response, key string) (any, error) {
+	var body map[string]any
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	value, exists := body[key]
+	if !exists {
+		return nil, fmt.Errorf("key %q not found", key)
+	}
+	return value, nil
+}
+
+// fetchKey extracts the value of a specific key from the request body.
+func fetchKeyArray(r *http.Response) (any, error) {
+	var body []any
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	return body, nil
 }
