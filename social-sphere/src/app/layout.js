@@ -1,4 +1,6 @@
 import "./globals.css";
+import { ThemeProvider } from "next-themes";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export const metadata = {
   title: "SocialSphere",
@@ -7,9 +9,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+          <ThemeToggle />
+        </ThemeProvider>
       </body>
     </html>
   );

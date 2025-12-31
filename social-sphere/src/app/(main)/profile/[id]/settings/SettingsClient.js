@@ -31,7 +31,7 @@ export default function SettingsClient({ user }) {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${isActive
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer hover:bg-background/50 ${isActive
                                     ? "bg-background text-foreground shadow-sm"
                                     : "text-muted hover:text-foreground"
                                     }`}

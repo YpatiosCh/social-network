@@ -1008,7 +1008,7 @@ export default function SinglePostCard({ post }) {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="bg-white dark:bg-black/20 rounded-2xl rounded-tl-none px-4 py-2 border border-(--border) relative">
+                                                <div className="bg-background rounded-2xl rounded-tl-none px-4 py-2 border border-(--border) relative">
                                                     <div className="flex items-center justify-between mb-1">
                                                         <Link href={`/profile/${comment.user.id}`} prefetch={false}>
                                                             <span className="text-xs font-bold hover:underline">@{comment.user.username}</span>
