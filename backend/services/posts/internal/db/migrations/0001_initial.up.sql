@@ -240,31 +240,56 @@ EXECUTE FUNCTION update_timestamp();
 CREATE OR REPLACE FUNCTION update_post_comments_count()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (TG_OP = 'INSERT') THEN
+    -- New comment
+    IF TG_OP = 'INSERT' THEN
         UPDATE posts
         SET comments_count = comments_count + 1,
             last_commented_at = NEW.created_at
         WHERE id = NEW.parent_id;
-    ELSIF (TG_OP = 'DELETE') THEN
+
+    -- Soft delete
+    ELSIF TG_OP = 'UPDATE'
+      AND OLD.deleted_at IS NULL
+      AND NEW.deleted_at IS NOT NULL THEN
+
         UPDATE posts
-        SET comments_count = comments_count - 1,
-            last_commented_at = (SELECT MAX(created_at) 
-                                 FROM comments 
-                                 WHERE parent_id = OLD.parent_id 
-                                   AND deleted_at IS NULL)
+        SET comments_count = GREATEST(comments_count - 1, 0),
+            last_commented_at = (
+                SELECT MAX(created_at)
+                FROM comments
+                WHERE parent_id = OLD.parent_id
+                  AND deleted_at IS NULL
+            )
         WHERE id = OLD.parent_id;
+
+    -- Restore comment
+    ELSIF TG_OP = 'UPDATE'
+      AND OLD.deleted_at IS NOT NULL
+      AND NEW.deleted_at IS NULL THEN
+
+        UPDATE posts
+        SET comments_count = comments_count + 1,
+            last_commented_at = GREATEST(
+                COALESCE(last_commented_at, NEW.created_at),
+                NEW.created_at
+            )
+        WHERE id = NEW.parent_id;
+
     END IF;
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
+
+
 
 CREATE TRIGGER trg_comments_insert
 AFTER INSERT ON comments
 FOR EACH ROW
 EXECUTE FUNCTION update_post_comments_count();
 
-CREATE TRIGGER trg_comments_delete
-AFTER DELETE ON comments
+CREATE TRIGGER trg_comments_update
+AFTER UPDATE ON comments
 FOR EACH ROW
 EXECUTE FUNCTION update_post_comments_count();
 
