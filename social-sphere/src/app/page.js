@@ -30,7 +30,7 @@ export default function LandingPage() {
             </nav>
 
             {/* Hero Section */}
-            <section className="section-border">
+            <section className="section-border bg-(--muted)/10">
                 <div className="max-w-7xl mx-auto px-6 py-32 md:py-26">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 xl:gap-20 items-center">
                         {/* Left side - Content */}
@@ -130,7 +130,7 @@ export default function LandingPage() {
             </section>
             
             {/* CTA Section */}
-            <section className="section-border bg-neutral-50">
+            <section className="section-border bg-(--muted)/10">
                 <div className="max-w-7xl mx-auto px-6 py-32">
                     <div className="max-w-4xl">
                         <h2 className="heading-lg mb-8">
