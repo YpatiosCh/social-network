@@ -1,18 +1,20 @@
 "use server";
 
 import { serverApiRequest } from "@/lib/server-api";
+import { redirect } from "next/navigation";
 
 export async function logout() {
     try {
-        const apiResp = await serverApiRequest("/logout", {
+        await serverApiRequest("/logout", {
             method: "POST",
             forwardCookies: true // Forward the cookie clearing headers
         });
-
-        return { success: true };
-
     } catch (error) {
         console.error("Logout Action Error:", error);
         return { success: false, error: error.message };
     }
+
+    // Redirect after successful logout - this throws a NEXT_REDIRECT error
+    // which Next.js catches to perform the redirect
+    redirect("/login");
 }

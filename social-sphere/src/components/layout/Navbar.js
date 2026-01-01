@@ -14,7 +14,6 @@ export default function Navbar() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const searchRef = useRef(null);
-    const isLoggingOut = useRef(false);
     const clearUser = useStore((state) => state.clearUser);
 
     const user = useStore((state) => state.user);
@@ -72,30 +71,15 @@ export default function Navbar() {
 
     const handleLogout = async () => {
         try {
-            // Set flag immediately to prevent any re-renders
-            isLoggingOut.current = true;
-
-            // logout
-            const resp = await logout();
-
-            if (!resp.success) {
-                console.error('error:', resp.error);
-            }
-
-            // Redirect to login using hard navigation to clear all app state
-            // clearUser() is intentionally NOT called here to avoid re-renders
-            // that trigger API calls after the cookie is deleted
-            window.location.href = "/login";
-
+            // Logout and redirect happens on the server
+            await logout();
         } catch (error) {
-            console.error('Logout error:', error);
-            isLoggingOut.current = false;
+            // redirect() in server actions throws a NEXT_REDIRECT error
+            // which is handled by Next.js, so we can safely ignore it here
+            if (!error?.message?.includes('NEXT_REDIRECT')) {
+                console.error('Logout error:', error);
+            }
         }
-    }
-
-    // Prevent rendering during logout to avoid API calls with missing cookie
-    if (isLoggingOut.current) {
-        return <div></div>;
     }
 
     if (!user) {
