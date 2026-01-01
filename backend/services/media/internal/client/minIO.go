@@ -21,6 +21,7 @@ func (c *Clients) GenerateDownloadURL(
 	objectKey string,
 	expiry time.Duration,
 ) (*url.URL, error) {
+	errMsg := fmt.Sprintf("S3 client: generate download: file bucket: %v object key: %v", bucket, objectKey)
 
 	client := c.MinIOClient
 
@@ -38,7 +39,7 @@ func (c *Clients) GenerateDownloadURL(
 	)
 
 	if err != nil {
-		return nil, ce.Wrap(ce.ErrInternal, err)
+		return nil, ce.Wrap(ce.ErrInternal, err, errMsg)
 	}
 
 	return url, nil
@@ -50,6 +51,7 @@ func (c *Clients) GenerateUploadURL(
 	objectKey string,
 	expiry time.Duration,
 ) (*url.URL, error) {
+	errMsg := fmt.Sprintf("S3 client: generate upload: file bucket: %v object key: %v", bucket, objectKey)
 
 	client := c.MinIOClient
 
@@ -66,7 +68,7 @@ func (c *Clients) GenerateUploadURL(
 	)
 
 	if err != nil {
-		return nil, ce.Wrap(ce.ErrInternal, err)
+		return nil, ce.Wrap(ce.ErrInternal, err, errMsg)
 	}
 
 	return url, nil
