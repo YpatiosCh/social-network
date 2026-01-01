@@ -5,10 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"io"
-	"mime/multipart"
 	"net/http"
-	"slices"
 	"social-network/shared/go/ct"
 	tele "social-network/shared/go/telemetry"
 
@@ -68,25 +65,6 @@ func WriteJSON(ctx context.Context, w http.ResponseWriter, code int, v any) erro
 	return err
 }
 
-// func WriteJSON(w http.ResponseWriter, code int, v any) error {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(code)
-
-// 	if code == http.StatusNoContent {
-// 		return nil
-// 	}
-
-// 	b, err := json.Marshal(v)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	tele.Info(ctx, "sending this:", string(b))
-
-// 	_, err = w.Write(b)
-// 	return err
-// }
-
 func ErrorJSON(ctx context.Context, w http.ResponseWriter, code int, msg string) {
 	tele.Warn(ctx, "Sending error response @1, @2", "code", code, "error_message", msg)
 	err := WriteJSON(ctx, w, code, map[string]string{"error": msg})
@@ -108,29 +86,29 @@ func GenUUID() string {
 	return uuid.String()
 }
 
-var (
-	ErrImageTooBig      = errors.New("image too big")
-	ErrInvalidImageFile = errors.New("invalid image file: Only PNG, JPG, or GIF allowed")
-	ImageTypes          = []string{"jpg, png, svg"}
-)
+// var (
+// 	ErrImageTooBig      = errors.New("image too big")
+// 	ErrInvalidImageFile = errors.New("invalid image file: Only PNG, JPG, or GIF allowed")
+// 	ImageTypes          = []string{"jpg, png, svg"}
+// )
 
-// Parses the image file and stores it to the configured path. Returns a uuid as filename
-func CheckImage(file multipart.File, header *multipart.FileHeader) (filetype string, err error) {
-	if header.Size > 10*1024*1024 {
-		return "", ErrImageTooBig
-	}
+// // Parses the image file and stores it to the configured path. Returns a uuid as filename
+// func CheckImage(file multipart.File, header *multipart.FileHeader) (filetype string, err error) {
+// 	if header.Size > 10*1024*1024 {
+// 		return "", ErrImageTooBig
+// 	}
 
-	buf := make([]byte, 512)
-	_, err = file.Read(buf)
-	if err != nil {
-		return "", ErrInvalidImageFile
-	}
-	filetype = http.DetectContentType(buf)
-	file.Seek(0, io.SeekStart)
+// 	buf := make([]byte, 512)
+// 	_, err = file.Read(buf)
+// 	if err != nil {
+// 		return "", ErrInvalidImageFile
+// 	}
+// 	filetype = http.DetectContentType(buf)
+// 	file.Seek(0, io.SeekStart)
 
-	if slices.Contains(ImageTypes, filetype) {
-		return "", ErrInvalidImageFile
-	}
+// 	if slices.Contains(ImageTypes, filetype) {
+// 		return "", ErrInvalidImageFile
+// 	}
 
-	return filetype, nil
-}
+// 	return filetype, nil
+// }

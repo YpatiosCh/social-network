@@ -3,17 +3,17 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/posts"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	"social-network/shared/go/models"
 )
 
 func (s *Handlers) toggleOrInsertReaction() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}

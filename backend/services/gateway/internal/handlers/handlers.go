@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"social-network/services/gateway/internal/middleware"
 	"social-network/shared/gen-go/chat"
 	"social-network/shared/gen-go/media"
 	"social-network/shared/gen-go/posts"
 	"social-network/shared/gen-go/users"
+	middleware "social-network/shared/go/http-middleware"
 	"social-network/shared/go/ratelimit"
 )
 
@@ -40,7 +40,7 @@ func NewHandlers(
 func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 	mux := http.NewServeMux()
 	ratelimiter := ratelimit.NewRateLimiter(serviceName+":", h.CacheService)
-	middlewareObj := middleware.NewMiddleware(ratelimiter, "gateway")
+	middlewareObj := middleware.NewMiddleware(ratelimiter, serviceName)
 	Chain := middlewareObj.Chain
 
 	IP := middleware.IPLimit
@@ -321,7 +321,6 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			Finalize(h.updateUserProfile()))
 
 	// POSTS
-
 	mux.HandleFunc("/public-feed",
 		Chain("/public-feed").
 			AllowedMethod("POST").

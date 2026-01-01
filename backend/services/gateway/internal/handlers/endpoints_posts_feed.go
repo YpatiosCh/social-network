@@ -3,10 +3,10 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/posts"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	"social-network/shared/go/models"
 	tele "social-network/shared/go/telemetry"
 )
@@ -16,7 +16,7 @@ func (h *Handlers) getPublicFeed() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "getPublicFeed handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -80,7 +80,7 @@ func (h *Handlers) getPersonalizedFeed() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "getPersonalizedFeed handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -144,7 +144,7 @@ func (h *Handlers) getUserPostsPaginated() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "getUserPostsPaginated handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}

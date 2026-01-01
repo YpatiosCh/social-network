@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/media"
 	"social-network/shared/gen-go/posts"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	"social-network/shared/go/models"
 	tele "social-network/shared/go/telemetry"
 	"time"
@@ -19,7 +19,7 @@ func (h *Handlers) createEvent() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "createEvent handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -103,7 +103,7 @@ func (h *Handlers) editEvent() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "editEvent handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -189,7 +189,7 @@ func (h *Handlers) deleteEvent() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "deleteEvent handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -219,7 +219,7 @@ func (h *Handlers) getEventsByGroupId() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "getEventsByGroupId handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -280,7 +280,7 @@ func (h *Handlers) getEventsByGroupId() http.HandlerFunc {
 func (s *Handlers) respondToEvent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -310,7 +310,7 @@ func (s *Handlers) respondToEvent() http.HandlerFunc {
 func (s *Handlers) RemoveEventResponse() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}

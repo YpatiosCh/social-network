@@ -418,6 +418,33 @@ services:
   #
   #
   # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  # LIVE: the main entry point for clients, it routes requests to the appropriate services
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  live:
+    networks:
+      - social-network
+    build:
+      context: backend/.
+      dockerfile: services/live/Dockerfile
+    container_name: live
+    environment:
+      <<: *common-env
+      ENC_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
+      JWT_KEY: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=
+      PASSWORD_SECRET: a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= 
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=live,service.namespace=social-network,deployment.environment=dev"
+      
+    ports:
+      - "8082:8082"
+    depends_on:
+      redis:
+        condition: service_started
+
+
+  #
+  #
+  #
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   # API - GATEWAY: the main entry point for clients, it routes requests to the appropriate services
   # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   api-gateway:
