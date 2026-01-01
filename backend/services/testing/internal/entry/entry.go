@@ -11,6 +11,7 @@ import (
 	tele "social-network/shared/go/telemetry"
 	"sync"
 	"syscall"
+	"time"
 )
 
 var cfgs configs.Configs
@@ -22,18 +23,20 @@ func Run() {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	wg := sync.WaitGroup{}
+	for range 5 {
+		wg.Go(func() {
+			if err := users_test.StartTest(ctx, cfgs); err != nil {
+				tele.Fatal("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ERROR WTF !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" + err.Error())
+			}
+		})
 
-	wg.Go(func() {
-		if err := users_test.StartTest(ctx, cfgs); err != nil {
-			tele.Fatal("ERROR WTF" + err.Error())
-		}
-	})
-
-	wg.Go(func() {
-		if err := gateway_test.StartTest(ctx, cfgs); err != nil {
-			tele.Fatal("ERROR WTF" + err.Error())
-		}
-	})
+		wg.Go(func() {
+			if err := gateway_test.StartTest(ctx, cfgs); err != nil {
+				tele.Fatal("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ERROR WTF !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" + err.Error())
+			}
+		})
+		time.Sleep(time.Millisecond * 2000)
+	}
 
 	wg.Wait()
 

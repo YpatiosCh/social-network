@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"net/http"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/common"
 	"social-network/shared/gen-go/posts"
 	"social-network/shared/gen-go/users"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	"social-network/shared/go/models"
 	tele "social-network/shared/go/telemetry"
 
@@ -17,7 +17,7 @@ import (
 func (s *Handlers) getFollowSuggestions() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -66,7 +66,7 @@ func (s *Handlers) getFollowSuggestions() http.HandlerFunc {
 func (s *Handlers) getFollowersPaginated() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		// claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		// claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		// if !ok {
 		// 	panic(1)
 		// }
@@ -113,7 +113,7 @@ func (s *Handlers) getFollowersPaginated() http.HandlerFunc {
 func (s *Handlers) getFollowingPaginated() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		// claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		// claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		// if !ok {
 		// 	panic(1)
 		// }
@@ -161,7 +161,7 @@ func (s *Handlers) getFollowingPaginated() http.HandlerFunc {
 func (s *Handlers) followUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -190,7 +190,7 @@ func (s *Handlers) followUser() http.HandlerFunc {
 func (s *Handlers) handleFollowRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -225,7 +225,7 @@ func (s *Handlers) handleFollowRequest() http.HandlerFunc {
 func (s *Handlers) unFollowUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"net/http"
-	ct "social-network/shared/go/ct"
+	"social-network/shared/go/ct"
 	utils "social-network/shared/go/http-utils"
 	tele "social-network/shared/go/telemetry"
 )

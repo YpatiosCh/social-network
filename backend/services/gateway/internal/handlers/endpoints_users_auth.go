@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/media"
 	"social-network/shared/gen-go/users"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	"social-network/shared/go/models"
 	tele "social-network/shared/go/telemetry"
 	"time"
@@ -66,13 +66,13 @@ func (h *Handlers) loginHandler() http.HandlerFunc {
 		now := time.Now().Unix()
 		exp := time.Now().AddDate(0, 6, 0).Unix() // six months from now
 
-		claims := security.Claims{
+		claims := jwt.Claims{
 			UserId: resp.UserId,
 			Iat:    now,
 			Exp:    exp,
 		}
 
-		token, err := security.CreateToken(claims)
+		token, err := jwt.CreateToken(claims)
 		if err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "token generation failed")
 			return
@@ -116,7 +116,7 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 		// Check if user already logged in
 		cookie, _ := r.Cookie("jwt")
 		if cookie != nil {
-			_, err := security.ParseAndValidate(cookie.Value)
+			_, err := jwt.ParseAndValidate(cookie.Value)
 			if err == nil {
 				utils.ErrorJSON(ctx, w, http.StatusForbidden, "Already logged in. Log out to register.")
 				return
@@ -205,13 +205,13 @@ func (h *Handlers) registerHandler() http.HandlerFunc {
 		now := time.Now().Unix()
 		exp := time.Now().AddDate(0, 6, 0).Unix() // six months from now
 
-		claims := security.Claims{
+		claims := jwt.Claims{
 			UserId: resp.UserId,
 			Iat:    now,
 			Exp:    exp,
 		}
 
-		token, err := security.CreateToken(claims)
+		token, err := jwt.CreateToken(claims)
 		if err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "token generation failed")
 			return
@@ -278,7 +278,7 @@ func (h *Handlers) authStatus() http.HandlerFunc {
 func (s *Handlers) updateUserEmail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -312,7 +312,7 @@ func (s *Handlers) updateUserEmail() http.HandlerFunc {
 func (s *Handlers) updateUserPassword() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}

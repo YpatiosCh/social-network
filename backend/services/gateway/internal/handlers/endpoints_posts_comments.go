@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/media"
 	"social-network/shared/gen-go/posts"
 	"social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	"social-network/shared/go/models"
 	tele "social-network/shared/go/telemetry"
 	"time"
@@ -19,7 +19,7 @@ func (h *Handlers) createComment() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "createComment handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -100,7 +100,7 @@ func (h *Handlers) getCommentsByParentId() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "getCommentsByParentId handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -163,7 +163,7 @@ func (h *Handlers) editComment() http.HandlerFunc {
 
 		tele.Info(ctx, "editComment handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -244,7 +244,7 @@ func (h *Handlers) deleteComment() http.HandlerFunc {
 		ctx := r.Context()
 		tele.Info(ctx, "deleteComment handler called")
 
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}

@@ -1,4 +1,4 @@
-package security
+package jwt
 
 import (
 	"crypto/hmac"
@@ -7,10 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"social-network/services/gateway/internal/utils"
+	utils "social-network/shared/go/http-utils"
 	"strings"
 	"time"
-	// "platform.zone01.gr/git/kvamvasa/real-time-forum/backend/internal/utils"
 )
 
 // ======== Minimal custom JWT (HS256) using ONLY Go stdlib ========

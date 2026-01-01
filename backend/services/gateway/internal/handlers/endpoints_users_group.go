@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	"social-network/shared/gen-go/media"
 	"social-network/shared/gen-go/users"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	"social-network/shared/go/models"
 	"time"
 )
@@ -16,7 +16,7 @@ import (
 func (s *Handlers) createGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -97,7 +97,7 @@ func (s *Handlers) createGroup() http.HandlerFunc {
 func (s *Handlers) updateGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -180,7 +180,7 @@ func (s *Handlers) updateGroup() http.HandlerFunc {
 func (s *Handlers) getAllGroupsPaginated() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -232,7 +232,7 @@ func (s *Handlers) getAllGroupsPaginated() http.HandlerFunc {
 func (s *Handlers) getGroupInfo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -278,7 +278,7 @@ func (s *Handlers) getGroupInfo() http.HandlerFunc {
 func (s *Handlers) getGroupMembers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -328,7 +328,7 @@ func (s *Handlers) getGroupMembers() http.HandlerFunc {
 func (s *Handlers) getUserGroupsPaginated() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -380,7 +380,7 @@ func (s *Handlers) getUserGroupsPaginated() http.HandlerFunc {
 func (s *Handlers) handleGroupJoinRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -411,7 +411,7 @@ func (s *Handlers) handleGroupJoinRequest() http.HandlerFunc {
 func (s *Handlers) inviteToGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -441,7 +441,7 @@ func (s *Handlers) inviteToGroup() http.HandlerFunc {
 func (s *Handlers) leaveGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -470,7 +470,7 @@ func (s *Handlers) leaveGroup() http.HandlerFunc {
 func (s *Handlers) requestJoinGroupOrCancel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -499,7 +499,7 @@ func (s *Handlers) requestJoinGroupOrCancel() http.HandlerFunc {
 func (s *Handlers) respondToGroupInvite() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}
@@ -534,7 +534,7 @@ func (s *Handlers) respondToGroupInvite() http.HandlerFunc {
 func (s *Handlers) searchGroups() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		claims, ok := utils.GetValue[security.Claims](r, ct.ClaimsKey)
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
 		if !ok {
 			panic(1)
 		}

@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"social-network/services/gateway/internal/utils"
+
 	"social-network/shared/gen-go/media"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
 	"social-network/shared/go/mapping"
 	tele "social-network/shared/go/telemetry"
 )

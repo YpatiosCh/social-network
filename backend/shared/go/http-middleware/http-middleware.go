@@ -6,9 +6,9 @@ import (
 	"net"
 	"net/http"
 	"slices"
-	"social-network/services/gateway/internal/security"
-	"social-network/services/gateway/internal/utils"
 	ct "social-network/shared/go/ct"
+	utils "social-network/shared/go/http-utils"
+	"social-network/shared/go/jwt"
 	tele "social-network/shared/go/telemetry"
 
 	"strings"
@@ -110,7 +110,7 @@ func (m *MiddleSystem) Auth() *MiddleSystem {
 			return false, nil
 		}
 		tele.Debug(ctx, "JWT cookie. @1", "value", cookie.Value)
-		claims, err := security.ParseAndValidate(cookie.Value)
+		claims, err := jwt.ParseAndValidate(cookie.Value)
 		if err != nil {
 			tele.Warn(ctx, "unauthorized request at @1", "endpoint", r.URL)
 			utils.ErrorJSON(ctx, w, http.StatusUnauthorized, err.Error())
@@ -136,11 +136,12 @@ func (m *MiddleSystem) Auth() *MiddleSystem {
 // 	return m
 // }
 
-type rateLimitType string
+type rateLimitType struct {
+}
 
-const (
-	UserLimit rateLimitType = "user"
-	IPLimit   rateLimitType = "ip"
+var (
+	UserLimit = rateLimitType{}
+	IPLimit   = rateLimitType{}
 )
 
 func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, durationSeconds int64) *MiddleSystem {
