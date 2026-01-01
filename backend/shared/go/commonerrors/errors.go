@@ -21,7 +21,9 @@ type Error struct {
 
 // Returns a string with all available fields of err
 func (e *Error) Error() string {
-	e.Code = preventNilKind(e.Code)
+	if e == nil {
+		return ""
+	}
 	switch {
 	case e.Msg != "" && e.Err != nil:
 		return fmt.Sprintf("%s: %s: %v", e.Code, e.Msg, e.Err)
@@ -29,16 +31,27 @@ func (e *Error) Error() string {
 		return fmt.Sprintf("%s: %s", e.Code, e.Msg)
 	case e.Err != nil:
 		return fmt.Sprintf("%s: %v", e.Code, e.Err)
-	default:
+	case e.Code != nil:
 		return e.Code.Error()
 	}
+	return ""
 }
 
-func preventNilKind(k error) error {
-	if k != nil {
-		return k
+// Returns the original most underlying error
+func GetSource(err error) string {
+	var e *Error
+	if errors.As(err, &e) {
+		if e.Source != nil {
+			return e.Source.Error()
+		}
 	}
-	return ErrUnknown
+	for {
+		u := errors.Unwrap(err)
+		if u == nil {
+			return err.Error()
+		}
+		err = u
+	}
 }
 
 // Method for errors.Is parsing. Returns `MediaError.Kind`.
@@ -65,7 +78,7 @@ func (e *Error) Unwrap() error {
 //   - If kind is nil and the err is not media error or lacks kind then kind is set to ErrUnknownClass.
 //
 // It is recommended to only use nil kind if the underlying error is of type Error and its kind is not nil.
-func Wrap(kind error, err error, msg ...string) *Error {
+func Wrap(code error, err error, msg ...string) *Error {
 	if err == nil {
 		return nil
 	}
@@ -80,9 +93,13 @@ func Wrap(kind error, err error, msg ...string) *Error {
 			PublicMsg: ce.PublicMsg, // retain public message by default
 		}
 
-		if kind != nil {
-			e.Code = kind
+		if code != nil {
+			e.Code = code
 		}
+		if e.Code == nil {
+			e.Code = ErrUnknown
+		}
+
 		if len(msg) > 0 {
 			e.Msg = msg[0]
 		}
@@ -90,14 +107,14 @@ func Wrap(kind error, err error, msg ...string) *Error {
 		return e
 	}
 
-	if kind == nil {
-		kind = ErrUnknown
+	if code == nil {
+		code = ErrUnknown
 	}
 
 	e := &Error{
-		Code:   kind,
+		Code:   code,
 		Err:    err,
-		Source: err, // ORIGINAL ROOT ERROR
+		Source: err,
 	}
 	if len(msg) > 0 {
 		e.Msg = msg[0]
