@@ -108,16 +108,16 @@ export default function ProfileForm({ user }) {
             {/* Avatar Section */}
             <div className="flex flex-col items-center gap-4">
                 <div className="relative group cursor-pointer">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-background shadow-xl bg-(--muted)/10">
-                        {user.avatar_url ? (
-                            <img
-                                src={avatarPreview}
-                                alt="Profile"
-                                className="w-full h-full object-cover"
-                            />) : (<label htmlFor="avatar-input" className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center cursor-pointer hover:bg-background/10">
-                                <Camera className="w-8 h-8 text-white" />
-                            </label>)}
+                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-background shadow-xl">
+                        <img
+                            src={avatarPreview}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                        />
                     </div>
+                    <label htmlFor="avatar-input" className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <Camera className="w-8 h-8 text-white" />
+                    </label>
 
                     <input
                         id="avatar-input"
