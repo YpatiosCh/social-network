@@ -9,13 +9,15 @@ import (
 )
 
 // Record is a type that helps with commiting after processing a record
+// AFTER PROCESSING THE RECORD MAKE SURE TO COMMIT!!!
 type Record struct {
 	rec           *kgo.Record
 	commitChannel chan<- (*kgo.Record)
 }
 
-var ErrBadArgs = errors.New("bad arguments passed")
+var ErrBadArgs = errors.New("bro, you passed bad arguments")
 
+// newRecord creates a new Record instance
 func newRecord(record *kgo.Record, commitChannel chan<- (*kgo.Record)) (*Record, error) {
 	if record == nil {
 		return nil, fmt.Errorf("%w record: %v", ErrBadArgs, record)
@@ -36,7 +38,7 @@ func (r *Record) Data() []byte {
 }
 
 // Commit marks the record as processed in the Kafka client.
-// MAKE SURE THIS IS PART OF A TRANSACTION, DONT BE COMMITING THINGS YOU LATER UNDO!!
+// MAKE SURE THIS IS AT THE END OF A TRANSACTION, DONT BE COMMITING THINGS YOU LATER UNDO!!
 func (r *Record) Commit(ctx context.Context) {
 	if r.rec == nil {
 		return

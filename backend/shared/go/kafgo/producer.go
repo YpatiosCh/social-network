@@ -9,12 +9,14 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
+// How to use this. Create a kafka producer. User Send() to send payloads. A payload should be a struct with json tags, cause it will get marshaled.
+
 type kafkaProducer struct {
 	client *kgo.Client
 }
 
 // seeds are used for finding the server, just as many kafka ip's you have
-func NewKafkaProducer(ctx context.Context, seeds []string) (*kafkaProducer, func(), error) {
+func NewKafkaProducer(seeds []string) (*kafkaProducer, func(), error) {
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(seeds...),
 	)
@@ -29,6 +31,7 @@ func NewKafkaProducer(ctx context.Context, seeds []string) (*kafkaProducer, func
 
 var ErrProduceFail = errors.New("failed to produce")
 
+// Send sends payload(s) to the specified topic
 func (kfc *kafkaProducer) Send(ctx context.Context, topic string, payload ...any) error {
 	records := make([]*kgo.Record, len(payload))
 	for i, p := range payload {
