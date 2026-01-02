@@ -346,6 +346,22 @@ func (s *Server) CreateNewEvent(ctx context.Context, req *pb.CreateNewEventReque
 	return notification, nil
 }
 
+// CreateNewEventForMultipleUsers creates a new event notification for multiple users
+func (s *Server) CreateNewEventForMultipleUsers(ctx context.Context, req *pb.CreateNewEventForMultipleUsersRequest) (*pb.CreateNewEventForMultipleUsersResponse, error) {
+	if len(req.UserIds) == 0 || req.GroupId == 0 || req.EventId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "user_ids, group_id, and event_id are required")
+	}
+
+	err := s.Application.CreateNewEventForMultipleUsers(ctx, req.UserIds, req.GroupId, req.EventId, req.GroupName, req.EventTitle)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create new event notifications for multiple users: %v", err)
+	}
+
+	// For now, return an empty response since the internal function returns only error
+	// In a real implementation, we might want to return the created notifications
+	return &pb.CreateNewEventForMultipleUsersResponse{}, nil
+}
+
 // CreatePostLike creates a post like notification
 func (s *Server) CreatePostLike(ctx context.Context, req *pb.CreatePostLikeRequest) (*pb.Notification, error) {
 	if req.UserId == 0 || req.LikerUserId == 0 || req.PostId == 0 {

@@ -859,3 +859,51 @@ func TestCreateGroupJoinRequestRejectedNotification(t *testing.T) {
 
 	mockDB.AssertExpectations(t)
 }
+
+// Test CreateNewEventForMultipleUsers function
+func TestCreateNewEventForMultipleUsers(t *testing.T) {
+	mockDB := new(MockDB)
+	app := NewApplicationWithMocks(mockDB)
+
+	ctx := context.Background()
+	userIDs := []int64{1, 2, 3} // Multiple users
+	groupID := int64(100)
+	eventID := int64(200)
+	groupName := "Test Group"
+	eventTitle := "Test Event"
+
+	payloadBytes, _ := json.Marshal(map[string]string{
+		"group_id":      "100",
+		"group_name":    "Test Group",
+		"event_id":      "200",
+		"event_title":   "Test Event",
+		"action":        "view_event",
+	})
+
+	// Expect CreateNotification to be called 3 times (once for each user)
+	for i, userID := range userIDs {
+		expectedNotification := sqlc.Notification{
+			ID:             int64(i + 1), // Different ID for each call
+			UserID:         userID,
+			NotifType:      string(NewEvent),
+			SourceService:  "posts",
+			SourceEntityID: pgtype.Int8{Int64: eventID, Valid: true},
+			Seen:           pgtype.Bool{Bool: false, Valid: true},
+			NeedsAction:    pgtype.Bool{Bool: false, Valid: true},
+			Acted:          pgtype.Bool{Bool: false, Valid: true},
+			CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
+			ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+			DeletedAt:      pgtype.Timestamptz{Valid: false},
+			Payload:        payloadBytes,
+			Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
+		}
+
+		mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil).Once()
+	}
+
+	err := app.CreateNewEventForMultipleUsers(ctx, userIDs, groupID, eventID, groupName, eventTitle)
+
+	assert.NoError(t, err)
+
+	mockDB.AssertExpectations(t)
+}

@@ -32,6 +32,8 @@ service NotificationService {
   rpc CreateGroupJoinRequest (CreateGroupJoinRequestRequest) returns (Notification);
   // Creates a new event notification
   rpc CreateNewEvent (CreateNewEventRequest) returns (Notification);
+  // Creates a new event notification for multiple users
+  rpc CreateNewEventForMultipleUsers (CreateNewEventForMultipleUsersRequest) returns (CreateNewEventForMultipleUsersResponse);
   // Creates a post like notification
   rpc CreatePostLike (CreatePostLikeRequest) returns (Notification);
   // Creates a post comment notification
@@ -152,6 +154,20 @@ message CreateNotificationsRequest {
 // Response for creating multiple notifications
 message CreateNotificationsResponse {
   repeated Notification created_notifications = 1;
+}
+
+// Request to create a new event notification for multiple users
+message CreateNewEventForMultipleUsersRequest {
+  repeated int64 user_ids = 1; // recipients
+  int64 group_id = 2; // id of the group
+  int64 event_id = 3; // id of the event
+  string group_name = 4; // name of the group
+  string event_title = 5; // title of the event
+}
+
+// Response for creating a new event notification for multiple users
+message CreateNewEventForMultipleUsersResponse {
+  repeated Notification created_notifications = 1; // created notifications
 }
 
 // Request to get user notifications
