@@ -3,7 +3,6 @@ package kafgo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"social-network/shared/go/ct"
 	tele "social-network/shared/go/telemetry"
@@ -44,7 +43,7 @@ func NewKafkaConsumer(seeds []string, group string) (*kafkaConsumer, error) {
 		topicChannels: make(map[string]chan *Record, 3),
 		commitBuffer:  1000,
 		topicBuffer:   5000,
-		commitChannel: make(chan (*kgo.Record), 5000),
+		commitChannel: make(chan (*kgo.Record), 1000),
 	}
 
 	return kfc, nil
@@ -88,7 +87,6 @@ func (kfc *kafkaConsumer) RegisterTopic(topic ct.KafkaTopic) (<-chan *Record, er
 func (kfc *kafkaConsumer) StartConsuming(ctx context.Context) (func(), error) {
 	// do state validation checks
 
-	kfc.isConsuming = true
 	var err error
 
 	//making the actual client, cause it needs to be created after all topics have been registered
@@ -97,6 +95,7 @@ func (kfc *kafkaConsumer) StartConsuming(ctx context.Context) (func(), error) {
 		kgo.ConsumerGroup(kfc.group),
 		kgo.ConsumeTopics(kfc.topics...),
 		kgo.DisableAutoCommit(),
+		kgo.AllowAutoTopicCreation(),
 	)
 	if err != nil {
 		return nil, err
@@ -122,6 +121,7 @@ func (kfc *kafkaConsumer) StartConsuming(ctx context.Context) (func(), error) {
 
 // actuallyStartConsuming actually does the consumption
 func (kfc *kafkaConsumer) actuallyStartConsuming() {
+	kfc.isConsuming = true
 	// commitChannel is listened to by a routine for record commits
 	// after the handlers are done processing the record
 	go kfc.commitRoutine()
@@ -139,6 +139,7 @@ func (kfc *kafkaConsumer) actuallyStartConsuming() {
 				if errs := fetches.Errors(); len(errs) > 0 {
 					// All errors are retried internally when fetching, but non-retriable errors are
 					// returned from polls so that users can notice and take action.
+					tele.Info(context.Background(), "fetch error: @1", "error", errs)
 					kfc.shutdownProcedure(true)
 					return
 				}
@@ -152,15 +153,16 @@ func (kfc *kafkaConsumer) actuallyStartConsuming() {
 					Record, err := newRecord(record, kfc.commitChannel)
 					if err != nil {
 						//think what to do
-						fmt.Println("failed to create record")
+						tele.Info(context.Background(), "failed to create record")
 						continue
 					}
 
 					timer.Reset(time.Second)
 					select {
 					case <-timer.C:
-						fmt.Print("SLOW CHANNEL DETECTED")
+						tele.Info(context.Background(), "SLOW CHANNEL DETECTED")
 						kfc.shutdownProcedure(true)
+						tele.Info(context.Background(), "SLOW CHANNEL error: ")
 						return
 					case kfc.topicChannels[record.Topic] <- Record:
 					}
@@ -211,11 +213,11 @@ outer:
 		case record := <-kfc.commitChannel:
 			err := kfc.client.CommitRecords(record.Context, record) //TODO is this the correct context?
 			if err != nil {
-				fmt.Println("ERROR FOUND") //TODO think what needs to be done here
+				tele.Info(context.Background(), "ERROR FOUND") //TODO think what needs to be done here
 			}
 			timer.Reset(time.Second * 10)
 		case <-timer.C:
-			fmt.Println("enough waiting for commit messages, ending it all now")
+			tele.Info(context.Background(), "enough waiting for commit messages, ending it all now")
 			break outer
 		}
 	}
@@ -232,14 +234,14 @@ func (kfc *kafkaConsumer) commitRoutine() {
 		case <-kfc.context.Done():
 			return
 		case record := <-kfc.commitChannel:
-			fmt.Println("record:", record)
+			tele.Info(context.Background(), "@1", "record", record)
 
 			//TODO pool records here instead of doing them one by one
 
 			err := kfc.client.CommitRecords(record.Context, record) //TODO is this the correct context?
 			if err != nil {
-				fmt.Println("ERROR FOUND")  //TODO think what needs to be done here
-				kfc.shutdownProcedure(true) //TODO this is excessive, but not sure what else to do? other than retry?
+				tele.Info(context.Background(), "COMMIT ERROR FOUND") //TODO think what needs to be done here
+				kfc.shutdownProcedure(true)                           //TODO this is excessive, but not sure what else to do? other than retry?
 			}
 
 		}
@@ -297,13 +299,6 @@ func (kfc *kafkaConsumer) validateBeforeStart() error {
 	}
 	if cap(kfc.commitChannel) != kfc.commitBuffer {
 		return errors.New("commit channel capacity mismatch")
-	}
-
-	if kfc.client != nil {
-		return errors.New("client already initialized")
-	}
-	if kfc.cancel != nil {
-		return errors.New("cancel func already set")
 	}
 
 	return nil

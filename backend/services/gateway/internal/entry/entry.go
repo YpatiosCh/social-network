@@ -3,6 +3,7 @@ package entry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -15,11 +16,16 @@ import (
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
 	"social-network/shared/go/gorpc"
+	"social-network/shared/go/kafgo"
 	redis_connector "social-network/shared/go/redis"
 	tele "social-network/shared/go/telemetry"
 	"syscall"
 	"time"
+
+	"github.com/twmb/franz-go/pkg/kgo"
 )
+
+var producer = kafgo.KafkaProducer{}
 
 func Run() {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -27,6 +33,11 @@ func Run() {
 
 	// Inject envs to custom types
 	ct.InitCustomTypes(cfgs.PassSecret, cfgs.EncrytpionKey)
+
+	// go mytest()
+
+	// time.Sleep(time.Second * 5)
+	// os.Exit(1)
 
 	//
 	//
@@ -49,9 +60,69 @@ func Run() {
 		cfgs.RedisDB,
 	)
 	if err := CacheService.TestRedisConnection(); err != nil {
-		tele.Fatalf("connection test failed, ERROR: %v", err)
+		// tele.Fatalf("connection test failed, ERROR: %v", err)
 	}
 	tele.Info(ctx, "Cache service connection started correctly")
+
+	//
+	//
+	//
+
+	consumer, err := kafgo.NewKafkaConsumer([]string{"kafka:9092"}, "test")
+	if err != nil {
+		tele.Error(ctx, "KAFKA ERROR: @1", "error", err.Error())
+	}
+
+	ch, err := consumer.RegisterTopic("test_topic")
+	if err != nil {
+		tele.Error(ctx, "KAFKA ERROR: @1", "error", err.Error())
+	}
+
+	go func() {
+		for {
+
+			for record := range ch {
+				tele.Info(ctx, "RECORD ARRIVED! @1", "record", record)
+				record.Commit(ctx)
+			}
+			time.Sleep(time.Second)
+			tele.Info(ctx, "consume loop")
+		}
+	}()
+
+	_, err = consumer.StartConsuming(ctx)
+	if err != nil {
+		tele.Error(ctx, "KAFKA ERROR: @1", "error", err.Error())
+	}
+	tele.Info(ctx, "started consuming")
+
+	//
+	//
+	//
+	//
+	producer, _, err := kafgo.NewKafkaProducer([]string{"kafka:9092"})
+	if err != nil {
+		tele.Error(ctx, "KAFKA ERROR: @1", "error", err.Error())
+	}
+
+	type X struct {
+		Name string `json:"name"`
+	}
+
+	fmt.Println(producer)
+
+	go func() {
+		for i := range 10000 {
+			err := producer.Send(ctx, "test_topic", X{fmt.Sprint("alex:", i)})
+			if err != nil {
+				tele.Error(ctx, "KAFKA ERROR: @1", "error", err.Error())
+			}
+			tele.Info(ctx, "producer loop")
+			time.Sleep(time.Second)
+		}
+	}()
+
+	time.Sleep(time.Minute)
 
 	//
 	//
@@ -200,4 +271,74 @@ func getConfigs() configs { // sensible defaults
 	}
 
 	return cfgs
+}
+
+func mytest() {
+	seeds := []string{"localhost:9092"}
+	// One client can both produce and consume!
+	// Consuming can either be direct (no consumer group), or through a group. Below, we use a group.
+	cl, err := kgo.NewClient(
+		kgo.SeedBrokers(seeds...),
+		kgo.ConsumerGroup("my-group-identifier"),
+		kgo.ConsumeTopics("foo"),
+		kgo.AllowAutoTopicCreation(),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer cl.Close()
+
+	ctx := context.Background()
+
+	// 1.) Producing a message
+	// All record production goes through Produce, and the callback can be used
+	// to allow for synchronous or asynchronous production.
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// fmt.Println("produce async start")
+	record := &kgo.Record{Topic: "foo", Value: []byte("bar")}
+	// cl.Produce(ctx, record, func(_ *kgo.Record, err error) {
+	// 	defer wg.Done()
+	// 	if err != nil {
+	// 		fmt.Printf("record had a produce error: %v\n", err)
+	// 	}
+
+	// })
+	// fmt.Println("produce async wait")
+	// wg.Wait()
+	fmt.Println("produce async fin")
+	fmt.Println("produce sync start")
+	// Alternatively, ProduceSync exists to synchronously produce a batch of records.
+	if err := cl.ProduceSync(ctx, record).FirstErr(); err != nil {
+		fmt.Printf("record had a produce error while synchronously producing: %v\n", err)
+	}
+	fmt.Println("produce sync fin")
+	// 2.) Consuming messages from a topic
+	for {
+		fetches := cl.PollFetches(ctx)
+		if errs := fetches.Errors(); len(errs) > 0 {
+			// All errors are retried internally when fetching, but non-retriable errors are
+			// returned from polls so that users can notice and take action.
+			panic(fmt.Sprint(errs))
+		}
+
+		// We can iterate through a record iterator...
+		iter := fetches.RecordIter()
+		for !iter.Done() {
+			record := iter.Next()
+			fmt.Println(string(record.Value), "from an iterator!")
+		}
+
+		// or a callback function.
+		fetches.EachPartition(func(p kgo.FetchTopicPartition) {
+			for _, record := range p.Records {
+				fmt.Println(string(record.Value), "from range inside a callback!")
+			}
+
+			// We can even use a second callback!
+			p.EachRecord(func(record *kgo.Record) {
+				fmt.Println(string(record.Value), "from a second callback!")
+			})
+		})
+	}
 }
