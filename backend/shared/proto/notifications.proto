@@ -44,6 +44,8 @@ service NotificationService {
   rpc CreateMention (CreateMentionRequest) returns (Notification);
   // Creates a new message notification
   rpc CreateNewMessage (CreateNewMessageRequest) returns (Notification);
+  // Creates a new message notification for multiple users
+  rpc CreateNewMessageForMultipleUsers (CreateNewMessageForMultipleUsersRequest) returns (CreateNewMessageForMultipleUsersResponse);
   // Creates a follow request accepted notification
   rpc CreateFollowRequestAccepted (CreateFollowRequestAcceptedRequest) returns (Notification);
   // Creates a follow request rejected notification
@@ -305,6 +307,21 @@ message CreateNewMessageRequest {
   string sender_username = 4; // username of the sender
   string message_content = 5; // content of the message
   bool aggregate = 6; // whether to aggregate this notification with existing ones
+}
+
+// Request to create a new message notification for multiple users
+message CreateNewMessageForMultipleUsersRequest {
+  repeated int64 user_ids = 1; // recipients
+  int64 sender_user_id = 2; // user that sent the message
+  int64 chat_id = 3; // id of the chat
+  string sender_username = 4; // username of the sender
+  string message_content = 5; // content of the message
+  bool aggregate = 6; // whether to aggregate this notification with existing ones
+}
+
+// Response for creating a new message notification for multiple users
+message CreateNewMessageForMultipleUsersResponse {
+  repeated Notification created_notifications = 1; // created notifications
 }
 
 // Request to create a follow request accepted notification

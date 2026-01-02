@@ -277,6 +277,11 @@ func (a *Application) CreateMentionNotification(ctx context.Context, userID, men
 
 // CreateNewMessageNotification creates a notification when a user receives a new message in a chat
 func (a *Application) CreateNewMessageNotification(ctx context.Context, userID, senderID, chatID int64, senderUsername, messageContent string, aggregate bool) error {
+	return a.CreateNewMessageForMultipleUsers(ctx, []int64{userID}, senderID, chatID, senderUsername, messageContent, aggregate)
+}
+
+// CreateNewMessageForMultipleUsers creates a notification when a user sends a message to multiple users in a chat
+func (a *Application) CreateNewMessageForMultipleUsers(ctx context.Context, userIDs []int64, senderID, chatID int64, senderUsername, messageContent string, aggregate bool) error {
 	title := "New Message"
 	message := fmt.Sprintf("%s sent you a message", senderUsername)
 
@@ -288,20 +293,23 @@ func (a *Application) CreateNewMessageNotification(ctx context.Context, userID, 
 		"action":          "view_chat",
 	}
 
-	_, err := a.CreateNotificationWithAggregation(
-		ctx,
-		userID,     // recipient
-		NewMessage, // type
-		title,      // title
-		message,    // message
-		"chat",     // source service
-		chatID,     // source entity ID (the chat)
-		false,      // doesn't need action (just informational)
-		payload,    // payload
-		aggregate,  // whether to aggregate
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create new message notification: %w", err)
+	// Create notifications for each user
+	for _, userID := range userIDs {
+		_, err := a.CreateNotificationWithAggregation(
+			ctx,
+			userID,     // recipient
+			NewMessage, // type
+			title,      // title
+			message,    // message
+			"chat",     // source service
+			chatID,     // source entity ID (the chat)
+			false,      // doesn't need action (just informational)
+			payload,    // payload
+			aggregate,  // whether to aggregate
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create new message notification for user %d: %w", userID, err)
+		}
 	}
 
 	return nil

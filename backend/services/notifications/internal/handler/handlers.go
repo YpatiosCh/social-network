@@ -502,6 +502,22 @@ func (s *Server) CreateNewMessage(ctx context.Context, req *pb.CreateNewMessageR
 	return notification, nil
 }
 
+// CreateNewMessageForMultipleUsers creates a new message notification for multiple users
+func (s *Server) CreateNewMessageForMultipleUsers(ctx context.Context, req *pb.CreateNewMessageForMultipleUsersRequest) (*pb.CreateNewMessageForMultipleUsersResponse, error) {
+	if len(req.UserIds) == 0 || req.SenderUserId == 0 || req.ChatId == 0 {
+		return nil, status.Error(codes.InvalidArgument, "user_ids, sender_user_id, and chat_id are required")
+	}
+
+	err := s.Application.CreateNewMessageForMultipleUsers(ctx, req.UserIds, req.SenderUserId, req.ChatId, req.SenderUsername, req.MessageContent, req.Aggregate)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create new message notifications for multiple users: %v", err)
+	}
+
+	// For now, return an empty response since the internal function returns only error
+	// In a real implementation, we might want to return the created notifications
+	return &pb.CreateNewMessageForMultipleUsersResponse{}, nil
+}
+
 // CreateFollowRequestAccepted creates a follow request accepted notification
 func (s *Server) CreateFollowRequestAccepted(ctx context.Context, req *pb.CreateFollowRequestAcceptedRequest) (*pb.Notification, error) {
 	if req.RequesterUserId == 0 || req.TargetUserId == 0 {

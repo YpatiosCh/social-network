@@ -34,6 +34,7 @@ const (
 	NotificationService_CreatePostComment_FullMethodName                 = "/notifications.NotificationService/CreatePostComment"
 	NotificationService_CreateMention_FullMethodName                     = "/notifications.NotificationService/CreateMention"
 	NotificationService_CreateNewMessage_FullMethodName                  = "/notifications.NotificationService/CreateNewMessage"
+	NotificationService_CreateNewMessageForMultipleUsers_FullMethodName  = "/notifications.NotificationService/CreateNewMessageForMultipleUsers"
 	NotificationService_CreateFollowRequestAccepted_FullMethodName       = "/notifications.NotificationService/CreateFollowRequestAccepted"
 	NotificationService_CreateFollowRequestRejected_FullMethodName       = "/notifications.NotificationService/CreateFollowRequestRejected"
 	NotificationService_CreateGroupInviteAccepted_FullMethodName         = "/notifications.NotificationService/CreateGroupInviteAccepted"
@@ -87,6 +88,8 @@ type NotificationServiceClient interface {
 	CreateMention(ctx context.Context, in *CreateMentionRequest, opts ...grpc.CallOption) (*Notification, error)
 	// Creates a new message notification
 	CreateNewMessage(ctx context.Context, in *CreateNewMessageRequest, opts ...grpc.CallOption) (*Notification, error)
+	// Creates a new message notification for multiple users
+	CreateNewMessageForMultipleUsers(ctx context.Context, in *CreateNewMessageForMultipleUsersRequest, opts ...grpc.CallOption) (*CreateNewMessageForMultipleUsersResponse, error)
 	// Creates a follow request accepted notification
 	CreateFollowRequestAccepted(ctx context.Context, in *CreateFollowRequestAcceptedRequest, opts ...grpc.CallOption) (*Notification, error)
 	// Creates a follow request rejected notification
@@ -263,6 +266,16 @@ func (c *notificationServiceClient) CreateNewMessage(ctx context.Context, in *Cr
 	return out, nil
 }
 
+func (c *notificationServiceClient) CreateNewMessageForMultipleUsers(ctx context.Context, in *CreateNewMessageForMultipleUsersRequest, opts ...grpc.CallOption) (*CreateNewMessageForMultipleUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateNewMessageForMultipleUsersResponse)
+	err := c.cc.Invoke(ctx, NotificationService_CreateNewMessageForMultipleUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *notificationServiceClient) CreateFollowRequestAccepted(ctx context.Context, in *CreateFollowRequestAcceptedRequest, opts ...grpc.CallOption) (*Notification, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Notification)
@@ -431,6 +444,8 @@ type NotificationServiceServer interface {
 	CreateMention(context.Context, *CreateMentionRequest) (*Notification, error)
 	// Creates a new message notification
 	CreateNewMessage(context.Context, *CreateNewMessageRequest) (*Notification, error)
+	// Creates a new message notification for multiple users
+	CreateNewMessageForMultipleUsers(context.Context, *CreateNewMessageForMultipleUsersRequest) (*CreateNewMessageForMultipleUsersResponse, error)
 	// Creates a follow request accepted notification
 	CreateFollowRequestAccepted(context.Context, *CreateFollowRequestAcceptedRequest) (*Notification, error)
 	// Creates a follow request rejected notification
@@ -515,6 +530,9 @@ func (UnimplementedNotificationServiceServer) CreateMention(context.Context, *Cr
 }
 func (UnimplementedNotificationServiceServer) CreateNewMessage(context.Context, *CreateNewMessageRequest) (*Notification, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateNewMessage not implemented")
+}
+func (UnimplementedNotificationServiceServer) CreateNewMessageForMultipleUsers(context.Context, *CreateNewMessageForMultipleUsersRequest) (*CreateNewMessageForMultipleUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateNewMessageForMultipleUsers not implemented")
 }
 func (UnimplementedNotificationServiceServer) CreateFollowRequestAccepted(context.Context, *CreateFollowRequestAcceptedRequest) (*Notification, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateFollowRequestAccepted not implemented")
@@ -806,6 +824,24 @@ func _NotificationService_CreateNewMessage_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotificationServiceServer).CreateNewMessage(ctx, req.(*CreateNewMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NotificationService_CreateNewMessageForMultipleUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateNewMessageForMultipleUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).CreateNewMessageForMultipleUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_CreateNewMessageForMultipleUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).CreateNewMessageForMultipleUsers(ctx, req.(*CreateNewMessageForMultipleUsersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1102,6 +1138,10 @@ var NotificationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateNewMessage",
 			Handler:    _NotificationService_CreateNewMessage_Handler,
+		},
+		{
+			MethodName: "CreateNewMessageForMultipleUsers",
+			Handler:    _NotificationService_CreateNewMessageForMultipleUsers_Handler,
 		},
 		{
 			MethodName: "CreateFollowRequestAccepted",

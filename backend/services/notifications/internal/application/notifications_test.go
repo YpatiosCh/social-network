@@ -955,3 +955,57 @@ func TestCreateGroupInviteForMultipleUsers(t *testing.T) {
 
 	mockDB.AssertExpectations(t)
 }
+
+// Test CreateNewMessageForMultipleUsers function
+func TestCreateNewMessageForMultipleUsers(t *testing.T) {
+	mockDB := new(MockDB)
+	app := NewApplicationWithMocks(mockDB)
+
+	ctx := context.Background()
+	userIDs := []int64{1, 2, 3} // Multiple users
+	senderUserID := int64(10)
+	chatID := int64(100)
+	senderUsername := "senderuser"
+	messageContent := "Hello, this is a test message"
+	aggregate := true
+
+	payloadBytes, _ := json.Marshal(map[string]string{
+		"sender_id":       "10",
+		"sender_name":     "senderuser",
+		"chat_id":         "100",
+		"message_content": "Hello, this is a test message",
+		"action":          "view_chat",
+	})
+
+	// Expect CreateNotification to be called 3 times (once for each user)
+	for i, userID := range userIDs {
+		expectedNotification := sqlc.Notification{
+			ID:             int64(i + 1), // Different ID for each call
+			UserID:         userID,
+			NotifType:      string(NewMessage),
+			SourceService:  "chat",
+			SourceEntityID: pgtype.Int8{Int64: chatID, Valid: true},
+			Seen:           pgtype.Bool{Bool: false, Valid: true},
+			NeedsAction:    pgtype.Bool{Bool: false, Valid: true},
+			Acted:          pgtype.Bool{Bool: false, Valid: true},
+			CreatedAt:      pgtype.Timestamptz{Time: time.Now(), Valid: true},
+			ExpiresAt:      pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true},
+			DeletedAt:      pgtype.Timestamptz{Valid: false},
+			Payload:        payloadBytes,
+			Count:          pgtype.Int4{Int32: 1, Valid: true}, // Add the count field
+		}
+
+		// For aggregated messages, expect GetUnreadNotificationByTypeAndEntity to be called first
+		if aggregate {
+			mockDB.On("GetUnreadNotificationByTypeAndEntity", ctx, mock.AnythingOfType("sqlc.GetUnreadNotificationByTypeAndEntityParams")).Return(sqlc.Notification{}, fmt.Errorf("sql: no rows in result set")).Once()
+		}
+
+		mockDB.On("CreateNotification", ctx, mock.AnythingOfType("sqlc.CreateNotificationParams")).Return(expectedNotification, nil).Once()
+	}
+
+	err := app.CreateNewMessageForMultipleUsers(ctx, userIDs, senderUserID, chatID, senderUsername, messageContent, aggregate)
+
+	assert.NoError(t, err)
+
+	mockDB.AssertExpectations(t)
+}
