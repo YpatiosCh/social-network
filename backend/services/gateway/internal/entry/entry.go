@@ -15,14 +15,11 @@ import (
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
 	"social-network/shared/go/gorpc"
-	"social-network/shared/go/kafgo"
 	redis_connector "social-network/shared/go/redis"
 	tele "social-network/shared/go/telemetry"
 	"syscall"
 	"time"
 )
-
-var producer = kafgo.KafkaProducer{}
 
 func Run() {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -52,7 +49,7 @@ func Run() {
 		cfgs.RedisDB,
 	)
 	if err := CacheService.TestRedisConnection(); err != nil {
-		// tele.Fatalf("connection test failed, ERROR: %v", err)
+		tele.Fatalf("connection test failed, ERROR: %v", err)
 	}
 	tele.Info(ctx, "Cache service connection started correctly")
 
