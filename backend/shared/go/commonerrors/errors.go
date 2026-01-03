@@ -3,7 +3,9 @@ package commonerrors
 import (
 	"context"
 	"errors"
-	"fmt"
+	"runtime"
+	"strconv"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -12,39 +14,52 @@ import (
 // Error represents a custom error type that includes classification, cause, and context.
 // It implements the error interface and supports error wrapping and classification.
 type Error struct {
-	Code      error  // Classification: ErrNotFound, ErrInternal, etc. Enusured to never be nil
-	Err       error  // Cause: wrapped original error.
-	Msg       string // Context: Func, args etc.
-	PublicMsg string // A message that will be displayed to clients.
-	Source    error  // The original most underlying error.
+	code      error  // Classification: ErrNotFound, ErrInternal, etc. Enusured to never be nil
+	input     string // The input given to the func returning or wraping: args, structs.
+	stack     string // The stack starting from the most undeliyng error and three levels up.
+	err       error  // Cause: wrapped original error.
+	publicMsg string // A message that will be displayed to clients.
 }
 
-// Returns a string with all available fields of err
+// Returns a string of the full stack of errors. For each error the string contains:
+//   - Error.code: Classification: ErrNotFound, ErrInternal, etc. Enusured to never be nil
+//   - Error.input: The input given to the func returning or wraping: args, structs
+//   - Error.err: The wraped error down the chain.
 func (e *Error) Error() string {
 	if e == nil {
 		return ""
 	}
-	switch {
-	case e.Msg != "" && e.Err != nil:
-		return fmt.Sprintf("%s: %s: %v", e.Code, e.Msg, e.Err)
-	case e.Msg != "":
-		return fmt.Sprintf("%s: %s", e.Code, e.Msg)
-	case e.Err != nil:
-		return fmt.Sprintf("%s: %v", e.Code, e.Err)
-	case e.Code != nil:
-		return e.Code.Error()
+
+	var builder strings.Builder
+
+	if e.code != nil {
+		builder.WriteString(e.code.Error())
 	}
-	return ""
+
+	if e.input != "" {
+		builder.WriteString(": ")
+		builder.WriteString(e.input)
+	}
+
+	if e.stack != "" {
+		builder.WriteString(": ")
+		builder.WriteString(e.stack)
+	}
+
+	if e.err != nil {
+		builder.WriteString(": ")
+		builder.WriteString(e.err.Error())
+	}
+	return builder.String()
 }
 
-// Returns the original most underlying error
+// Stringer method for loggers
+func (e *Error) String() string {
+	return e.Error()
+}
+
+// Returns the original most underlying error by calling Unwrap until next err is nil.
 func GetSource(err error) string {
-	var e *Error
-	if errors.As(err, &e) {
-		if e.Source != nil {
-			return e.Source.Error()
-		}
-	}
 	for {
 		u := errors.Unwrap(err)
 		if u == nil {
@@ -54,17 +69,30 @@ func GetSource(err error) string {
 	}
 }
 
-// Method for errors.Is parsing. Returns `MediaError.Kind`.
+// Method for errors.Is parsing. Returns `Error.code` match.
 func (e *Error) Is(target error) bool {
-	return e.Code == target
+	return e.code == target
 }
 
 // Method for error.As parsing. Returns the `MediaError.Err`.
 func (e *Error) Unwrap() error {
-	return e.Err
+	return e.err
 }
 
-//TODOvagelis make wrap embed the stack trace into the error it receives, ex. "(<package_name>)<function_name>: <error_message> "(application)DeleteComment: request validation failed"
+// Creates a new Error with code
+func New(code error, err error, msg ...string) *Error {
+	if err == nil {
+		return nil
+	}
+
+	e := &Error{
+		code:  parseCode(code),
+		err:   err,
+		stack: getStack(3, 3),
+		input: getMsg(msg...),
+	}
+	return e
+}
 
 // Wrap creates a MediaError that classifies and optionally wraps an existing error.
 //
@@ -89,20 +117,19 @@ func Wrap(code error, err error, msg ...string) *Error {
 	if errors.As(err, &ce) {
 		// Wrapping an existing custom error
 		e := &Error{
-			Code:      ce.Code,
-			Err:       err,
-			Source:    ce.Source,    // retain original source
-			PublicMsg: ce.PublicMsg, // retain public message by default
+			code:      ce.code,
+			err:       err,
+			publicMsg: ce.publicMsg, // retain public message by default
 		}
 
 		if code != nil {
-			e.Code = code
+			e.code = parseCode(code)
 		}
-		if e.Code == nil {
-			e.Code = ErrUnknown
+		if e.code == nil {
+			e.code = ErrUnknown
 		}
 
-		e.Msg = getMsg(msg...)
+		e.input = getMsg(msg...)
 
 		return e
 	}
@@ -112,12 +139,12 @@ func Wrap(code error, err error, msg ...string) *Error {
 	}
 
 	e := &Error{
-		Code:   code,
-		Err:    err,
-		Source: err,
+		code: code,
+		err:  err,
+		// stack: getStack(3, 2),
 	}
 
-	e.Msg = getMsg(msg...)
+	e.input = getMsg(msg...)
 
 	return e
 }
@@ -129,7 +156,13 @@ func Wrap(code error, err error, msg ...string) *Error {
 //	 return Wrap(ErrUnauthorized, err, "token expired").
 //		WithPublic("Authentication required")
 func (e *Error) WithPublic(msg string) *Error {
-	e.PublicMsg = msg
+	e.publicMsg = msg
+	return e
+}
+
+// Returns *Error e  with error code c. If c fails validation e's code becomes ErrUnknown.
+func (e *Error) WithCode(c error) *Error {
+	e.code = parseCode(c)
 	return e
 }
 
@@ -156,7 +189,7 @@ func ToGRPCCode(err error) codes.Code {
 	// Handle your domain error
 	var e *Error
 	if errors.As(err, &e) {
-		if code, ok := errorToGRPC[e.Code]; ok {
+		if code, ok := errorToGRPC[e.code]; ok {
 			return code
 		}
 	}
@@ -170,20 +203,19 @@ func ToGRPCCode(err error) codes.Code {
 // Optionaly a msg string is included for additional context.
 // Usefull for downstream error parsing.
 func ParseGrpcErr(err error, msg ...string) error {
-	if err != nil {
-		st, ok := status.FromError(err)
-		if !ok {
-			// Not a gRPC status error (very rare)
-			return err
-		}
+	if err == nil {
+		return nil
+	}
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
 
-		code := st.Code() // codes.NotFound, codes.Internal, etc.
-		message := st.Message()
+	code := st.Code() // codes.NotFound, codes.Internal, etc.
+	message := st.Message()
 
-		if domainErr, ok := grpcToError[code]; ok {
-			return Wrap(domainErr, errors.New(message), getMsg(msg...))
-		}
-
+	if domainErr, ok := grpcToError[code]; ok {
+		return Wrap(domainErr, errors.New(message), getMsg(msg...))
 	}
 	return Wrap(ErrUnknown, err, getMsg(msg...))
 }
@@ -195,7 +227,6 @@ func GRPCStatus(err error) error {
 		return nil
 	}
 
-	// TODO: Check this
 	// Propagate gRPC status errors
 	if st, ok := status.FromError(err); ok {
 		return st.Err()
@@ -212,11 +243,25 @@ func GRPCStatus(err error) error {
 	// Handle domain error
 	var e *Error
 	if errors.As(err, &e) {
-		if code, ok := errorToGRPC[e.Code]; ok {
-			return status.Errorf(code, "service error: %v", e.PublicMsg)
+		msg := e.publicMsg
+		if msg == "" {
+			msg = "missing error message"
+		}
+
+		if code, ok := errorToGRPC[e.code]; ok {
+			return status.Errorf(code, "service error: %v", msg)
 		}
 	}
 	return status.Errorf(codes.Unknown, "unknown error")
+}
+
+// Returns c error if c is not nil and is a defined error in commonerrors else returns ErrUnknown
+func parseCode(c error) error {
+	_, ok := errorToGRPC[c]
+	if c == nil || !ok {
+		c = ErrUnknown
+	}
+	return c
 }
 
 func getMsg(msg ...string) string {
@@ -224,4 +269,31 @@ func getMsg(msg ...string) string {
 		return msg[0]
 	}
 	return ""
+}
+
+func getStack(depth int, skip int) string {
+	var builder strings.Builder
+	builder.Grow(150)
+	pc := make([]uintptr, depth)
+	n := runtime.Callers(skip, pc)
+	if n == 0 {
+		return "(no caller data)"
+	}
+	pc = pc[:n] // pass only valid pcs to runtime.CallersFrames
+	frames := runtime.CallersFrames(pc)
+	for {
+		frame, more := frames.Next()
+		name := frame.Func.Name()
+		start := strings.LastIndex(name, "/")
+		builder.WriteString("by ")
+		builder.WriteString(name[start+1:])
+		builder.WriteString(" at ")
+		builder.WriteString(strconv.Itoa(frame.Line))
+		builder.WriteString("\n")
+		if !more {
+			break
+		}
+	}
+
+	return builder.String()
 }

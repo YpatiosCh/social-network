@@ -1,30 +1,31 @@
 # commonerrors
 
-`commonerrors` provides a structured error model for Go services with:
+`commonerrors` provides a **structured, opinionated error model** for Go backend services, with a strong focus on:
 
-* **Stable error classification** (sentinel errors)
-* **Error wrapping** with preserved root cause
-* **Public vs internal messages**
+* **Stable error classification**
+* **Explicit error wrapping**
+* **Clear separation between internal diagnostics and public messages**
 * **Idiomatic integration with `errors.Is` / `errors.As`**
 * **First-class gRPC status mapping**
 
-This package is designed for backend services (especially gRPC) that need **consistent error semantics across layers**.
+This package is designed for **internal service use**, especially in gRPC-based systems, where consistent error semantics and debuggability matter more than minimal error strings.
 
 ---
 
 ## Design Goals
 
 * Separate **classification** (what kind of error) from **cause** (what actually happened)
-* Preserve the **original underlying error**
+* Preserve the **full causal chain** of errors
+* Capture **stack traces only at the point of failure**
 * Support Go’s standard error inspection (`errors.Is`, `errors.As`)
-* Provide a single source of truth for **gRPC status codes**
-* Avoid string-based error handling
+* Provide a single, consistent mapping to **gRPC status codes**
+* Avoid string-based error handling and ad-hoc conventions
 
 ---
 
 ## Error Classification
 
-Error *classes* are represented as **sentinel `error` values**, similar to gRPC and `os` errors:
+Error *classes* are represented as **sentinel `error` values**, similar to `os` and gRPC errors:
 
 ```go
 ErrNotFound
@@ -34,9 +35,9 @@ ErrUnavailable
 // ...
 ```
 
-These are used as **error codes**, not returned directly in most cases.
+These sentinels are used as **error codes**, not typically returned directly.
 
-They map 1:1 to gRPC status codes.
+Each error code maps 1:1 to a gRPC `codes.Code` via internal maps.
 
 ---
 
@@ -44,42 +45,88 @@ They map 1:1 to gRPC status codes.
 
 ```go
 type Error struct {
-	Code      error  // Classification (never nil)
-	Err       error  // Wrapped cause
-	Msg       string // Internal context
-	PublicMsg string // Message safe for clients
-	Source    error  // Original underlying error
+	code      error  // Classification (never nil)
+	input     string // Input / context at the wrapping site
+	stack     string // Stack trace (captured only at origin)
+	err       error  // Wrapped cause
+	publicMsg string // Message safe for clients
 }
 ```
 
 ### Invariants
 
-* `Code` is **guaranteed to be non-nil**
-* `Source` always points to the **first underlying error**
-* Errors are **fully compatible** with `errors.Is` and `errors.As`
+* `code` is **guaranteed to be non-nil**
+* Stack traces are captured **only at the root cause**
+* Wrapping preserves the **original causal chain**
+* Errors are fully compatible with `errors.Is` and `errors.As`
+
+---
+
+## Error String Representation
+
+Calling `Error()` (or logging the error) produces a **recursive, flattened string** containing:
+
+* The error code
+* The input/context at each wrapping level
+* The stack trace (only once, at the origin)
+* The full wrapped error chain
+
+```go
+log.Println(err)
+```
+
+This prints the **entire causal chain**, because `Error()` recursively calls `err.Error()` on wrapped errors.
+
+This behavior is **intentional** and meant for **internal logging and debugging**.
 
 ---
 
 ## Creating Errors
 
-### Wrapping an error
+### Creating a new error (origin point)
 
 ```go
-err := Wrap(ErrNotFound, sql.ErrNoRows, "user lookup failed")
+err := New(ErrInternal, sqlErr, "query users")
 ```
+
+* Captures a stack trace
+* Sets the classification code
+* Records input/context
+
+---
+
+### Wrapping an existing error
+
+```go
+err = Wrap(ErrNotFound, err, "GetUser")
+```
+
+* Preserves the original stack trace
+* Updates or inherits the error code
+* Adds contextual input
+
+---
 
 ### Wrapping without changing the code
 
 ```go
-err = Wrap(nil, err, "additional context")
+err = Wrap(nil, err, "repository layer")
 ```
+
+* Keeps the existing classification
+* Adds context only
+
+---
 
 ### Public-facing messages
 
 ```go
-err := Wrap(ErrUnauthenticated, tokenErr).
+err := Wrap(ErrUnauthenticated, tokenErr, "validate token").
 	WithPublic("authentication required")
 ```
+
+* `publicMsg` is **never used internally**
+* It is only consumed by transport adapters (e.g. gRPC)
 
 ---
 
@@ -93,12 +140,12 @@ if errors.Is(err, ErrNotFound) {
 }
 ```
 
-### Accessing the custom error
+### Accessing the custom error (`errors.As`)
 
 ```go
 var e *commonerrors.Error
 if errors.As(err, &e) {
-	log.Println(e.Msg)
+	log.Println(e)
 }
 ```
 
@@ -106,13 +153,13 @@ if errors.As(err, &e) {
 
 ## Root Cause Extraction
 
-Retrieve the **original underlying error**:
+Retrieve the **original underlying error message**:
 
 ```go
 cause := GetSource(err)
 ```
 
-This works even across multiple wraps.
+This walks the unwrap chain until the final error.
 
 ---
 
@@ -124,6 +171,14 @@ This works even across multiple wraps.
 code := ToGRPCCode(err)
 ```
 
+Behavior:
+
+* Context cancellation & deadlines are handled explicitly
+* Domain errors map via internal code maps
+* Fallback is `codes.Unknown`
+
+---
+
 ### Convert to gRPC status error
 
 ```go
@@ -132,10 +187,12 @@ return GRPCStatus(err)
 
 Behavior:
 
-* Context cancellation & deadlines are handled
-* Domain errors map via `errorToGRPC`
-* Public messages are used when available
-* Unknown errors fall back to `codes.Unknown`
+* Existing gRPC status errors are propagated
+* Most outer error code prevails over nested error codes
+* Context errors are mapped first
+* Domain errors use `publicMsg` when present
+* Empty public messages fall back to a safe default
+* Internal details are never exposed
 
 ---
 
@@ -156,34 +213,34 @@ func GetUser(id string) error {
 
 ## Best Practices
 
-* **Always wrap errors at boundaries**
-* Use `ErrUnknown` only as a fallback
-* Prefer `errors.Is` over string comparison
-* Use `PublicMsg` only for client-safe text
-* Do not construct `Error` manually — use `Wrap`
+* **Create errors at failure boundaries**
+* **Wrap errors at layer boundaries**
+* Use `WithPublic` only for client-safe messages
 
 ---
 
 ## Non-Goals
 
-* Stack traces
-* Localization
-* HTTP-specific error formatting
-* Automatic logging
+The following are intentionally out of scope:
 
-These are intentionally left to higher layers.
+* HTTP-specific error formatting
+* Localization / i18n
+* Automatic logging
+* Error mutation after creation
+* Structured logging output
+
+These can be layered on top without changing the core API.
 
 ---
 
 ## Summary
 
-`commonerrors` provides a **minimal, predictable, and Go-idiomatic** error model that scales cleanly across service boundaries while remaining easy to reason about.
+`commonerrors` provides a **predictable, explicit, and debuggable** error model that:
 
-If you want:
+* Scales cleanly across service boundaries
+* Preserves full causal context
+* Keeps public and internal concerns separate
+* Plays nicely with Go’s standard error tooling
 
-* immutability guarantees
-* HTTP helpers
-* middleware examples
-* test utilities
+It favors **clarity and correctness** over minimalism, making it well-suited for production backend systems.
 
-those can be layered on without changing the core API.
