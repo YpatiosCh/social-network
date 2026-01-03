@@ -3,8 +3,6 @@ package commonerrors
 import (
 	"context"
 	"errors"
-	"runtime"
-	"strconv"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -33,21 +31,22 @@ func (e *Error) Error() string {
 	var builder strings.Builder
 
 	if e.code != nil {
+		builder.WriteString("\nCode: ")
 		builder.WriteString(e.code.Error())
 	}
 
 	if e.input != "" {
-		builder.WriteString(": ")
+		builder.WriteString(", Input: ")
 		builder.WriteString(e.input)
 	}
 
 	if e.stack != "" {
-		builder.WriteString(": ")
+		builder.WriteString(", Origin: ")
 		builder.WriteString(e.stack)
 	}
 
 	if e.err != nil {
-		builder.WriteString(": ")
+		builder.WriteString(" || ")
 		builder.WriteString(e.err.Error())
 	}
 	return builder.String()
@@ -88,8 +87,8 @@ func New(code error, err error, msg ...string) *Error {
 	e := &Error{
 		code:  parseCode(code),
 		err:   err,
-		stack: getStack(3, 3),
-		input: getMsg(msg...),
+		stack: getStack(1, 3),
+		input: getInput(msg...),
 	}
 	return e
 }
@@ -119,6 +118,7 @@ func Wrap(code error, err error, msg ...string) *Error {
 		e := &Error{
 			code:      ce.code,
 			err:       err,
+			stack:     getStack(1, 3),
 			publicMsg: ce.publicMsg, // retain public message by default
 		}
 
@@ -129,7 +129,7 @@ func Wrap(code error, err error, msg ...string) *Error {
 			e.code = ErrUnknown
 		}
 
-		e.input = getMsg(msg...)
+		e.input = getInput(msg...)
 
 		return e
 	}
@@ -139,12 +139,12 @@ func Wrap(code error, err error, msg ...string) *Error {
 	}
 
 	e := &Error{
-		code: code,
-		err:  err,
-		// stack: getStack(3, 2),
+		code:  code,
+		err:   err,
+		stack: getStack(1, 3),
 	}
 
-	e.input = getMsg(msg...)
+	e.input = getInput(msg...)
 
 	return e
 }
@@ -172,11 +172,10 @@ func ToGRPCCode(err error) codes.Code {
 		return codes.OK
 	}
 
-	// TODO: Check this
 	// Propagate gRPC status errors
-	// if st, ok := status.FromError(err); ok {
-	// 	return st.Code()
-	// }
+	if st, ok := status.FromError(err); ok {
+		return st.Code()
+	}
 
 	// Handle context errors
 	if errors.Is(err, context.DeadlineExceeded) {
@@ -202,10 +201,11 @@ func ToGRPCCode(err error) codes.Code {
 // The status code is converted to commonerrors type and the status message is wraped inside it as a new error.
 // Optionaly a msg string is included for additional context.
 // Usefull for downstream error parsing.
-func ParseGrpcErr(err error, msg ...string) error {
+func ParseGrpcErr(err error, input ...string) error {
 	if err == nil {
 		return nil
 	}
+
 	st, ok := status.FromError(err)
 	if !ok {
 		return err
@@ -215,9 +215,9 @@ func ParseGrpcErr(err error, msg ...string) error {
 	message := st.Message()
 
 	if domainErr, ok := grpcToError[code]; ok {
-		return Wrap(domainErr, errors.New(message), getMsg(msg...))
+		return New(domainErr, errors.New(message), getInput(input...))
 	}
-	return Wrap(ErrUnknown, err, getMsg(msg...))
+	return New(ErrUnknown, err, getInput(input...))
 }
 
 // Converts a commonerrors type Error to grpc status error. Handles context errors first.
@@ -253,47 +253,4 @@ func GRPCStatus(err error) error {
 		}
 	}
 	return status.Errorf(codes.Unknown, "unknown error")
-}
-
-// Returns c error if c is not nil and is a defined error in commonerrors else returns ErrUnknown
-func parseCode(c error) error {
-	_, ok := errorToGRPC[c]
-	if c == nil || !ok {
-		c = ErrUnknown
-	}
-	return c
-}
-
-func getMsg(msg ...string) string {
-	if len(msg) > 0 {
-		return msg[0]
-	}
-	return ""
-}
-
-func getStack(depth int, skip int) string {
-	var builder strings.Builder
-	builder.Grow(150)
-	pc := make([]uintptr, depth)
-	n := runtime.Callers(skip, pc)
-	if n == 0 {
-		return "(no caller data)"
-	}
-	pc = pc[:n] // pass only valid pcs to runtime.CallersFrames
-	frames := runtime.CallersFrames(pc)
-	for {
-		frame, more := frames.Next()
-		name := frame.Func.Name()
-		start := strings.LastIndex(name, "/")
-		builder.WriteString("by ")
-		builder.WriteString(name[start+1:])
-		builder.WriteString(" at ")
-		builder.WriteString(strconv.Itoa(frame.Line))
-		builder.WriteString("\n")
-		if !more {
-			break
-		}
-	}
-
-	return builder.String()
 }

@@ -31,7 +31,7 @@ func NewMediaRetriever(client MediaInfoRetriever, cache RedisCache, ttl time.Dur
 
 // GetImages returns a map[imageId]imageUrl, using cache + batch RPC.
 func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant media.FileVariant) (map[int64]string, []int64, error) {
-	errMsg := fmt.Sprintf("media retriever: get images: ids %v, variant: %v", imageIds, variant)
+	input := fmt.Sprintf("ids %v, variant: %v", imageIds, variant)
 
 	uniqueImageIds := imageIds.Unique()
 	images := make(map[int64]string, len(uniqueImageIds))
@@ -41,7 +41,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 	if err := ctVariant.Validate(); err != nil {
 		// If variant is invalid, we probably can't do anything meaningful.
 		// Returning error or empty map? Returning error seems safest.
-		return nil, nil, ce.Wrap(ce.ErrInvalidArgument, err, errMsg)
+		return nil, nil, ce.New(ce.ErrInvalidArgument, err, input)
 	}
 
 	// Redis lookup for images
@@ -73,7 +73,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 
 		resp, err := h.client.GetImages(ctx, req)
 		if err != nil {
-			return nil, nil, ce.ParseGrpcErr(err, errMsg)
+			return nil, nil, ce.ParseGrpcErr(err, input)
 		}
 
 		for _, failedImage := range resp.FailedIds {

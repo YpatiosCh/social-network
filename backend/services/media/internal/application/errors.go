@@ -59,10 +59,10 @@ func mapDBError(err error) error {
 	}
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return ce.Wrap(ce.ErrNotFound, err)
+		return ce.New(ce.ErrNotFound, err).WithPublic("not found")
 	}
 
-	return ce.Wrap(ce.ErrInternal, err)
+	return ce.New(ce.ErrInternal, err).WithPublic("internal media error")
 }
 
 // validateUploadRequest validates all inputs required to create an image upload.

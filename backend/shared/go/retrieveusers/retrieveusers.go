@@ -33,7 +33,7 @@ func NewUserRetriever(userClient GetBatchBasicUserInfo, cache *redis_connector.R
 
 // GetUsers returns a map[userID]User, using cache + batch RPC.
 func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id]models.User, error) {
-	errMsg := fmt.Sprintf("user retriever: get users: uses ids: %v", userIDs)
+	input := fmt.Sprintf("user retriever: get users: uses ids: %v", userIDs)
 	//========================== STEP 1 : get user info from users ===============================================
 
 	ids := userIDs.Unique()
@@ -64,7 +64,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 	if len(missing) > 0 {
 		resp, err := h.GetBatchBasicUserInfo(ctx, &cm.UserIds{Values: missing.Int64()})
 		if err != nil {
-			return nil, ce.ParseGrpcErr(err, errMsg)
+			return nil, ce.ParseGrpcErr(err, input)
 		}
 
 		for _, u := range resp.Users {
@@ -100,7 +100,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 		// Use shared MediaRetriever for images (handles caching and fetching)
 		imageMap, _, err := h.mediaRetriever.GetImages(ctx, imageIds, media.FileVariant_THUMBNAIL)
 		if err != nil {
-			return nil, ce.Wrap(nil, err, errMsg) // keep the code from retrieve media by wrapping the error and add errMsg for context
+			return nil, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
 		}
 
 		for id, u := range users {

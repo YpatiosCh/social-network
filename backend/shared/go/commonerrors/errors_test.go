@@ -157,20 +157,34 @@ func TestIntegration(t *testing.T) {
 }
 
 func TestMultiLayerWrap_ErrorString(t *testing.T) {
-	root := errors.New("sql: no rows")
-	e1 := New(ErrNotFound, root, "repo.FindUser")
-	e2 := Wrap(nil, e1, "service.GetUser")
-	e3 := Wrap(ErrInternal, e2, "handler.GetUser")
+	root := root()
+	e1 := err1(root)
+	e2 := Err2(e1)
+	e3 := err3(e2)
 
 	out := e3.Error()
+	// t.Fatal(out)
 
-	assert.Contains(t, out, "internal error")
-	assert.Contains(t, out, "service.GetUser")
-	assert.Contains(t, out, "repo.FindUser")
+	assert.Contains(t, out, "level 3")
+	assert.Contains(t, out, "level 2")
+	assert.Contains(t, out, "level 1")
 	assert.Contains(t, out, "sql: no rows")
 
 	// stack appears exactly once (entire block)
-	assert.Equal(t, 1, strings.Count(out, e1.stack))
+	assert.Equal(t, 1, strings.Count(out, e1.(*Error).stack))
+}
+
+func root() error {
+	return errors.New("sql: no rows")
+}
+func err1(err error) error {
+	return New(ErrNotFound, err, "level 1")
+}
+func Err2(err error) error {
+	return Wrap(nil, err, "level 2")
+}
+func err3(err error) error {
+	return Wrap(ErrInternal, err, "level 3")
 }
 
 func TestAs_ReturnsOutermostError(t *testing.T) {
