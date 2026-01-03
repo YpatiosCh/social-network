@@ -29,6 +29,8 @@ type kafkaConsumer struct {
 	weAreShuttingDown bool
 }
 
+//TODO check if consumer and producer work gracefully after kafka restarts
+
 // seeds are used for finding the server, just as many kafka ip's you have
 // enter all the topics you want to consume
 // enter you group identifier
@@ -85,10 +87,7 @@ func (kfc *kafkaConsumer) RegisterTopic(topic ct.KafkaTopic) (<-chan *Record, er
 
 // StartConsuming sets some stuff up and begin the consumption routines
 func (kfc *kafkaConsumer) StartConsuming(ctx context.Context) (func(), error) {
-	// do state validation checks
-
 	var err error
-
 	//making the actual client, cause it needs to be created after all topics have been registered
 	kfc.client, err = kgo.NewClient(
 		kgo.SeedBrokers(kfc.seeds...),
@@ -227,18 +226,27 @@ outer:
 	}
 }
 
+var counter = 0
+
+//TODO handle out of order commits...
+
 // commitRoutine listens to the commitChannel and commits records as they come in
 func (kfc *kafkaConsumer) commitRoutine() {
+	defer tele.Info(context.Background(), "COMMIT WATCHER ROUTINE CLOSING DEFERRED")
+
 	for {
 		select {
 		case <-kfc.context.Done():
+			tele.Info(context.Background(), "COMMIT WATCHER ROUTINE CLOSING DUE TO CONTEXT")
 			return
 		case record := <-kfc.commitChannel:
-			tele.Info(context.Background(), "@1", "record", record)
+			tele.Info(context.Background(), "commit: @1", "counter", counter)
+			counter++
 
 			//TODO pool records here instead of doing them one by one
-
-			err := kfc.client.CommitRecords(record.Context, record) //TODO is this the correct context?
+			ctx, cancel := context.WithTimeout(kfc.context, time.Second*2)
+			defer cancel()
+			err := kfc.client.CommitRecords(ctx, record) //TODO is this the correct context?
 			if err != nil {
 				tele.Info(context.Background(), "COMMIT ERROR FOUND") //TODO think what needs to be done here
 				kfc.shutdownProcedure(true)                           //TODO this is excessive, but not sure what else to do? other than retry?
@@ -246,6 +254,7 @@ func (kfc *kafkaConsumer) commitRoutine() {
 
 		}
 	}
+
 }
 
 func (kfc *kafkaConsumer) validateBeforeStart() error {

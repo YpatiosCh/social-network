@@ -3,9 +3,7 @@ package kafgo
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	tele "social-network/shared/go/telemetry"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 )
@@ -31,40 +29,19 @@ func NewKafkaProducer(seeds []string) (producer *KafkaProducer, close func(), er
 	return kfc, cl.Close, nil
 }
 
-var ErrProduceFail = errors.New("failed to produce")
-
 // Send sends payload(s) to the specified topic
 func (kfc *KafkaProducer) Send(ctx context.Context, topic string, payload ...any) error {
-	tele.Info(ctx, "sending")
 	records := make([]*kgo.Record, len(payload))
 	for i, p := range payload {
 		bytes, err := json.Marshal(p)
 		if err != nil {
 			return err
 		}
-
 		records[i] = &kgo.Record{Topic: topic, Value: bytes}
 	}
-
-	tele.Info(ctx, "right before produce")
-
-	// var wg sync.WaitGroup
-	// wg.Add(1)
-	// record := &kgo.Record{Topic: "test_topic", Value: []byte("bar")}
-	// kfc.client.Produce(ctx, record, func(_ *kgo.Record, err error) {
-	// 	defer wg.Done()
-	// 	if err != nil {
-	// 		fmt.Printf("record had a produce error: %v\n", err)
-	// 	}
-
-	// })
-	// wg.Wait()
-
-	results := kfc.client.ProduceSync(ctx, &kgo.Record{Topic: topic, Value: []byte("test_data")})
-	tele.Info(ctx, "right after produce")
+	results := kfc.client.ProduceSync(ctx, records...)
 	if results.FirstErr() != nil {
 		return fmt.Errorf("failed to produce %w", results.FirstErr())
 	}
-	tele.Info(ctx, "finished sending")
 	return nil
 }

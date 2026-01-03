@@ -32,7 +32,7 @@ func newRecord(record *kgo.Record, commitChannel chan<- (*kgo.Record)) (*Record,
 func (r *Record) Data() []byte {
 	if r.rec == nil {
 		//log?
-		return []byte{}
+		return []byte("no data found")
 	}
 	return r.rec.Value
 }
@@ -43,7 +43,6 @@ func (r *Record) Commit(ctx context.Context) {
 	if r.rec == nil {
 		return
 	}
-
 	select {
 	case r.commitChannel <- r.rec:
 	case <-ctx.Done():
