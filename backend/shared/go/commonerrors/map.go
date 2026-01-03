@@ -79,3 +79,23 @@ var errorToGRPC = map[error]codes.Code{
 	ErrDataLoss:           codes.DataLoss,
 	ErrUnauthenticated:    codes.Unauthenticated,
 }
+
+var grpcToError = map[codes.Code]error{
+	codes.OK:                 ErrOK,
+	codes.Canceled:           ErrCanceled,
+	codes.Unknown:            ErrUnknown,
+	codes.InvalidArgument:    ErrInvalidArgument,
+	codes.DeadlineExceeded:   ErrDeadlineExceeded,
+	codes.NotFound:           ErrNotFound,
+	codes.AlreadyExists:      ErrAlreadyExists,
+	codes.PermissionDenied:   ErrPermissionDenied,
+	codes.ResourceExhausted:  ErrResourceExhausted,
+	codes.FailedPrecondition: ErrFailedPrecondition,
+	codes.Aborted:            ErrAborted,
+	codes.OutOfRange:         ErrOutOfRange,
+	codes.Unimplemented:      ErrUnimplemented,
+	codes.Internal:           ErrInternal,
+	codes.Unavailable:        ErrUnavailable,
+	codes.DataLoss:           ErrDataLoss,
+	codes.Unauthenticated:    ErrUnauthenticated,
+}
