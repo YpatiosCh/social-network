@@ -242,7 +242,7 @@ func (m *MediaService) ValidateUpload(ctx context.Context,
 	}
 
 	if fileMeta.Status == ct.Failed {
-		return url, ce.Wrap(ce.ErrNotFound, ErrFailed, errMsg).WithPublic("invalid file")
+		return url, ce.New(ce.ErrNotFound, ErrFailed, errMsg).WithPublic("invalid file")
 	}
 
 	if fileMeta.Status != ct.Complete {

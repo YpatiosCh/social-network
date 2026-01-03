@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"social-network/shared/gen-go/media"
+	ce "social-network/shared/go/commonerrors"
 	"social-network/shared/go/ct"
+	"social-network/shared/go/mapping"
 
 	"google.golang.org/grpc"
 )
@@ -29,16 +31,17 @@ func NewMediaRetriever(client MediaInfoRetriever, cache RedisCache, ttl time.Dur
 
 // GetImages returns a map[imageId]imageUrl, using cache + batch RPC.
 func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant media.FileVariant) (map[int64]string, []int64, error) {
+	input := fmt.Sprintf("ids %v, variant: %v", imageIds, variant)
 
 	uniqueImageIds := imageIds.Unique()
 	images := make(map[int64]string, len(uniqueImageIds))
 	var missingImages ct.Ids
 
-	ctVariant, err := toCtVariant(variant)
-	if err != nil {
+	ctVariant := mapping.PbToCtFileVariant(variant)
+	if err := ctVariant.Validate(); err != nil {
 		// If variant is invalid, we probably can't do anything meaningful.
 		// Returning error or empty map? Returning error seems safest.
-		return nil, nil, fmt.Errorf("invalid variant: %w", err)
+		return nil, nil, ce.New(ce.ErrInvalidArgument, err, input)
 	}
 
 	// Redis lookup for images
@@ -70,7 +73,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 
 		resp, err := h.client.GetImages(ctx, req)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, ce.ParseGrpcErr(err, input)
 		}
 
 		for _, failedImage := range resp.FailedIds {
@@ -96,22 +99,22 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 	return images, imagesToDelete, nil
 }
 
-func toCtVariant(v media.FileVariant) (ct.FileVariant, error) {
-	switch v {
-	case media.FileVariant_THUMBNAIL:
-		return ct.ImgThumbnail, nil
-	case media.FileVariant_SMALL:
-		return ct.ImgSmall, nil
-	case media.FileVariant_MEDIUM:
-		return ct.ImgMedium, nil
-	case media.FileVariant_LARGE:
-		return ct.ImgLarge, nil
-	case media.FileVariant_ORIGINAL:
-		return ct.Original, nil
-	default:
-		return "", fmt.Errorf("unknown media variant: %v", v)
-	}
-}
+// func toCtVariant(v media.FileVariant) (ct.FileVariant, error) {
+// 	switch v {
+// 	case media.FileVariant_THUMBNAIL:
+// 		return ct.ImgThumbnail, nil
+// 	case media.FileVariant_SMALL:
+// 		return ct.ImgSmall, nil
+// 	case media.FileVariant_MEDIUM:
+// 		return ct.ImgMedium, nil
+// 	case media.FileVariant_LARGE:
+// 		return ct.ImgLarge, nil
+// 	case media.FileVariant_ORIGINAL:
+// 		return ct.Original, nil
+// 	default:
+// 		return "", fmt.Errorf("unknown media variant: %v", v)
+// 	}
+// }
 
 // GetImage returns a single image url, using cache + batch RPC.
 func (h *MediaRetriever) GetImage(ctx context.Context, imageId int64, variant media.FileVariant) (string, error) {
