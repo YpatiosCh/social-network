@@ -102,9 +102,7 @@ func Wrap(code error, err error, msg ...string) *Error {
 			e.Code = ErrUnknown
 		}
 
-		if len(msg) > 0 {
-			e.Msg = msg[0]
-		}
+		e.Msg = getMsg(msg...)
 
 		return e
 	}
@@ -118,9 +116,9 @@ func Wrap(code error, err error, msg ...string) *Error {
 		Err:    err,
 		Source: err,
 	}
-	if len(msg) > 0 {
-		e.Msg = msg[0]
-	}
+
+	e.Msg = getMsg(msg...)
+
 	return e
 }
 
@@ -167,6 +165,31 @@ func ToGRPCCode(err error) codes.Code {
 	return codes.Unknown
 }
 
+// Coverts a grpc error to commonerrors Error type.
+// The status code is converted to commonerrors type and the status message is wraped inside it as a new error.
+// Optionaly a msg string is included for additional context.
+// Usefull for downstream error parsing.
+func ParseGrpcErr(err error, msg ...string) error {
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			// Not a gRPC status error (very rare)
+			return err
+		}
+
+		code := st.Code() // codes.NotFound, codes.Internal, etc.
+		message := st.Message()
+
+		if domainErr, ok := grpcToError[code]; ok {
+			return Wrap(domainErr, errors.New(message), getMsg(msg...))
+		}
+
+	}
+	return Wrap(ErrUnknown, err, getMsg(msg...))
+}
+
+// Converts a commonerrors type Error to grpc status error. Handles context errors first.
+// If the error passed is neither context error or Error unknown is returned.
 func GRPCStatus(err error) error {
 	if err == nil {
 		return nil
@@ -194,4 +217,11 @@ func GRPCStatus(err error) error {
 		}
 	}
 	return status.Errorf(codes.Unknown, "unknown error")
+}
+
+func getMsg(msg ...string) string {
+	if len(msg) > 0 {
+		return msg[0]
+	}
+	return ""
 }
