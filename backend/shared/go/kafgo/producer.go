@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	tele "social-network/shared/go/telemetry"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 )
@@ -36,12 +37,14 @@ func (kfc *KafkaProducer) Send(ctx context.Context, topic string, payload ...any
 	for i, p := range payload {
 		bytes, err := json.Marshal(p)
 		if err != nil {
+			tele.Error(ctx, "prod send error")
 			return err
 		}
 		records[i] = &kgo.Record{Topic: topic, Value: bytes}
 	}
 	results := kfc.client.ProduceSync(ctx, records...)
 	if results.FirstErr() != nil {
+		tele.Error(ctx, "failed to produce: @1", "error", results.FirstErr())
 		return fmt.Errorf("failed to produce %w", results.FirstErr())
 	}
 	return nil
