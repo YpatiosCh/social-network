@@ -182,7 +182,7 @@ func (s *Application) EditPost(ctx context.Context, req models.EditPostReq) erro
 		}
 
 		// edit audience ids
-		if req.Audience == "selected" && rowsAffected == 1 {
+		if req.Audience == "selected" {
 			if len(req.AudienceIds) < 1 {
 				return ErrNoAudienceSelected
 			}
