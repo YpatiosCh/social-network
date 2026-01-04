@@ -6,6 +6,8 @@ import (
 	"os"
 	"social-network/shared/go/ct"
 	tele "social-network/shared/go/telemetry"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -14,16 +16,16 @@ import (
 type committerData struct {
 	TopicChannel       chan *Record
 	CommitChannel      chan *Record
-	StartOffset        chan int64
 	CommitRoutineReady bool
-	ExpectedOffsets    []int64
+	ExpectedIds        []uint64
+	Mutex              *sync.Mutex
 }
 
 func newCommitRoutine() *committerData {
 	return &committerData{
 		TopicChannel:  make(chan *Record),
 		CommitChannel: make(chan *Record),
-		StartOffset:   make(chan int64),
+		Mutex:         &sync.Mutex{},
 	}
 }
 
@@ -37,8 +39,6 @@ type kafkaConsumer struct {
 	context           context.Context
 	client            *kgo.Client
 	committerDataMap  map[string]*committerData
-	allOffsetsSorted  bool
-	offtsetsOkCount   int
 	commitBuffer      int
 	topicBuffer       int
 	cancel            func()
@@ -96,10 +96,10 @@ func (kfc *kafkaConsumer) RegisterTopic(topic ct.KafkaTopic) (<-chan *Record, er
 	}
 
 	kfc.topics = append(kfc.topics, string(topic))
-	topicChannel := make(chan *Record, kfc.topicBuffer)
-	kfc.committerDataMap[string(topic)] = newCommitRoutine()
+	committerData := newCommitRoutine()
+	kfc.committerDataMap[string(topic)] = committerData
 
-	return topicChannel, nil
+	return committerData.TopicChannel, nil
 }
 
 // StartConsuming sets some stuff up and begin the consumption routines
@@ -145,11 +145,15 @@ func (kfc *kafkaConsumer) actuallyStartConsuming() {
 	for _, topic := range kfc.topics {
 		commitData := kfc.committerDataMap[topic]
 		commitData.CommitChannel = make(chan *Record, kfc.commitBuffer)
-		commitData.StartOffset = make(chan int64)
 		go kfc.commitRoutine(commitData)
 	}
 
 	go func() {
+		// This id will be used for identifying orders so that they can
+		// be committed in the same order as they arrived.
+		// Kafka's offset can't be used cause it gets, seemingly, randomly reset to 0...
+		var monotonicIds atomic.Uint64
+
 		timer := time.NewTimer(time.Second)
 		defer timer.Stop()
 		for {
@@ -160,47 +164,46 @@ func (kfc *kafkaConsumer) actuallyStartConsuming() {
 			default:
 				fetches := kfc.client.PollFetches(kfc.context)
 				if errs := fetches.Errors(); len(errs) > 0 {
-					// All errors are retried internally when fetching, but non-retriable errors are
-					// returned from polls so that users can notice and take action.
-					tele.Info(context.Background(), "fetch error: @1", "error", errs)
+					tele.Error(kfc.context, "fetch error: @1", "error", errs)
 					kfc.shutdownProcedure(true)
 					return
 				}
+				tele.Info(kfc.context, "consumer fetch successful")
 
 				// We can iterate through a record iterator...
 				iter := fetches.RecordIter()
 				for !iter.Done() {
+					newId := monotonicIds.Add(1)
 					record := iter.Next()
-
 					committerData := kfc.committerDataMap[record.Topic]
-					committerData.ExpectedOffsets = append(committerData.ExpectedOffsets, record.Offset)
-					//since the commit routines need to commit the records in the right order
-					//we need to find the smallest record offset and let them know
-					if !committerData.CommitRoutineReady {
-						committerData.StartOffset <- record.Offset
-						committerData.CommitRoutineReady = true
-						kfc.offtsetsOkCount++
-						if kfc.offtsetsOkCount == len(kfc.topics) {
-							kfc.allOffsetsSorted = true
-						}
-					}
 
-					Record, err := newRecord(record, committerData.CommitChannel)
+					//since the commit routines need to commit the records in the right order
+					//we need keep track of what records have arrived, this is then read by commit routine
+					tele.Info(kfc.context, "consumer before mutex")
+					committerData.Mutex.Lock()
+					committerData.ExpectedIds = append(committerData.ExpectedIds, newId)
+					committerData.Mutex.Unlock()
+					tele.Info(kfc.context, "consumer after mutex")
+
+					Record, err := newRecord(kfc.context, record, committerData.CommitChannel, newId)
 					if err != nil {
 						//think what to do
-						tele.Info(context.Background(), "failed to create record")
+						tele.Error(context.Background(), "failed to create record")
 						continue
 					}
 
 					timer.Reset(time.Second * 5)
+					tele.Info(kfc.context, "consumer before timer select")
 					select {
 					case <-timer.C:
-						tele.Info(context.Background(), "SLOW CHANNEL DETECTED")
+						tele.Error(context.Background(), "SLOW CHANNEL DETECTED")
 						kfc.shutdownProcedure(true)
-						tele.Info(context.Background(), "SLOW CHANNEL error: ")
+						tele.Error(context.Background(), "SLOW CHANNEL error: ")
 						return
 					case committerData.TopicChannel <- Record:
+						tele.Info(kfc.context, "consumer give record to topic channel")
 					}
+					tele.Info(kfc.context, "consumer after timer select")
 				}
 			}
 		}
@@ -252,42 +255,84 @@ func (kfc *kafkaConsumer) shutdownProcedure(thereIsSomethingWrong bool) {
 //TODO make separate commit channels and routine for each topic
 //TODO handle out of order commits...
 //TODO batch commits, small batches
-//TODO add detection trap whenc committing offsets out of order
+//TODO add detection trap whenc committing monotinicIds out of order
 
 // commitRoutine listens to the commitChannel and commits records as they come in
+// it batches records to reduce spamming too many requests to kafka <- TODO
+// since records need to be committed in order, it collects record monotinicIds,
+// and by using the expected monotinicIds provided by the consumer routine we only commit the next expected record
+// HOPEFULLY THE RECORD HANDLERS DO THEIR BEST EFFORT TO PROCESS IT, and if it's corrupted then they should commit it to remove it from circulation
+// if a handler is incapable of of processing the record, then it needs to close the channel
+// so that the shutdown operation can begin and restart the pod
 func (kfc *kafkaConsumer) commitRoutine(data *committerData) {
-	defer tele.Info(context.Background(), "COMMIT WATCHER ROUTINE CLOSING DEFERRED")
-	//we wait for the consumer loop to give us the offset of the first record if receives
-	nextOffset := <-data.StartOffset
-	tooEarlyOffsets := make(map[int64]struct{}, 30)
+	foundRecords := make(map[uint64]*Record, 30)
 	for {
 		select {
 		case <-kfc.context.Done():
-			tele.Info(context.Background(), "COMMIT WATCHER ROUTINE CLOSING DUE TO CONTEXT")
+			tele.Info(context.Background(), "COMMIT WATCHER ROUTINE CLOSING DUE TO CONTEXT .Done()")
 			return
 
-		case record := <-data.CommitChannel:
-			tooEarlyOffsets[record.rec.Offset] = struct{}{}
-
-			_, nextExists := tooEarlyOffsets[data.ExpectedOffsets[0]]
-			for nextExists {
-				//TODO pool records here instead of doing them one by one
-				ctx, cancel := context.WithTimeout(kfc.context, time.Second*2) //TODO is this the correct context?
-				defer cancel()
-				err := kfc.client.CommitRecords(ctx, record.rec) //TODO is this the correct context?
-
-				if err != nil {
-					tele.Info(context.Background(), "COMMIT ERROR FOUND @1", "error", err.Error()) //TODO think what needs to be done here
-					kfc.shutdownProcedure(true)                                                    //TODO this is excessive, but not sure what else to do? other than retry?
-				}
-
-				data.ExpectedOffsets = data.ExpectedOffsets[1:]
-				if len(data.ExpectedOffsets) == 0 {
-					break
-				}
-				_, nextExists = tooEarlyOffsets[nextOffset]
+		case newRecord, ok := <-data.CommitChannel:
+			if !ok {
+				tele.Error(kfc.context, "commitroutine: shutting down due to bad channel")
+				//if not ok, means channel was closed by record handler, which means there's a critical problem and pod needs to be restarted
+				kfc.shutdownProcedure(true)
+				return
 			}
 
+			//add new record to collection of monotonicIds
+			foundRecords[newRecord.monotinicId] = newRecord
+			tele.Info(kfc.context, "new record found of @1. current @2, and expected monoIds @3", "monoId", newRecord.monotinicId, "count", len(foundRecords), "monoIdsLen", len(data.ExpectedIds))
+
+			//check if the next expected monoId (assigned by consumer routine) if available
+			data.Mutex.Lock()
+			nextMonoId := data.ExpectedIds[0]
+			data.Mutex.Unlock()
+
+			record, nextExists := foundRecords[nextMonoId]
+			combo := 0
+			if !nextExists {
+				tele.Info(kfc.context, "next record of @1 not found, skipping...", "monoId", nextMonoId)
+			}
+			for nextExists {
+				tele.Info(kfc.context, "inside nextExists")
+				combo++
+				//TODO pool records here instead of doing them one by one
+				ctx, cancel := context.WithTimeout(kfc.context, time.Second*5) //TODO is this the correct context?
+				err := kfc.client.CommitRecords(ctx, record.rec)               //TODO is this the correct context?
+				if err != nil {
+					tele.Error(context.Background(), "COMMIT ERROR FOUND @1", "error", err.Error()) //TODO think what needs to be done here
+					kfc.shutdownProcedure(true)                                                     //TODO this is excessive, but not sure what else to do? other than retry?
+					cancel()
+					return
+				}
+				cancel()
+
+				//the handler of the record is waiting for confirmation that we received it before committing the transaction
+				//so lets confirm it
+				record.confirmChannel <- struct{}{}
+
+				//clean map from committed record
+
+				delete(foundRecords, nextMonoId)
+
+				//time to check if the next found expected monoId is available too
+				data.Mutex.Lock()
+				data.ExpectedIds = data.ExpectedIds[1:]
+				if len(data.ExpectedIds) == 0 {
+					data.Mutex.Unlock()
+					if combo > 1 {
+						tele.Info(kfc.context, "COMBO: @1", "count", combo)
+					}
+					break
+				}
+				nextMonoId = data.ExpectedIds[0]
+				record, nextExists = foundRecords[nextMonoId]
+				data.Mutex.Unlock()
+			}
+			if combo > 1 {
+				tele.Info(kfc.context, "COMBO: @1", "count", combo)
+			}
 		}
 	}
 }
