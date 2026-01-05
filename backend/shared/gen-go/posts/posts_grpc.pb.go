@@ -81,7 +81,7 @@ type PostsServiceClient interface {
 	GetGroupPostsPaginated(ctx context.Context, in *GetGroupPostsReq, opts ...grpc.CallOption) (*ListPosts, error)
 	// Creates a comment on a post or another comment.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND parent; PERMISSION_DENIED when commenting not allowed.
-	CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*IdResp, error)
 	// Updates an existing comment by the creator.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
 	EditComment(ctx context.Context, in *EditCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -93,7 +93,7 @@ type PostsServiceClient interface {
 	GetCommentsByParentId(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListComments, error)
 	// Creates a group event.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED for non-member.
-	CreateEvent(ctx context.Context, in *CreateEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateEvent(ctx context.Context, in *CreateEventReq, opts ...grpc.CallOption) (*IdResp, error)
 	// Deletes an event by creator or moderator.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED when not owner/moderator.
 	DeleteEvent(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -215,9 +215,9 @@ func (c *postsServiceClient) GetGroupPostsPaginated(ctx context.Context, in *Get
 	return out, nil
 }
 
-func (c *postsServiceClient) CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *postsServiceClient) CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*IdResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(IdResp)
 	err := c.cc.Invoke(ctx, PostsService_CreateComment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -255,9 +255,9 @@ func (c *postsServiceClient) GetCommentsByParentId(ctx context.Context, in *Enti
 	return out, nil
 }
 
-func (c *postsServiceClient) CreateEvent(ctx context.Context, in *CreateEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *postsServiceClient) CreateEvent(ctx context.Context, in *CreateEventReq, opts ...grpc.CallOption) (*IdResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(IdResp)
 	err := c.cc.Invoke(ctx, PostsService_CreateEvent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -372,7 +372,7 @@ type PostsServiceServer interface {
 	GetGroupPostsPaginated(context.Context, *GetGroupPostsReq) (*ListPosts, error)
 	// Creates a comment on a post or another comment.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND parent; PERMISSION_DENIED when commenting not allowed.
-	CreateComment(context.Context, *CreateCommentReq) (*emptypb.Empty, error)
+	CreateComment(context.Context, *CreateCommentReq) (*IdResp, error)
 	// Updates an existing comment by the creator.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
 	EditComment(context.Context, *EditCommentReq) (*emptypb.Empty, error)
@@ -384,7 +384,7 @@ type PostsServiceServer interface {
 	GetCommentsByParentId(context.Context, *EntityIdPaginatedReq) (*ListComments, error)
 	// Creates a group event.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED for non-member.
-	CreateEvent(context.Context, *CreateEventReq) (*emptypb.Empty, error)
+	CreateEvent(context.Context, *CreateEventReq) (*IdResp, error)
 	// Deletes an event by creator or moderator.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED when not owner/moderator.
 	DeleteEvent(context.Context, *GenericReq) (*emptypb.Empty, error)
@@ -443,7 +443,7 @@ func (UnimplementedPostsServiceServer) GetUserPostsPaginated(context.Context, *G
 func (UnimplementedPostsServiceServer) GetGroupPostsPaginated(context.Context, *GetGroupPostsReq) (*ListPosts, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGroupPostsPaginated not implemented")
 }
-func (UnimplementedPostsServiceServer) CreateComment(context.Context, *CreateCommentReq) (*emptypb.Empty, error) {
+func (UnimplementedPostsServiceServer) CreateComment(context.Context, *CreateCommentReq) (*IdResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateComment not implemented")
 }
 func (UnimplementedPostsServiceServer) EditComment(context.Context, *EditCommentReq) (*emptypb.Empty, error) {
@@ -455,7 +455,7 @@ func (UnimplementedPostsServiceServer) DeleteComment(context.Context, *GenericRe
 func (UnimplementedPostsServiceServer) GetCommentsByParentId(context.Context, *EntityIdPaginatedReq) (*ListComments, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCommentsByParentId not implemented")
 }
-func (UnimplementedPostsServiceServer) CreateEvent(context.Context, *CreateEventReq) (*emptypb.Empty, error) {
+func (UnimplementedPostsServiceServer) CreateEvent(context.Context, *CreateEventReq) (*IdResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateEvent not implemented")
 }
 func (UnimplementedPostsServiceServer) DeleteEvent(context.Context, *GenericReq) (*emptypb.Empty, error) {

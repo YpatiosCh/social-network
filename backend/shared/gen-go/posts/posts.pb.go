@@ -1730,7 +1730,7 @@ const file_posts_proto_rawDesc = "" +
 	"\x11RespondToEventReq\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\x03R\aeventId\x12!\n" +
 	"\fresponder_id\x18\x02 \x01(\x03R\vresponderId\x12\x14\n" +
-	"\x05going\x18\x03 \x01(\bR\x05going2\xbd\n" +
+	"\x05going\x18\x03 \x01(\bR\x05going2\xab\n" +
 	"\n" +
 	"\fPostsService\x12-\n" +
 	"\vGetPostById\x12\x11.posts.GenericReq\x1a\v.posts.Post\x121\n" +
@@ -1743,12 +1743,12 @@ const file_posts_proto_rawDesc = "" +
 	"\x13GetPersonalizedFeed\x12\x1d.posts.GetPersonalizedFeedReq\x1a\x10.posts.ListPosts\x12=\n" +
 	"\rGetPublicFeed\x12\x1a.posts.GenericPaginatedReq\x1a\x10.posts.ListPosts\x12A\n" +
 	"\x15GetUserPostsPaginated\x12\x16.posts.GetUserPostsReq\x1a\x10.posts.ListPosts\x12C\n" +
-	"\x16GetGroupPostsPaginated\x12\x17.posts.GetGroupPostsReq\x1a\x10.posts.ListPosts\x12@\n" +
-	"\rCreateComment\x12\x17.posts.CreateCommentReq\x1a\x16.google.protobuf.Empty\x12<\n" +
+	"\x16GetGroupPostsPaginated\x12\x17.posts.GetGroupPostsReq\x1a\x10.posts.ListPosts\x127\n" +
+	"\rCreateComment\x12\x17.posts.CreateCommentReq\x1a\r.posts.IdResp\x12<\n" +
 	"\vEditComment\x12\x15.posts.EditCommentReq\x1a\x16.google.protobuf.Empty\x12:\n" +
 	"\rDeleteComment\x12\x11.posts.GenericReq\x1a\x16.google.protobuf.Empty\x12I\n" +
-	"\x15GetCommentsByParentId\x12\x1b.posts.EntityIdPaginatedReq\x1a\x13.posts.ListComments\x12<\n" +
-	"\vCreateEvent\x12\x15.posts.CreateEventReq\x1a\x16.google.protobuf.Empty\x128\n" +
+	"\x15GetCommentsByParentId\x12\x1b.posts.EntityIdPaginatedReq\x1a\x13.posts.ListComments\x123\n" +
+	"\vCreateEvent\x12\x15.posts.CreateEventReq\x1a\r.posts.IdResp\x128\n" +
 	"\vDeleteEvent\x12\x11.posts.GenericReq\x1a\x16.google.protobuf.Empty\x128\n" +
 	"\tEditEvent\x12\x13.posts.EditEventReq\x1a\x16.google.protobuf.Empty\x12D\n" +
 	"\x12GetEventsByGroupId\x12\x1b.posts.EntityIdPaginatedReq\x1a\x11.posts.ListEvents\x12B\n" +
@@ -1850,11 +1850,11 @@ var file_posts_proto_depIdxs = []int32{
 	6,  // 47: posts.PostsService.GetPublicFeed:output_type -> posts.ListPosts
 	6,  // 48: posts.PostsService.GetUserPostsPaginated:output_type -> posts.ListPosts
 	6,  // 49: posts.PostsService.GetGroupPostsPaginated:output_type -> posts.ListPosts
-	26, // 50: posts.PostsService.CreateComment:output_type -> google.protobuf.Empty
+	1,  // 50: posts.PostsService.CreateComment:output_type -> posts.IdResp
 	26, // 51: posts.PostsService.EditComment:output_type -> google.protobuf.Empty
 	26, // 52: posts.PostsService.DeleteComment:output_type -> google.protobuf.Empty
 	13, // 53: posts.PostsService.GetCommentsByParentId:output_type -> posts.ListComments
-	26, // 54: posts.PostsService.CreateEvent:output_type -> google.protobuf.Empty
+	1,  // 54: posts.PostsService.CreateEvent:output_type -> posts.IdResp
 	26, // 55: posts.PostsService.DeleteEvent:output_type -> google.protobuf.Empty
 	26, // 56: posts.PostsService.EditEvent:output_type -> google.protobuf.Empty
 	17, // 57: posts.PostsService.GetEventsByGroupId:output_type -> posts.ListEvents

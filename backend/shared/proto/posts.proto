@@ -52,7 +52,7 @@ service PostsService {
 
     // Creates a comment on a post or another comment.
     // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND parent; PERMISSION_DENIED when commenting not allowed.
-    rpc CreateComment (CreateCommentReq) returns (google.protobuf.Empty);
+    rpc CreateComment (CreateCommentReq) returns (IdResp);
 
     // Updates an existing comment by the creator.
     // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
@@ -68,7 +68,7 @@ service PostsService {
 
     // Creates a group event.
     // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED for non-member.
-    rpc CreateEvent (CreateEventReq) returns (google.protobuf.Empty);
+    rpc CreateEvent (CreateEventReq) returns (IdResp);
 
     // Deletes an event by creator or moderator.
     // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED when not owner/moderator.

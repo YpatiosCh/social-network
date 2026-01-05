@@ -13,11 +13,11 @@ import (
 
 const genericPublic = "posts service error"
 
-func (s *Application) CreateComment(ctx context.Context, req models.CreateCommentReq) (err error) {
+func (s *Application) CreateComment(ctx context.Context, req models.CreateCommentReq) (commentId int64, err error) {
 	input := fmt.Sprintf("%#v", req)
 
 	if err := ct.ValidateStruct(req); err != nil {
-		return ce.Wrap(ce.ErrInvalidArgument, err, input).WithPublic("invalid data received")
+		return 0, ce.Wrap(ce.ErrInvalidArgument, err, input).WithPublic("invalid data received")
 	}
 
 	accessCtx := accessContext{
@@ -27,12 +27,12 @@ func (s *Application) CreateComment(ctx context.Context, req models.CreateCommen
 
 	hasAccess, err := s.hasRightToView(ctx, accessCtx)
 	if err != nil {
-		return ce.Wrap(ce.ErrInternal, err, fmt.Sprintf("%#v", accessCtx)).WithPublic(genericPublic)
+		return 0, ce.Wrap(ce.ErrInternal, err, fmt.Sprintf("%#v", accessCtx)).WithPublic(genericPublic)
 	}
 	if !hasAccess {
-		return ce.New(ce.ErrPermissionDenied, fmt.Errorf("user has no permission to comment on post: %v", req.ParentId), input).WithPublic("permission denied")
+		return 0, ce.New(ce.ErrPermissionDenied, fmt.Errorf("user has no permission to comment on post: %v", req.ParentId), input).WithPublic("permission denied")
 	}
-	var commentId int64
+
 	err = s.txRunner.RunTx(ctx, func(q *ds.Queries) error {
 		commentId, err = q.CreateComment(ctx, ds.CreateCommentParams{
 			CommentCreatorID: req.CreatorId.Int64(),
@@ -56,14 +56,14 @@ func (s *Application) CreateComment(ctx context.Context, req models.CreateCommen
 		return nil
 	})
 	if err != nil {
-		return ce.Wrap(nil, err)
+		return 0, ce.Wrap(nil, err)
 	}
 
 	//create notification
 	userMap, err := s.userRetriever.GetUsers(ctx, ct.Ids{req.CreatorId})
 	if err != nil {
 		tele.Error(ctx, "failed to GetUsers for @1: @2 ", "userId", req.CreatorId, "error", err.Error())
-		return nil //return with no error but without creating non-essential notif
+		return commentId, nil //return with no error but without creating non-essential notif
 	}
 	var commenterUsername string
 	if u, ok := userMap[req.CreatorId]; ok {
@@ -72,15 +72,15 @@ func (s *Application) CreateComment(ctx context.Context, req models.CreateCommen
 	basicPost, err := s.db.GetBasicPostByID(ctx, req.ParentId.Int64())
 	if err != nil {
 		tele.Error(ctx, "get GetBasicPostByID failed for post @1: @2 ", "post id", req.ParentId, "error", err.Error())
-		return nil //return with no error but without creating non-essential notif
+		return commentId, nil //return with no error but without creating non-essential notif
 	}
 
 	err = s.clients.CreatePostComment(ctx, basicPost.CreatorID, req.CreatorId.Int64(), req.ParentId.Int64(), commenterUsername, req.Body.String())
 	if err != nil {
 		tele.Error(ctx, "CreatePostComment notification failed for comment @1: @2", "comment id", commentId, "error", err.Error())
-		return nil //return with no error but without creating non-essential notif
+		return commentId, nil //return with no error but without creating non-essential notif
 	}
-	return nil
+	return commentId, nil
 }
 
 func (s *Application) EditComment(ctx context.Context, req models.EditCommentReq) error {

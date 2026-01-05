@@ -41,7 +41,7 @@ func (s *UsersHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserReq
 		Public:      req.GetPublic(),
 	})
 	if err != nil {
-		tele.Warn(ctx, "Error in RegisterUser. @1", "error", err)
+		tele.Warn(ctx, "Error in RegisterUser. @1", "error", err.Error(), "req", req)
 		return nil, ce.GRPCStatus(err)
 	}
 
@@ -73,7 +73,7 @@ func (s *UsersHandler) LoginUser(ctx context.Context, req *pb.LoginRequest) (*cm
 		Password:   ct.HashedPassword(Password),
 	})
 	if err != nil {
-		tele.Warn(ctx, "Error in LoginUser. @1", "error", err)
+		tele.Warn(ctx, "Error in LoginUser. @1", "error", err.Error(), "req", req)
 		return nil, ce.GRPCStatus(err)
 	}
 
@@ -133,7 +133,7 @@ func (s *UsersHandler) UpdateUserEmail(ctx context.Context, req *pb.UpdateEmailR
 		Email:  ct.Email(newEmail),
 	})
 	if err != nil {
-		tele.Warn(ctx, "Error in UpdateUserEmail. @1", "error", err)
+		tele.Warn(ctx, "Error in UpdateUserEmail. @1", "error", err.Error(), "req", req)
 		return nil, ce.GRPCStatus(err)
 	}
 	return &emptypb.Empty{}, nil

@@ -325,12 +325,12 @@ func (s *PostsHandler) GetGroupPostsPaginated(ctx context.Context, req *pb.GetGr
 	return &pb.ListPosts{Posts: pbPosts}, nil
 }
 
-func (s *PostsHandler) CreateComment(ctx context.Context, req *pb.CreateCommentReq) (*emptypb.Empty, error) {
+func (s *PostsHandler) CreateComment(ctx context.Context, req *pb.CreateCommentReq) (*pb.IdResp, error) {
 	tele.Info(ctx, "CreateComment gRPC method called. @1", "request", req)
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
 	}
-	err := s.Application.CreateComment(ctx, models.CreateCommentReq{
+	commentId, err := s.Application.CreateComment(ctx, models.CreateCommentReq{
 		CreatorId: ct.Id(req.CreatorId),
 		ParentId:  ct.Id(req.ParentId),
 		Body:      ct.CommentBody(req.Body),
@@ -340,7 +340,7 @@ func (s *PostsHandler) CreateComment(ctx context.Context, req *pb.CreateCommentR
 		tele.Error(ctx, "Error in CreateComment @1 @2", "request", req, "error", err.Error())
 		return nil, ce.GRPCStatus(err)
 	}
-	return &emptypb.Empty{}, nil
+	return &pb.IdResp{Id: commentId}, nil
 }
 
 func (s *PostsHandler) EditComment(ctx context.Context, req *pb.EditCommentReq) (*emptypb.Empty, error) {
@@ -416,12 +416,12 @@ func (s *PostsHandler) GetCommentsByParentId(ctx context.Context, req *pb.Entity
 	return &pb.ListComments{Comments: pbComments}, nil
 }
 
-func (s *PostsHandler) CreateEvent(ctx context.Context, req *pb.CreateEventReq) (*emptypb.Empty, error) {
+func (s *PostsHandler) CreateEvent(ctx context.Context, req *pb.CreateEventReq) (*pb.IdResp, error) {
 	tele.Info(ctx, "CreateEvent gRPC method called. @1", "request", req)
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
 	}
-	err := s.Application.CreateEvent(ctx, models.CreateEventReq{
+	eventId, err := s.Application.CreateEvent(ctx, models.CreateEventReq{
 		Title:     ct.Title(req.Title),
 		Body:      ct.EventBody(req.Body),
 		CreatorId: ct.Id(req.CreatorId),
@@ -433,7 +433,7 @@ func (s *PostsHandler) CreateEvent(ctx context.Context, req *pb.CreateEventReq) 
 		tele.Error(ctx, "Error in CreateEvent @1 @2", "request", req, "error", err.Error())
 		return nil, ce.GRPCStatus(err)
 	}
-	return &emptypb.Empty{}, nil
+	return &pb.IdResp{Id: eventId}, nil
 }
 
 func (s *PostsHandler) DeleteEvent(ctx context.Context, req *pb.GenericReq) (*emptypb.Empty, error) {
