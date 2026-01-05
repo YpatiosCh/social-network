@@ -57,7 +57,7 @@ type PostsServiceClient interface {
 	GetPostById(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*Post, error)
 	// Creates a post in a user feed or group.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
-	CreatePost(ctx context.Context, in *CreatePostReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreatePost(ctx context.Context, in *CreatePostReq, opts ...grpc.CallOption) (*IdResp, error)
 	// Deletes a post authored by requester or permitted moderator.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED if not owner/moderator.
 	DeletePost(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -135,9 +135,9 @@ func (c *postsServiceClient) GetPostById(ctx context.Context, in *GenericReq, op
 	return out, nil
 }
 
-func (c *postsServiceClient) CreatePost(ctx context.Context, in *CreatePostReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *postsServiceClient) CreatePost(ctx context.Context, in *CreatePostReq, opts ...grpc.CallOption) (*IdResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(IdResp)
 	err := c.cc.Invoke(ctx, PostsService_CreatePost_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -348,7 +348,7 @@ type PostsServiceServer interface {
 	GetPostById(context.Context, *GenericReq) (*Post, error)
 	// Creates a post in a user feed or group.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
-	CreatePost(context.Context, *CreatePostReq) (*emptypb.Empty, error)
+	CreatePost(context.Context, *CreatePostReq) (*IdResp, error)
 	// Deletes a post authored by requester or permitted moderator.
 	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED if not owner/moderator.
 	DeletePost(context.Context, *GenericReq) (*emptypb.Empty, error)
@@ -419,7 +419,7 @@ type UnimplementedPostsServiceServer struct{}
 func (UnimplementedPostsServiceServer) GetPostById(context.Context, *GenericReq) (*Post, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPostById not implemented")
 }
-func (UnimplementedPostsServiceServer) CreatePost(context.Context, *CreatePostReq) (*emptypb.Empty, error) {
+func (UnimplementedPostsServiceServer) CreatePost(context.Context, *CreatePostReq) (*IdResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreatePost not implemented")
 }
 func (UnimplementedPostsServiceServer) DeletePost(context.Context, *GenericReq) (*emptypb.Empty, error) {

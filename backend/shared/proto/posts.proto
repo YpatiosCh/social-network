@@ -20,7 +20,7 @@ service PostsService {
 
     // Creates a post in a user feed or group.
     // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
-    rpc CreatePost (CreatePostReq) returns (google.protobuf.Empty);
+    rpc CreatePost (CreatePostReq) returns (IdResp);
 
     // Deletes a post authored by requester or permitted moderator.
     // Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED if not owner/moderator.
@@ -103,6 +103,10 @@ service PostsService {
 
 message SimpleIdReq {
     int64 id = 1;
+}
+
+message IdResp{
+    int64 id=1;
 }
 message GenericReq {
     int64 requester_id = 1;

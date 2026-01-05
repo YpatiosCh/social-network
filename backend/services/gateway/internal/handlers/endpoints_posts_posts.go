@@ -153,17 +153,19 @@ func (h *Handlers) createPost() http.HandlerFunc {
 			ImageId: ImageId.Int64(),
 		}
 
-		_, err := h.PostsService.CreatePost(ctx, &grpcReq)
+		postId, err := h.PostsService.CreatePost(ctx, &grpcReq)
 		if err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, fmt.Sprintf("failed to create post: %v", err.Error()))
 			return
 		}
 		type httpResponse struct {
+			PostId    ct.Id
 			UserId    ct.Id
 			FileId    ct.Id
 			UploadUrl string
 		}
 		httpResp := httpResponse{
+			PostId:    ct.Id(postId.Id),
 			UserId:    ct.Id(claims.UserId),
 			FileId:    ImageId,
 			UploadUrl: uploadURL,

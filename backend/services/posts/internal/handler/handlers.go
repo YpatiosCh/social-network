@@ -71,12 +71,12 @@ func (s *PostsHandler) GetPostById(ctx context.Context, req *pb.GenericReq) (*pb
 	}, nil
 }
 
-func (s *PostsHandler) CreatePost(ctx context.Context, req *pb.CreatePostReq) (*emptypb.Empty, error) {
+func (s *PostsHandler) CreatePost(ctx context.Context, req *pb.CreatePostReq) (*pb.IdResp, error) {
 	tele.Info(ctx, "CreatePost gRPC method called. @1", "request", req)
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is nil")
 	}
-	err := s.Application.CreatePost(ctx, models.CreatePostReq{
+	postId, err := s.Application.CreatePost(ctx, models.CreatePostReq{
 		CreatorId:   ct.Id(req.CreatorId),
 		Body:        ct.PostBody(req.Body),
 		GroupId:     ct.Id(req.GroupId),
@@ -88,7 +88,7 @@ func (s *PostsHandler) CreatePost(ctx context.Context, req *pb.CreatePostReq) (*
 		tele.Error(ctx, "Error in CreatePost. @1 @2", "request", req, "error", err.Error())
 		return nil, ce.GRPCStatus(err)
 	}
-	return &emptypb.Empty{}, nil
+	return &pb.IdResp{Id: postId}, nil
 }
 
 func (s *PostsHandler) DeletePost(ctx context.Context, req *pb.GenericReq) (*emptypb.Empty, error) {

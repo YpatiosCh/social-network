@@ -15,11 +15,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (s *Application) CreatePost(ctx context.Context, req models.CreatePostReq) (err error) {
+func (s *Application) CreatePost(ctx context.Context, req models.CreatePostReq) (postId int64, err error) {
 	input := fmt.Sprintf("%#v", req)
 
 	if err := ct.ValidateStruct(req); err != nil {
-		return ce.Wrap(ce.ErrInvalidArgument, err, input).WithPublic("invalid data received")
+		return 0, ce.Wrap(ce.ErrInvalidArgument, err, input).WithPublic("invalid data received")
 	}
 
 	var groupId pgtype.Int8
@@ -31,22 +31,22 @@ func (s *Application) CreatePost(ctx context.Context, req models.CreatePostReq) 
 	audience := ds.IntendedAudience(req.Audience.String())
 
 	if !groupId.Valid && audience == "group" {
-		return ce.New(ce.ErrInvalidArgument, fmt.Errorf("no group id given"), input).WithPublic("invalid arguments")
+		return 0, ce.New(ce.ErrInvalidArgument, fmt.Errorf("no group id given"), input).WithPublic("invalid arguments")
 	}
 
 	if groupId.Valid {
 		isMember, err := s.clients.IsGroupMember(ctx, req.CreatorId.Int64(), req.GroupId.Int64())
 		if err != nil {
-			return ce.ParseGrpcErr(err, input)
+			return 0, ce.ParseGrpcErr(err, input)
 		}
 		if !isMember {
-			return ce.New(ce.ErrPermissionDenied, fmt.Errorf("user is not a member of group %v", req.GroupId), input).WithPublic("permission denied")
+			return 0, ce.New(ce.ErrPermissionDenied, fmt.Errorf("user is not a member of group %v", req.GroupId), input).WithPublic("permission denied")
 
 		}
 	}
-	return s.txRunner.RunTx(ctx, func(q *ds.Queries) error {
+	err = s.txRunner.RunTx(ctx, func(q *ds.Queries) error {
 
-		postId, err := q.CreatePost(ctx, ds.CreatePostParams{
+		postId, err = q.CreatePost(ctx, ds.CreatePostParams{
 			PostBody:  req.Body.String(),
 			CreatorID: req.CreatorId.Int64(),
 			GroupID:   groupId,
@@ -85,7 +85,10 @@ func (s *Application) CreatePost(ctx context.Context, req models.CreatePostReq) 
 
 		return nil
 	})
-
+	if err != nil {
+		return 0, ce.Wrap(nil, err)
+	}
+	return postId, nil
 }
 
 func (s *Application) DeletePost(ctx context.Context, req models.GenericReq) error {
