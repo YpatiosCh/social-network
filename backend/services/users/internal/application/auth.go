@@ -95,7 +95,7 @@ func (s *Application) LoginUser(ctx context.Context, req models.LoginRequest) (m
 			PasswordHash: req.Password.String(),
 		})
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if errors.Is(err, sql.ErrNoRows) {
 				return ce.New(ce.ErrInvalidArgument, err, input).WithPublic("wrong credentials")
 			}
 			return ce.New(ce.ErrInternal, err, input).WithPublic(genericPublic)
