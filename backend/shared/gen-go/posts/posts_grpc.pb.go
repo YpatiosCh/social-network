@@ -49,71 +49,98 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // PostsService handles post, comment, event, and reaction workflows.
-// Current behavior: handlers return INVALID_ARGUMENT for nil/validation issues and INTERNAL for all other errors.
-// Desired (not yet implemented): map domain errors to NOT_FOUND, PERMISSION_DENIED, FAILED_PRECONDITION, ALREADY_EXISTS, etc., per RPC.
 type PostsServiceClient interface {
-	// Returns a post by id
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if requester has no right to view.
+	// Returns a post by id.
+	// Returns permission denied if requester has no right to view requested post.
+	// Includes comment and reaction count, audience and selected audience ids, and whether requester has reacted.
+	// Calls users and media service for post creator info and avatar url.
 	GetPostById(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*Post, error)
-	// Creates a post in a user feed or group.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
+	// Creates a new post in a user feed or group.
+	// For a group post, returns permission denied if creator is not a member of the group.
+	// Post audience can be set to everyone, followers, selected and group.
+	// If audience is selected, user ids are expected for the post's selected audience.
 	CreatePost(ctx context.Context, in *CreatePostReq, opts ...grpc.CallOption) (*IdResp, error)
-	// Deletes a post authored by requester or permitted moderator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED if not owner/moderator.
+	// Deletes a post authored by requester.
 	DeletePost(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Updates post body/visibility for the requester-owned post.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
+	// Updates a post authored by requester.
+	// Body, image, audience and selected audience ids (if applicable) can be updated.
+	// All fields must be included in the request even if they remain unchanged, otherwise they'll be deleted.
 	EditPost(ctx context.Context, in *EditPostReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Returns the most popular post in the given group.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if none/hidden; PERMISSION_DENIED if group not visible.
+	// Popularity is measured as reactions count + comments count.
+	// Includes comment and reaction count, but not whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetMostPopularPostInGroup(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*Post, error)
-	// Returns a personalized feed for the requester.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: UNAUTHENTICATED for anonymous callers.
+	// Returns a paginated personalized feed for the requester.
+	// This consists of posts intended for followers or selected followers, where requester is in the intended audience.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
+	// Public posts by followers are not included in this feed but rather the public feed.
 	GetPersonalizedFeed(ctx context.Context, in *GetPersonalizedFeedReq, opts ...grpc.CallOption) (*ListPosts, error)
-	// Returns a public feed limited by pagination.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise.
+	// Returns a paginated public feed.
+	// This consists of posts intended for everyone, ordered by descending creation date.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetPublicFeed(ctx context.Context, in *GenericPaginatedReq, opts ...grpc.CallOption) (*ListPosts, error)
-	// Returns a user's posts visible to the requester.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if user missing; PERMISSION_DENIED for private feeds.
+	// Returns all of a user's posts visible to the requester, paginated.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetUserPostsPaginated(ctx context.Context, in *GetUserPostsReq, opts ...grpc.CallOption) (*ListPosts, error)
-	// Returns posts within a group visible to the requester.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED if access denied.
+	// Returns all posts within a group in descending order by date created, paginated.
+	// Returns permission denied if requester is not a member of the group.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetGroupPostsPaginated(ctx context.Context, in *GetGroupPostsReq, opts ...grpc.CallOption) (*ListPosts, error)
-	// Creates a comment on a post or another comment.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND parent; PERMISSION_DENIED when commenting not allowed.
+	// Creates a comment on a parent entity (post).
+	// Returns permission denied if requester is not allowed to view parent entity.
 	CreateComment(ctx context.Context, in *CreateCommentReq, opts ...grpc.CallOption) (*IdResp, error)
 	// Updates an existing comment by the creator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
+	// Returns permission denied if requester is not allowed to view parent entity.
+	// All fields must be included in the request even if they remain unchanged, otherwise they'll be deleted.
 	EditComment(ctx context.Context, in *EditCommentReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Deletes a comment by the creator or moderator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED when not allowed.
+	// Deletes a comment by the creator.
+	// Returns permission denied if requester is not allowed to view parent entity.
 	DeleteComment(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Returns comments for a parent entity with pagination.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing parent; PERMISSION_DENIED if thread hidden.
+	// Returns paginated comments for a parent entity, ordered by descending date created.
+	// Every comment includes reactions count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetCommentsByParentId(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListComments, error)
 	// Creates a group event.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED for non-member.
+	// Returns permission denied if requester is not a member of the group.
 	CreateEvent(ctx context.Context, in *CreateEventReq, opts ...grpc.CallOption) (*IdResp, error)
-	// Deletes an event by creator or moderator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED when not owner/moderator.
+	// Deletes an event by creator.
+	// Returns permission denied if requester is not a member of the group.
 	DeleteEvent(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Updates an event's details.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED/FAILED_PRECONDITION when locked/past.
+	// Updates an existing event by creator.
+	// Returns permission denied if requester is not a member of the group.
+	// All fields must be included in the request even if they remain unchanged, otherwise they'll be deleted.
 	EditEvent(ctx context.Context, in *EditEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Returns events for a group with pagination.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing group; PERMISSION_DENIED if access denied.
+	// Returns paginated events of a group ordered by descending creation date.
+	// Each event includes going/not going count, and requester's response, if any.
+	// Returns permission denied if requester is not a member of the group.
+	// A call to users and media service is made for user information and images.
 	GetEventsByGroupId(ctx context.Context, in *EntityIdPaginatedReq, opts ...grpc.CallOption) (*ListEvents, error)
-	// Records a response (going/not going) to an event.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED/FAILED_PRECONDITION if responses closed.
+	// Inserts or updates a response (going/not going) to an event.
+	// Returns permission denied if requester is not a member of the group.
 	RespondToEvent(ctx context.Context, in *RespondToEventReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Removes the requester's response to an event.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: same as RespondToEvent.
+	// Returns permission denied if requester is not a member of the group.
 	RemoveEventResponse(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Suggests users who interacted with the given post.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing post; PERMISSION_DENIED if not visible.
+	// Returns a small set of users that the given user may be interested to follow.
+	//
+	// Suggestions are derived from public ("everyone") posts and include users who:
+	//   - reacted to the user's posts
+	//   - commented on the user's posts
+	//   - reacted to the same posts the user reacted to
+	//   - commented on the same posts the user commented on
+	//
+	// Each interaction type contributes a weighted score, and users are ranked by
+	// total score. Results are randomized among users with similar scores to avoid
+	// deterministic ordering, and the top candidates are returned.
+	// A call to users and media service is made for user information and images.
 	SuggestUsersByPostActivity(ctx context.Context, in *SimpleIdReq, opts ...grpc.CallOption) (*common.ListUsers, error)
 	// Toggles or inserts a reaction for the requester on a post/comment.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing entity; PERMISSION_DENIED if reactions blocked.
+	// Returns permission denied if requester is not allowed to view parent entity.
 	ToggleOrInsertReaction(ctx context.Context, in *GenericReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -340,71 +367,98 @@ func (c *postsServiceClient) ToggleOrInsertReaction(ctx context.Context, in *Gen
 // for forward compatibility.
 //
 // PostsService handles post, comment, event, and reaction workflows.
-// Current behavior: handlers return INVALID_ARGUMENT for nil/validation issues and INTERNAL for all other errors.
-// Desired (not yet implemented): map domain errors to NOT_FOUND, PERMISSION_DENIED, FAILED_PRECONDITION, ALREADY_EXISTS, etc., per RPC.
 type PostsServiceServer interface {
-	// Returns a post by id
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if requester has no right to view.
+	// Returns a post by id.
+	// Returns permission denied if requester has no right to view requested post.
+	// Includes comment and reaction count, audience and selected audience ids, and whether requester has reacted.
+	// Calls users and media service for post creator info and avatar url.
 	GetPostById(context.Context, *GenericReq) (*Post, error)
-	// Creates a post in a user feed or group.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if creator/group missing; PERMISSION_DENIED if posting not allowed.
+	// Creates a new post in a user feed or group.
+	// For a group post, returns permission denied if creator is not a member of the group.
+	// Post audience can be set to everyone, followers, selected and group.
+	// If audience is selected, user ids are expected for the post's selected audience.
 	CreatePost(context.Context, *CreatePostReq) (*IdResp, error)
-	// Deletes a post authored by requester or permitted moderator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED if not owner/moderator.
+	// Deletes a post authored by requester.
 	DeletePost(context.Context, *GenericReq) (*emptypb.Empty, error)
-	// Updates post body/visibility for the requester-owned post.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if post missing; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
+	// Updates a post authored by requester.
+	// Body, image, audience and selected audience ids (if applicable) can be updated.
+	// All fields must be included in the request even if they remain unchanged, otherwise they'll be deleted.
 	EditPost(context.Context, *EditPostReq) (*emptypb.Empty, error)
 	// Returns the most popular post in the given group.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if none/hidden; PERMISSION_DENIED if group not visible.
+	// Popularity is measured as reactions count + comments count.
+	// Includes comment and reaction count, but not whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetMostPopularPostInGroup(context.Context, *SimpleIdReq) (*Post, error)
-	// Returns a personalized feed for the requester.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: UNAUTHENTICATED for anonymous callers.
+	// Returns a paginated personalized feed for the requester.
+	// This consists of posts intended for followers or selected followers, where requester is in the intended audience.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
+	// Public posts by followers are not included in this feed but rather the public feed.
 	GetPersonalizedFeed(context.Context, *GetPersonalizedFeedReq) (*ListPosts, error)
-	// Returns a public feed limited by pagination.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise.
+	// Returns a paginated public feed.
+	// This consists of posts intended for everyone, ordered by descending creation date.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetPublicFeed(context.Context, *GenericPaginatedReq) (*ListPosts, error)
-	// Returns a user's posts visible to the requester.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if user missing; PERMISSION_DENIED for private feeds.
+	// Returns all of a user's posts visible to the requester, paginated.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetUserPostsPaginated(context.Context, *GetUserPostsReq) (*ListPosts, error)
-	// Returns posts within a group visible to the requester.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED if access denied.
+	// Returns all posts within a group in descending order by date created, paginated.
+	// Returns permission denied if requester is not a member of the group.
+	// Every post includes comment count, reaction count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetGroupPostsPaginated(context.Context, *GetGroupPostsReq) (*ListPosts, error)
-	// Creates a comment on a post or another comment.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND parent; PERMISSION_DENIED when commenting not allowed.
+	// Creates a comment on a parent entity (post).
+	// Returns permission denied if requester is not allowed to view parent entity.
 	CreateComment(context.Context, *CreateCommentReq) (*IdResp, error)
 	// Updates an existing comment by the creator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED/FAILED_PRECONDITION when locked.
+	// Returns permission denied if requester is not allowed to view parent entity.
+	// All fields must be included in the request even if they remain unchanged, otherwise they'll be deleted.
 	EditComment(context.Context, *EditCommentReq) (*emptypb.Empty, error)
-	// Deletes a comment by the creator or moderator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing comment; PERMISSION_DENIED when not allowed.
+	// Deletes a comment by the creator.
+	// Returns permission denied if requester is not allowed to view parent entity.
 	DeleteComment(context.Context, *GenericReq) (*emptypb.Empty, error)
-	// Returns comments for a parent entity with pagination.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing parent; PERMISSION_DENIED if thread hidden.
+	// Returns paginated comments for a parent entity, ordered by descending date created.
+	// Every comment includes reactions count and whether requester has reacted.
+	// A call to users and media service is made for user information and images.
 	GetCommentsByParentId(context.Context, *EntityIdPaginatedReq) (*ListComments, error)
 	// Creates a group event.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND if group missing; PERMISSION_DENIED for non-member.
+	// Returns permission denied if requester is not a member of the group.
 	CreateEvent(context.Context, *CreateEventReq) (*IdResp, error)
-	// Deletes an event by creator or moderator.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED when not owner/moderator.
+	// Deletes an event by creator.
+	// Returns permission denied if requester is not a member of the group.
 	DeleteEvent(context.Context, *GenericReq) (*emptypb.Empty, error)
-	// Updates an event's details.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED/FAILED_PRECONDITION when locked/past.
+	// Updates an existing event by creator.
+	// Returns permission denied if requester is not a member of the group.
+	// All fields must be included in the request even if they remain unchanged, otherwise they'll be deleted.
 	EditEvent(context.Context, *EditEventReq) (*emptypb.Empty, error)
-	// Returns events for a group with pagination.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing group; PERMISSION_DENIED if access denied.
+	// Returns paginated events of a group ordered by descending creation date.
+	// Each event includes going/not going count, and requester's response, if any.
+	// Returns permission denied if requester is not a member of the group.
+	// A call to users and media service is made for user information and images.
 	GetEventsByGroupId(context.Context, *EntityIdPaginatedReq) (*ListEvents, error)
-	// Records a response (going/not going) to an event.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing event; PERMISSION_DENIED/FAILED_PRECONDITION if responses closed.
+	// Inserts or updates a response (going/not going) to an event.
+	// Returns permission denied if requester is not a member of the group.
 	RespondToEvent(context.Context, *RespondToEventReq) (*emptypb.Empty, error)
 	// Removes the requester's response to an event.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: same as RespondToEvent.
+	// Returns permission denied if requester is not a member of the group.
 	RemoveEventResponse(context.Context, *GenericReq) (*emptypb.Empty, error)
-	// Suggests users who interacted with the given post.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing post; PERMISSION_DENIED if not visible.
+	// Returns a small set of users that the given user may be interested to follow.
+	//
+	// Suggestions are derived from public ("everyone") posts and include users who:
+	//   - reacted to the user's posts
+	//   - commented on the user's posts
+	//   - reacted to the same posts the user reacted to
+	//   - commented on the same posts the user commented on
+	//
+	// Each interaction type contributes a weighted score, and users are ranked by
+	// total score. Results are randomized among users with similar scores to avoid
+	// deterministic ordering, and the top candidates are returned.
+	// A call to users and media service is made for user information and images.
 	SuggestUsersByPostActivity(context.Context, *SimpleIdReq) (*common.ListUsers, error)
 	// Toggles or inserts a reaction for the requester on a post/comment.
-	// Current: INVALID_ARGUMENT on bad input; INTERNAL otherwise. Desired: NOT_FOUND missing entity; PERMISSION_DENIED if reactions blocked.
+	// Returns permission denied if requester is not allowed to view parent entity.
 	ToggleOrInsertReaction(context.Context, *GenericReq) (*emptypb.Empty, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
