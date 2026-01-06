@@ -224,7 +224,8 @@ func (s *Handlers) getAllGroupsPaginated() http.HandlerFunc {
 				MembersCount:     group.MembersCount,
 				IsMember:         group.IsMember,
 				IsOwner:          group.IsOwner,
-				IsPending:        group.IsPending,
+				PendingRequest:   group.PendingRequest,
+				PendingInvite:    group.PendingInvite,
 			}
 			resp = append(resp, newGroup)
 		}
@@ -273,7 +274,8 @@ func (s *Handlers) getGroupInfo() http.HandlerFunc {
 			MembersCount:     grpcResp.MembersCount,
 			IsMember:         grpcResp.IsMember,
 			IsOwner:          grpcResp.IsOwner,
-			IsPending:        grpcResp.IsPending,
+			PendingRequest:   grpcResp.PendingRequest,
+			PendingInvite:    grpcResp.PendingInvite,
 		}
 
 		utils.WriteJSON(ctx, w, http.StatusOK, resp)
@@ -375,7 +377,8 @@ func (s *Handlers) getUserGroupsPaginated() http.HandlerFunc {
 				MembersCount:     group.MembersCount,
 				IsMember:         group.IsMember,
 				IsOwner:          group.IsOwner,
-				IsPending:        group.IsPending,
+				PendingRequest:   group.PendingRequest,
+				PendingInvite:    group.PendingInvite,
 			}
 			resp = append(resp, newGroup)
 		}
@@ -593,7 +596,8 @@ func (s *Handlers) searchGroups() http.HandlerFunc {
 				MembersCount:     group.MembersCount,
 				IsMember:         group.IsMember,
 				IsOwner:          group.IsOwner,
-				IsPending:        group.IsPending,
+				PendingRequest:   group.PendingRequest,
+				PendingInvite:    group.PendingInvite,
 			}
 
 			resp.Groups = append(resp.Groups, newGroup)

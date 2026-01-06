@@ -110,8 +110,10 @@ service UserService {
   // If the request already exists it updates to "pending".
   rpc RequestJoinGroup (GroupJoinRequest) returns (google.protobuf.Empty);
 
+  rpc CancelJoinGroupRequest(GroupJoinRequest) returns (google.protobuf.Empty);
+
   // Accepts or declines a received group invite.
-    rpc RespondToGroupInvite (HandleGroupInviteRequest) returns (google.protobuf.Empty);
+  rpc RespondToGroupInvite (HandleGroupInviteRequest) returns (google.protobuf.Empty);
 
   // Approves or rejects a user's join request.
   // Returns permission declined if user handling the request is not owner of the group.
@@ -120,6 +122,8 @@ service UserService {
   // Removes user as member of the specified group.
   // Returns permission denied if user wasn't a member of the group.
   rpc LeaveGroup (GeneralGroupRequest) returns (google.protobuf.Empty);
+
+  rpc RemoveFromGroup (RemoveFromGroupRequest) returns (google.protobuf.Empty);
 
   // Creates a new group with requester as owner and returns its id.
   rpc CreateGroup (CreateGroupRequest) returns (google.protobuf.Int64Value);
@@ -281,7 +285,8 @@ message Group {
   int32 members_count = 7;
   bool is_member = 8;
   bool is_owner = 9;
-  bool is_pending = 10;
+  bool pending_request = 10;
+  bool pending_invite=11;
 }
 
 //Response message including multiple groups
