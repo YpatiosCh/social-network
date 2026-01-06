@@ -13,19 +13,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (s *Application) CreateEvent(ctx context.Context, req models.CreateEventReq) error {
+func (s *Application) CreateEvent(ctx context.Context, req models.CreateEventReq) (int64, error) {
 	input := fmt.Sprintf("%#v", req)
 
+	var eventId int64
+
 	if err := ct.ValidateStruct(req); err != nil {
-		return ce.Wrap(ce.ErrInvalidArgument, err, "request validation failed", input).WithPublic("invalid data received")
+		return 0, ce.Wrap(ce.ErrInvalidArgument, err, "request validation failed", input).WithPublic("invalid data received")
 	}
 
 	isMember, err := s.clients.IsGroupMember(ctx, req.CreatorId.Int64(), req.GroupId.Int64())
 	if err != nil {
-		return ce.ParseGrpcErr(err, input)
+		return 0, ce.ParseGrpcErr(err, input)
 	}
 	if !isMember {
-		return ce.New(ce.ErrPermissionDenied, fmt.Errorf("user is not group member"), input).WithPublic("permission denied")
+		return 0, ce.New(ce.ErrPermissionDenied, fmt.Errorf("user is not group member"), input).WithPublic("permission denied")
 	}
 
 	// convert date
@@ -35,7 +37,7 @@ func (s *Application) CreateEvent(ctx context.Context, req models.CreateEventReq
 	}
 	err = s.txRunner.RunTx(ctx, func(q *ds.Queries) error {
 
-		eventId, err := s.db.CreateEvent(ctx, ds.CreateEventParams{
+		eventId, err = s.db.CreateEvent(ctx, ds.CreateEventParams{
 			EventTitle:     req.Title.String(),
 			EventBody:      req.Body.String(),
 			EventCreatorID: req.CreatorId.Int64(),
@@ -59,13 +61,13 @@ func (s *Application) CreateEvent(ctx context.Context, req models.CreateEventReq
 		return nil
 	})
 	if err != nil {
-		return ce.Wrap(nil, err)
+		return 0, ce.Wrap(nil, err)
 	}
 
 	//TODO CREATE NOTIFICATION EVENT (for all members)
 	//get group members
 	// err=s.clients.CreateNewEvent(ctx,)
-	return nil
+	return eventId, nil
 }
 
 func (s *Application) DeleteEvent(ctx context.Context, req models.GenericReq) error {

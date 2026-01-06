@@ -78,17 +78,19 @@ func (h *Handlers) createEvent() http.HandlerFunc {
 			EventDate: httpReq.EventDate.ToProto(),
 		}
 
-		_, err := h.PostsService.CreateEvent(ctx, &grpcReq)
+		eventId, err := h.PostsService.CreateEvent(ctx, &grpcReq)
 		if err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, fmt.Sprintf("failed to create post: %v", err.Error()))
 			return
 		}
 		type httpResponse struct {
+			EventId   ct.Id
 			UserId    ct.Id
 			FileId    ct.Id
 			UploadUrl string
 		}
 		httpResp := httpResponse{
+			EventId:   ct.Id(eventId.Id),
 			UserId:    ct.Id(claims.UserId),
 			FileId:    ImageId,
 			UploadUrl: uploadURL}

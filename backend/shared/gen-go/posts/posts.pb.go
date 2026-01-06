@@ -25,6 +25,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// generic request message that only includes
+// an entity id (can be post, event, comment id, etc)
 type SimpleIdReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -69,6 +71,8 @@ func (x *SimpleIdReq) GetId() int64 {
 	return 0
 }
 
+// generic response message that only includes
+// an entity id (can be post, event, comment id, etc)
 type IdResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -113,6 +117,9 @@ func (x *IdResp) GetId() int64 {
 	return 0
 }
 
+// generic request message that includes
+// the id of the requesting user
+// and an entity id (can be post, comment, event, etc)
 type GenericReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequesterId   int64                  `protobuf:"varint,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
@@ -165,6 +172,10 @@ func (x *GenericReq) GetEntityId() int64 {
 	return 0
 }
 
+// generic request message that includes
+// the id of the requesting user
+// an entity id (can be post, comment, event, etc)
+// and pagination information
 type EntityIdPaginatedReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequesterId   int64                  `protobuf:"varint,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
@@ -233,6 +244,9 @@ func (x *EntityIdPaginatedReq) GetOffset() int32 {
 	return 0
 }
 
+// generic request message that includes
+// the id of the requesting user
+// and pagination information
 type GenericPaginatedReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequesterId   int64                  `protobuf:"varint,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
@@ -293,22 +307,23 @@ func (x *GenericPaginatedReq) GetOffset() int32 {
 	return 0
 }
 
+// Response message that describes a post
 type Post struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	PostId                int64                  `protobuf:"varint,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
 	PostBody              string                 `protobuf:"bytes,2,opt,name=post_body,json=postBody,proto3" json:"post_body,omitempty"`
-	User                  *common.User           `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
-	GroupId               int64                  `protobuf:"varint,4,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	Audience              string                 `protobuf:"bytes,5,opt,name=audience,proto3" json:"audience,omitempty"`
+	User                  *common.User           `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`                       // includes id, username and avatar url
+	GroupId               int64                  `protobuf:"varint,4,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"` //can be 0, meaning the post doesn't belong to a group
+	Audience              string                 `protobuf:"bytes,5,opt,name=audience,proto3" json:"audience,omitempty"`               // one of "everyone", "followers","selected","group"
 	CommentsCount         int32                  `protobuf:"varint,6,opt,name=comments_count,json=commentsCount,proto3" json:"comments_count,omitempty"`
 	ReactionsCount        int32                  `protobuf:"varint,7,opt,name=reactions_count,json=reactionsCount,proto3" json:"reactions_count,omitempty"`
 	LastCommentedAt       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_commented_at,json=lastCommentedAt,proto3" json:"last_commented_at,omitempty"`
 	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt             *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	LikedByUser           bool                   `protobuf:"varint,11,opt,name=liked_by_user,json=likedByUser,proto3" json:"liked_by_user,omitempty"`
-	ImageId               int64                  `protobuf:"varint,12,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageUrl              string                 `protobuf:"bytes,13,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
-	SelectedAudienceUsers *common.ListUsers      `protobuf:"bytes,14,opt,name=selected_audience_users,json=selectedAudienceUsers,proto3" json:"selected_audience_users,omitempty"`
+	ImageId               int64                  `protobuf:"varint,12,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`                                            //can be 0, meaning no associated image
+	ImageUrl              string                 `protobuf:"bytes,13,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`                                          // can be an empty string if image_id is 0
+	SelectedAudienceUsers *common.ListUsers      `protobuf:"bytes,14,opt,name=selected_audience_users,json=selectedAudienceUsers,proto3" json:"selected_audience_users,omitempty"` //empty unless audience="selected"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -441,6 +456,7 @@ func (x *Post) GetSelectedAudienceUsers() *common.ListUsers {
 	return nil
 }
 
+// Response message with multiple posts
 type ListPosts struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Posts         []*Post                `protobuf:"bytes,1,rep,name=posts,proto3" json:"posts,omitempty"`
@@ -485,14 +501,15 @@ func (x *ListPosts) GetPosts() []*Post {
 	return nil
 }
 
+// Request message for creating a post
 type CreatePostReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CreatorId     int64                  `protobuf:"varint,1,opt,name=creator_id,json=creatorId,proto3" json:"creator_id,omitempty"`
 	Body          string                 `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
-	GroupId       int64                  `protobuf:"varint,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	Audience      string                 `protobuf:"bytes,4,opt,name=audience,proto3" json:"audience,omitempty"`
-	AudienceIds   *common.UserIds        `protobuf:"bytes,5,opt,name=audience_ids,json=audienceIds,proto3" json:"audience_ids,omitempty"`
-	ImageId       int64                  `protobuf:"varint,6,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	GroupId       int64                  `protobuf:"varint,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`            //can be 0 if audience is not "group"
+	Audience      string                 `protobuf:"bytes,4,opt,name=audience,proto3" json:"audience,omitempty"`                          // one of "everyone", "followers","selected","group"
+	AudienceIds   *common.UserIds        `protobuf:"bytes,5,opt,name=audience_ids,json=audienceIds,proto3" json:"audience_ids,omitempty"` // empty unless audience="selected"
+	ImageId       int64                  `protobuf:"varint,6,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`            //can be 0 if no image
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -569,15 +586,16 @@ func (x *CreatePostReq) GetImageId() int64 {
 	return 0
 }
 
+// Request message for editing a post
 type EditPostReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequesterId   int64                  `protobuf:"varint,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
 	PostId        int64                  `protobuf:"varint,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
 	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	ImageId       int64                  `protobuf:"varint,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	Audience      string                 `protobuf:"bytes,5,opt,name=audience,proto3" json:"audience,omitempty"`
-	AudienceIds   *common.UserIds        `protobuf:"bytes,6,opt,name=audience_ids,json=audienceIds,proto3" json:"audience_ids,omitempty"`
-	DeleteImage   bool                   `protobuf:"varint,7,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"`
+	ImageId       int64                  `protobuf:"varint,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`             //can be 0 if no image
+	Audience      string                 `protobuf:"bytes,5,opt,name=audience,proto3" json:"audience,omitempty"`                           // one of "everyone", "followers","selected","group"
+	AudienceIds   *common.UserIds        `protobuf:"bytes,6,opt,name=audience_ids,json=audienceIds,proto3" json:"audience_ids,omitempty"`  //empty unless audience="selected"
+	DeleteImage   bool                   `protobuf:"varint,7,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"` //true if removing preexisting image
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -661,6 +679,7 @@ func (x *EditPostReq) GetDeleteImage() bool {
 	return false
 }
 
+// Request message for retrieving a user's posts
 type GetUserPostsReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CreatorId     int64                  `protobuf:"varint,1,opt,name=creator_id,json=creatorId,proto3" json:"creator_id,omitempty"`
@@ -729,6 +748,8 @@ func (x *GetUserPostsReq) GetOffset() int32 {
 	return 0
 }
 
+// Request message for retrieving the personalized feed
+// (posts by followers with restricted visibility that requester is allowed to view)
 type GetPersonalizedFeedReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequesterId   int64                  `protobuf:"varint,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
@@ -789,6 +810,7 @@ func (x *GetPersonalizedFeedReq) GetOffset() int32 {
 	return 0
 }
 
+// Request message for retrieving posts belonging to a group
 type GetGroupPostsReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequesterId   int64                  `protobuf:"varint,1,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
@@ -857,19 +879,19 @@ func (x *GetGroupPostsReq) GetOffset() int32 {
 	return 0
 }
 
-// COMMENTS
+// Response message that describes a comment
 type Comment struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	CommentId      int64                  `protobuf:"varint,1,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
 	ParentId       int64                  `protobuf:"varint,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
 	Body           string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	User           *common.User           `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	User           *common.User           `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"` // includes id, username and avatar url
 	ReactionsCount int32                  `protobuf:"varint,5,opt,name=reactions_count,json=reactionsCount,proto3" json:"reactions_count,omitempty"`
 	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	LikedByUser    bool                   `protobuf:"varint,8,opt,name=liked_by_user,json=likedByUser,proto3" json:"liked_by_user,omitempty"`
-	ImageId        int64                  `protobuf:"varint,9,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageUrl       string                 `protobuf:"bytes,10,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
+	ImageId        int64                  `protobuf:"varint,9,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`    // can be 0 if no image
+	ImageUrl       string                 `protobuf:"bytes,10,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"` // can be empty string if image id=0
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -974,6 +996,7 @@ func (x *Comment) GetImageUrl() string {
 	return ""
 }
 
+// Response message with multiple comments
 type ListComments struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Comments      []*Comment             `protobuf:"bytes,1,rep,name=comments,proto3" json:"comments,omitempty"`
@@ -1018,12 +1041,13 @@ func (x *ListComments) GetComments() []*Comment {
 	return nil
 }
 
+// Request message for creating a comment
 type CreateCommentReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CreatorId     int64                  `protobuf:"varint,1,opt,name=creator_id,json=creatorId,proto3" json:"creator_id,omitempty"`
 	ParentId      int64                  `protobuf:"varint,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
 	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	ImageId       int64                  `protobuf:"varint,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	ImageId       int64                  `protobuf:"varint,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"` //can be 0 if no image
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1086,13 +1110,14 @@ func (x *CreateCommentReq) GetImageId() int64 {
 	return 0
 }
 
+// Request message for editing a comment
 type EditCommentReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CreatorId     int64                  `protobuf:"varint,1,opt,name=creator_id,json=creatorId,proto3" json:"creator_id,omitempty"`
 	CommentId     int64                  `protobuf:"varint,2,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
 	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	ImageId       int64                  `protobuf:"varint,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	DeleteImage   bool                   `protobuf:"varint,5,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"`
+	ImageId       int64                  `protobuf:"varint,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`             //can be 0 if no image
+	DeleteImage   bool                   `protobuf:"varint,5,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"` //true if removing preexisting image
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1162,22 +1187,22 @@ func (x *EditCommentReq) GetDeleteImage() bool {
 	return false
 }
 
-// EVENTS
+// Response message that describes an event
 type Event struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EventId       int64                  `protobuf:"varint,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
-	User          *common.User           `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	User          *common.User           `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"` // includes id, username and avatar url
 	GroupId       int64                  `protobuf:"varint,5,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
 	EventDate     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=event_date,json=eventDate,proto3" json:"event_date,omitempty"`
 	GoingCount    int32                  `protobuf:"varint,7,opt,name=going_count,json=goingCount,proto3" json:"going_count,omitempty"`
 	NotGoingCount int32                  `protobuf:"varint,8,opt,name=not_going_count,json=notGoingCount,proto3" json:"not_going_count,omitempty"`
-	ImageId       int64                  `protobuf:"varint,9,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageUrl      string                 `protobuf:"bytes,10,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
+	ImageId       int64                  `protobuf:"varint,9,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`    //can be 0 if no image
+	ImageUrl      string                 `protobuf:"bytes,10,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"` //can be empty string if image id=0
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	UserResponse  *wrapperspb.BoolValue  `protobuf:"bytes,13,opt,name=user_response,json=userResponse,proto3" json:"user_response,omitempty"`
+	UserResponse  *wrapperspb.BoolValue  `protobuf:"bytes,13,opt,name=user_response,json=userResponse,proto3" json:"user_response,omitempty"` //nil for no response, true for going, false for not going
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1303,6 +1328,7 @@ func (x *Event) GetUserResponse() *wrapperspb.BoolValue {
 	return nil
 }
 
+// Response message with multiple events
 type ListEvents struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Events        []*Event               `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
@@ -1347,13 +1373,14 @@ func (x *ListEvents) GetEvents() []*Event {
 	return nil
 }
 
+// Request message for creating an event
 type CreateEventReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	Body          string                 `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
 	CreatorId     int64                  `protobuf:"varint,3,opt,name=creator_id,json=creatorId,proto3" json:"creator_id,omitempty"`
 	GroupId       int64                  `protobuf:"varint,4,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	ImageId       int64                  `protobuf:"varint,5,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	ImageId       int64                  `protobuf:"varint,5,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"` //can be 0 if no image
 	EventDate     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=event_date,json=eventDate,proto3" json:"event_date,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1431,15 +1458,16 @@ func (x *CreateEventReq) GetEventDate() *timestamppb.Timestamp {
 	return nil
 }
 
+// Request message for editing an event
 type EditEventReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EventId       int64                  `protobuf:"varint,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
 	RequesterId   int64                  `protobuf:"varint,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
 	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Body          string                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	ImageId       int64                  `protobuf:"varint,5,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	ImageId       int64                  `protobuf:"varint,5,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"` //can be 0 if no image
 	EventDate     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=event_date,json=eventDate,proto3" json:"event_date,omitempty"`
-	DeleteImage   bool                   `protobuf:"varint,7,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"`
+	DeleteImage   bool                   `protobuf:"varint,7,opt,name=delete_image,json=deleteImage,proto3" json:"delete_image,omitempty"` //true if removing preexisting image
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1523,11 +1551,12 @@ func (x *EditEventReq) GetDeleteImage() bool {
 	return false
 }
 
+// Request message for responding to an event
 type RespondToEventReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EventId       int64                  `protobuf:"varint,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
 	ResponderId   int64                  `protobuf:"varint,2,opt,name=responder_id,json=responderId,proto3" json:"responder_id,omitempty"`
-	Going         bool                   `protobuf:"varint,3,opt,name=going,proto3" json:"going,omitempty"`
+	Going         bool                   `protobuf:"varint,3,opt,name=going,proto3" json:"going,omitempty"` //true for going, false for not going
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1730,7 +1759,7 @@ const file_posts_proto_rawDesc = "" +
 	"\x11RespondToEventReq\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\x03R\aeventId\x12!\n" +
 	"\fresponder_id\x18\x02 \x01(\x03R\vresponderId\x12\x14\n" +
-	"\x05going\x18\x03 \x01(\bR\x05going2\xbd\n" +
+	"\x05going\x18\x03 \x01(\bR\x05going2\xab\n" +
 	"\n" +
 	"\fPostsService\x12-\n" +
 	"\vGetPostById\x12\x11.posts.GenericReq\x1a\v.posts.Post\x121\n" +
@@ -1743,12 +1772,12 @@ const file_posts_proto_rawDesc = "" +
 	"\x13GetPersonalizedFeed\x12\x1d.posts.GetPersonalizedFeedReq\x1a\x10.posts.ListPosts\x12=\n" +
 	"\rGetPublicFeed\x12\x1a.posts.GenericPaginatedReq\x1a\x10.posts.ListPosts\x12A\n" +
 	"\x15GetUserPostsPaginated\x12\x16.posts.GetUserPostsReq\x1a\x10.posts.ListPosts\x12C\n" +
-	"\x16GetGroupPostsPaginated\x12\x17.posts.GetGroupPostsReq\x1a\x10.posts.ListPosts\x12@\n" +
-	"\rCreateComment\x12\x17.posts.CreateCommentReq\x1a\x16.google.protobuf.Empty\x12<\n" +
+	"\x16GetGroupPostsPaginated\x12\x17.posts.GetGroupPostsReq\x1a\x10.posts.ListPosts\x127\n" +
+	"\rCreateComment\x12\x17.posts.CreateCommentReq\x1a\r.posts.IdResp\x12<\n" +
 	"\vEditComment\x12\x15.posts.EditCommentReq\x1a\x16.google.protobuf.Empty\x12:\n" +
 	"\rDeleteComment\x12\x11.posts.GenericReq\x1a\x16.google.protobuf.Empty\x12I\n" +
-	"\x15GetCommentsByParentId\x12\x1b.posts.EntityIdPaginatedReq\x1a\x13.posts.ListComments\x12<\n" +
-	"\vCreateEvent\x12\x15.posts.CreateEventReq\x1a\x16.google.protobuf.Empty\x128\n" +
+	"\x15GetCommentsByParentId\x12\x1b.posts.EntityIdPaginatedReq\x1a\x13.posts.ListComments\x123\n" +
+	"\vCreateEvent\x12\x15.posts.CreateEventReq\x1a\r.posts.IdResp\x128\n" +
 	"\vDeleteEvent\x12\x11.posts.GenericReq\x1a\x16.google.protobuf.Empty\x128\n" +
 	"\tEditEvent\x12\x13.posts.EditEventReq\x1a\x16.google.protobuf.Empty\x12D\n" +
 	"\x12GetEventsByGroupId\x12\x1b.posts.EntityIdPaginatedReq\x1a\x11.posts.ListEvents\x12B\n" +
@@ -1850,11 +1879,11 @@ var file_posts_proto_depIdxs = []int32{
 	6,  // 47: posts.PostsService.GetPublicFeed:output_type -> posts.ListPosts
 	6,  // 48: posts.PostsService.GetUserPostsPaginated:output_type -> posts.ListPosts
 	6,  // 49: posts.PostsService.GetGroupPostsPaginated:output_type -> posts.ListPosts
-	26, // 50: posts.PostsService.CreateComment:output_type -> google.protobuf.Empty
+	1,  // 50: posts.PostsService.CreateComment:output_type -> posts.IdResp
 	26, // 51: posts.PostsService.EditComment:output_type -> google.protobuf.Empty
 	26, // 52: posts.PostsService.DeleteComment:output_type -> google.protobuf.Empty
 	13, // 53: posts.PostsService.GetCommentsByParentId:output_type -> posts.ListComments
-	26, // 54: posts.PostsService.CreateEvent:output_type -> google.protobuf.Empty
+	1,  // 54: posts.PostsService.CreateEvent:output_type -> posts.IdResp
 	26, // 55: posts.PostsService.DeleteEvent:output_type -> google.protobuf.Empty
 	26, // 56: posts.PostsService.EditEvent:output_type -> google.protobuf.Empty
 	17, // 57: posts.PostsService.GetEventsByGroupId:output_type -> posts.ListEvents

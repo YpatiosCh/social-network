@@ -78,17 +78,19 @@ func (h *Handlers) createComment() http.HandlerFunc {
 			ImageId:   ImageId.Int64(),
 		}
 
-		_, err := h.PostsService.CreateComment(ctx, &grpcReq)
+		commentId, err := h.PostsService.CreateComment(ctx, &grpcReq)
 		if err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, fmt.Sprintf("failed to create comment: %v", err.Error()))
 			return
 		}
 		type httpResponse struct {
+			CommentId ct.Id
 			UserId    ct.Id
 			FileId    ct.Id
 			UploadUrl string
 		}
 		httpResp := httpResponse{
+			CommentId: ct.Id(commentId.Id),
 			UserId:    ct.Id(claims.UserId),
 			FileId:    ImageId,
 			UploadUrl: uploadURL}
