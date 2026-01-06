@@ -22,40 +22,42 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_RegisterUser_FullMethodName           = "/users.UserService/RegisterUser"
-	UserService_LoginUser_FullMethodName              = "/users.UserService/LoginUser"
-	UserService_UpdateUserPassword_FullMethodName     = "/users.UserService/UpdateUserPassword"
-	UserService_UpdateUserEmail_FullMethodName        = "/users.UserService/UpdateUserEmail"
-	UserService_GetFollowersPaginated_FullMethodName  = "/users.UserService/GetFollowersPaginated"
-	UserService_GetFollowingPaginated_FullMethodName  = "/users.UserService/GetFollowingPaginated"
-	UserService_FollowUser_FullMethodName             = "/users.UserService/FollowUser"
-	UserService_UnFollowUser_FullMethodName           = "/users.UserService/UnFollowUser"
-	UserService_HandleFollowRequest_FullMethodName    = "/users.UserService/HandleFollowRequest"
-	UserService_GetFollowingIds_FullMethodName        = "/users.UserService/GetFollowingIds"
-	UserService_GetFollowSuggestions_FullMethodName   = "/users.UserService/GetFollowSuggestions"
-	UserService_IsFollowing_FullMethodName            = "/users.UserService/IsFollowing"
-	UserService_AreFollowingEachOther_FullMethodName  = "/users.UserService/AreFollowingEachOther"
-	UserService_GetAllGroupsPaginated_FullMethodName  = "/users.UserService/GetAllGroupsPaginated"
-	UserService_GetUserGroupsPaginated_FullMethodName = "/users.UserService/GetUserGroupsPaginated"
-	UserService_GetGroupInfo_FullMethodName           = "/users.UserService/GetGroupInfo"
-	UserService_GetGroupMembers_FullMethodName        = "/users.UserService/GetGroupMembers"
-	UserService_SearchGroups_FullMethodName           = "/users.UserService/SearchGroups"
-	UserService_InviteToGroup_FullMethodName          = "/users.UserService/InviteToGroup"
-	UserService_IsGroupMember_FullMethodName          = "/users.UserService/IsGroupMember"
-	UserService_RequestJoinGroup_FullMethodName       = "/users.UserService/RequestJoinGroup"
-	UserService_CancelJoinGroupRequest_FullMethodName = "/users.UserService/CancelJoinGroupRequest"
-	UserService_RespondToGroupInvite_FullMethodName   = "/users.UserService/RespondToGroupInvite"
-	UserService_HandleGroupJoinRequest_FullMethodName = "/users.UserService/HandleGroupJoinRequest"
-	UserService_LeaveGroup_FullMethodName             = "/users.UserService/LeaveGroup"
-	UserService_RemoveFromGroup_FullMethodName        = "/users.UserService/RemoveFromGroup"
-	UserService_CreateGroup_FullMethodName            = "/users.UserService/CreateGroup"
-	UserService_UpdateGroup_FullMethodName            = "/users.UserService/UpdateGroup"
-	UserService_GetBasicUserInfo_FullMethodName       = "/users.UserService/GetBasicUserInfo"
-	UserService_GetBatchBasicUserInfo_FullMethodName  = "/users.UserService/GetBatchBasicUserInfo"
-	UserService_GetUserProfile_FullMethodName         = "/users.UserService/GetUserProfile"
-	UserService_SearchUsers_FullMethodName            = "/users.UserService/SearchUsers"
-	UserService_UpdateUserProfile_FullMethodName      = "/users.UserService/UpdateUserProfile"
-	UserService_UpdateProfilePrivacy_FullMethodName   = "/users.UserService/UpdateProfilePrivacy"
+	UserService_RegisterUser_FullMethodName                  = "/users.UserService/RegisterUser"
+	UserService_LoginUser_FullMethodName                     = "/users.UserService/LoginUser"
+	UserService_UpdateUserPassword_FullMethodName            = "/users.UserService/UpdateUserPassword"
+	UserService_UpdateUserEmail_FullMethodName               = "/users.UserService/UpdateUserEmail"
+	UserService_GetFollowersPaginated_FullMethodName         = "/users.UserService/GetFollowersPaginated"
+	UserService_GetFollowingPaginated_FullMethodName         = "/users.UserService/GetFollowingPaginated"
+	UserService_FollowUser_FullMethodName                    = "/users.UserService/FollowUser"
+	UserService_UnFollowUser_FullMethodName                  = "/users.UserService/UnFollowUser"
+	UserService_HandleFollowRequest_FullMethodName           = "/users.UserService/HandleFollowRequest"
+	UserService_GetFollowingIds_FullMethodName               = "/users.UserService/GetFollowingIds"
+	UserService_GetFollowSuggestions_FullMethodName          = "/users.UserService/GetFollowSuggestions"
+	UserService_IsFollowing_FullMethodName                   = "/users.UserService/IsFollowing"
+	UserService_AreFollowingEachOther_FullMethodName         = "/users.UserService/AreFollowingEachOther"
+	UserService_GetAllGroupsPaginated_FullMethodName         = "/users.UserService/GetAllGroupsPaginated"
+	UserService_GetUserGroupsPaginated_FullMethodName        = "/users.UserService/GetUserGroupsPaginated"
+	UserService_GetGroupInfo_FullMethodName                  = "/users.UserService/GetGroupInfo"
+	UserService_GetGroupMembers_FullMethodName               = "/users.UserService/GetGroupMembers"
+	UserService_GetPendingGroupJoinRequests_FullMethodName   = "/users.UserService/GetPendingGroupJoinRequests"
+	UserService_GetFollowersNotInvitedToGroup_FullMethodName = "/users.UserService/GetFollowersNotInvitedToGroup"
+	UserService_SearchGroups_FullMethodName                  = "/users.UserService/SearchGroups"
+	UserService_InviteToGroup_FullMethodName                 = "/users.UserService/InviteToGroup"
+	UserService_IsGroupMember_FullMethodName                 = "/users.UserService/IsGroupMember"
+	UserService_RequestJoinGroup_FullMethodName              = "/users.UserService/RequestJoinGroup"
+	UserService_CancelJoinGroupRequest_FullMethodName        = "/users.UserService/CancelJoinGroupRequest"
+	UserService_RespondToGroupInvite_FullMethodName          = "/users.UserService/RespondToGroupInvite"
+	UserService_HandleGroupJoinRequest_FullMethodName        = "/users.UserService/HandleGroupJoinRequest"
+	UserService_LeaveGroup_FullMethodName                    = "/users.UserService/LeaveGroup"
+	UserService_RemoveFromGroup_FullMethodName               = "/users.UserService/RemoveFromGroup"
+	UserService_CreateGroup_FullMethodName                   = "/users.UserService/CreateGroup"
+	UserService_UpdateGroup_FullMethodName                   = "/users.UserService/UpdateGroup"
+	UserService_GetBasicUserInfo_FullMethodName              = "/users.UserService/GetBasicUserInfo"
+	UserService_GetBatchBasicUserInfo_FullMethodName         = "/users.UserService/GetBatchBasicUserInfo"
+	UserService_GetUserProfile_FullMethodName                = "/users.UserService/GetUserProfile"
+	UserService_SearchUsers_FullMethodName                   = "/users.UserService/SearchUsers"
+	UserService_UpdateUserProfile_FullMethodName             = "/users.UserService/UpdateUserProfile"
+	UserService_UpdateProfilePrivacy_FullMethodName          = "/users.UserService/UpdateProfilePrivacy"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -123,6 +125,8 @@ type UserServiceClient interface {
 	// Returns permission denied if requester is not a group member.
 	// Calls users and media service for user info and avatar urls.
 	GetGroupMembers(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*GroupUserArr, error)
+	GetPendingGroupJoinRequests(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error)
+	GetFollowersNotInvitedToGroup(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error)
 	// Searches active groups by title and description using substring and fuzzy
 	// matching, ranks results by relevance, and annotates whether the requesting
 	// user is a member or owner. Results are ordered by score and popularity and
@@ -356,6 +360,26 @@ func (c *userServiceClient) GetGroupMembers(ctx context.Context, in *GroupMember
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GroupUserArr)
 	err := c.cc.Invoke(ctx, UserService_GetGroupMembers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetPendingGroupJoinRequests(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(common.ListUsers)
+	err := c.cc.Invoke(ctx, UserService_GetPendingGroupJoinRequests_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetFollowersNotInvitedToGroup(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(common.ListUsers)
+	err := c.cc.Invoke(ctx, UserService_GetFollowersNotInvitedToGroup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -597,6 +621,8 @@ type UserServiceServer interface {
 	// Returns permission denied if requester is not a group member.
 	// Calls users and media service for user info and avatar urls.
 	GetGroupMembers(context.Context, *GroupMembersRequest) (*GroupUserArr, error)
+	GetPendingGroupJoinRequests(context.Context, *GroupMembersRequest) (*common.ListUsers, error)
+	GetFollowersNotInvitedToGroup(context.Context, *GroupMembersRequest) (*common.ListUsers, error)
 	// Searches active groups by title and description using substring and fuzzy
 	// matching, ranks results by relevance, and annotates whether the requesting
 	// user is a member or owner. Results are ordered by score and popularity and
@@ -716,6 +742,12 @@ func (UnimplementedUserServiceServer) GetGroupInfo(context.Context, *GeneralGrou
 }
 func (UnimplementedUserServiceServer) GetGroupMembers(context.Context, *GroupMembersRequest) (*GroupUserArr, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGroupMembers not implemented")
+}
+func (UnimplementedUserServiceServer) GetPendingGroupJoinRequests(context.Context, *GroupMembersRequest) (*common.ListUsers, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPendingGroupJoinRequests not implemented")
+}
+func (UnimplementedUserServiceServer) GetFollowersNotInvitedToGroup(context.Context, *GroupMembersRequest) (*common.ListUsers, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFollowersNotInvitedToGroup not implemented")
 }
 func (UnimplementedUserServiceServer) SearchGroups(context.Context, *GroupSearchRequest) (*GroupArr, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchGroups not implemented")
@@ -1091,6 +1123,42 @@ func _UserService_GetGroupMembers_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).GetGroupMembers(ctx, req.(*GroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetPendingGroupJoinRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetPendingGroupJoinRequests(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetPendingGroupJoinRequests_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetPendingGroupJoinRequests(ctx, req.(*GroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetFollowersNotInvitedToGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetFollowersNotInvitedToGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetFollowersNotInvitedToGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetFollowersNotInvitedToGroup(ctx, req.(*GroupMembersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1475,6 +1543,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGroupMembers",
 			Handler:    _UserService_GetGroupMembers_Handler,
+		},
+		{
+			MethodName: "GetPendingGroupJoinRequests",
+			Handler:    _UserService_GetPendingGroupJoinRequests_Handler,
+		},
+		{
+			MethodName: "GetFollowersNotInvitedToGroup",
+			Handler:    _UserService_GetFollowersNotInvitedToGroup_Handler,
 		},
 		{
 			MethodName: "SearchGroups",

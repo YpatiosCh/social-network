@@ -2175,7 +2175,7 @@ const file_users_proto_rawDesc = "" +
 	"\x05about\x18\a \x01(\tR\x05about\"N\n" +
 	"\x1bUpdateProfilePrivacyRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x16\n" +
-	"\x06public\x18\x02 \x01(\bR\x06public2\xb7\x12\n" +
+	"\x06public\x18\x02 \x01(\bR\x06public2\xd5\x13\n" +
 	"\vUserService\x12G\n" +
 	"\fRegisterUser\x12\x1a.users.RegisterUserRequest\x1a\x1b.users.RegisterUserResponse\x12.\n" +
 	"\tLoginUser\x12\x13.users.LoginRequest\x1a\f.common.User\x12J\n" +
@@ -2194,7 +2194,9 @@ const file_users_proto_rawDesc = "" +
 	"\x15GetAllGroupsPaginated\x12\x11.users.Pagination\x1a\x0f.users.GroupArr\x12<\n" +
 	"\x16GetUserGroupsPaginated\x12\x11.users.Pagination\x1a\x0f.users.GroupArr\x128\n" +
 	"\fGetGroupInfo\x12\x1a.users.GeneralGroupRequest\x1a\f.users.Group\x12B\n" +
-	"\x0fGetGroupMembers\x12\x1a.users.GroupMembersRequest\x1a\x13.users.GroupUserArr\x12:\n" +
+	"\x0fGetGroupMembers\x12\x1a.users.GroupMembersRequest\x1a\x13.users.GroupUserArr\x12L\n" +
+	"\x1bGetPendingGroupJoinRequests\x12\x1a.users.GroupMembersRequest\x1a\x11.common.ListUsers\x12N\n" +
+	"\x1dGetFollowersNotInvitedToGroup\x12\x1a.users.GroupMembersRequest\x1a\x11.common.ListUsers\x12:\n" +
 	"\fSearchGroups\x12\x19.users.GroupSearchRequest\x1a\x0f.users.GroupArr\x12D\n" +
 	"\rInviteToGroup\x12\x1b.users.InviteToGroupRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
 	"\rIsGroupMember\x12\x1a.users.GeneralGroupRequest\x1a\x1a.google.protobuf.BoolValue\x12C\n" +
@@ -2290,59 +2292,63 @@ var file_users_proto_depIdxs = []int32{
 	6,  // 21: users.UserService.GetUserGroupsPaginated:input_type -> users.Pagination
 	13, // 22: users.UserService.GetGroupInfo:input_type -> users.GeneralGroupRequest
 	14, // 23: users.UserService.GetGroupMembers:input_type -> users.GroupMembersRequest
-	17, // 24: users.UserService.SearchGroups:input_type -> users.GroupSearchRequest
-	18, // 25: users.UserService.InviteToGroup:input_type -> users.InviteToGroupRequest
-	13, // 26: users.UserService.IsGroupMember:input_type -> users.GeneralGroupRequest
-	19, // 27: users.UserService.RequestJoinGroup:input_type -> users.GroupJoinRequest
-	19, // 28: users.UserService.CancelJoinGroupRequest:input_type -> users.GroupJoinRequest
-	20, // 29: users.UserService.RespondToGroupInvite:input_type -> users.HandleGroupInviteRequest
-	21, // 30: users.UserService.HandleGroupJoinRequest:input_type -> users.HandleJoinRequest
-	13, // 31: users.UserService.LeaveGroup:input_type -> users.GeneralGroupRequest
-	22, // 32: users.UserService.RemoveFromGroup:input_type -> users.RemoveFromGroupRequest
-	23, // 33: users.UserService.CreateGroup:input_type -> users.CreateGroupRequest
-	24, // 34: users.UserService.UpdateGroup:input_type -> users.UpdateGroupRequest
-	31, // 35: users.UserService.GetBasicUserInfo:input_type -> google.protobuf.Int64Value
-	30, // 36: users.UserService.GetBatchBasicUserInfo:input_type -> common.UserIds
-	25, // 37: users.UserService.GetUserProfile:input_type -> users.GetUserProfileRequest
-	26, // 38: users.UserService.SearchUsers:input_type -> users.UserSearchRequest
-	27, // 39: users.UserService.UpdateUserProfile:input_type -> users.UpdateProfileRequest
-	28, // 40: users.UserService.UpdateProfilePrivacy:input_type -> users.UpdateProfilePrivacyRequest
-	2,  // 41: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
-	32, // 42: users.UserService.LoginUser:output_type -> common.User
-	33, // 43: users.UserService.UpdateUserPassword:output_type -> google.protobuf.Empty
-	33, // 44: users.UserService.UpdateUserEmail:output_type -> google.protobuf.Empty
-	34, // 45: users.UserService.GetFollowersPaginated:output_type -> common.ListUsers
-	34, // 46: users.UserService.GetFollowingPaginated:output_type -> common.ListUsers
-	8,  // 47: users.UserService.FollowUser:output_type -> users.FollowUserResponse
-	33, // 48: users.UserService.UnFollowUser:output_type -> google.protobuf.Empty
-	33, // 49: users.UserService.HandleFollowRequest:output_type -> google.protobuf.Empty
-	30, // 50: users.UserService.GetFollowingIds:output_type -> common.UserIds
-	34, // 51: users.UserService.GetFollowSuggestions:output_type -> common.ListUsers
-	35, // 52: users.UserService.IsFollowing:output_type -> google.protobuf.BoolValue
-	35, // 53: users.UserService.AreFollowingEachOther:output_type -> google.protobuf.BoolValue
-	12, // 54: users.UserService.GetAllGroupsPaginated:output_type -> users.GroupArr
-	12, // 55: users.UserService.GetUserGroupsPaginated:output_type -> users.GroupArr
-	11, // 56: users.UserService.GetGroupInfo:output_type -> users.Group
-	16, // 57: users.UserService.GetGroupMembers:output_type -> users.GroupUserArr
-	12, // 58: users.UserService.SearchGroups:output_type -> users.GroupArr
-	33, // 59: users.UserService.InviteToGroup:output_type -> google.protobuf.Empty
-	35, // 60: users.UserService.IsGroupMember:output_type -> google.protobuf.BoolValue
-	33, // 61: users.UserService.RequestJoinGroup:output_type -> google.protobuf.Empty
-	33, // 62: users.UserService.CancelJoinGroupRequest:output_type -> google.protobuf.Empty
-	33, // 63: users.UserService.RespondToGroupInvite:output_type -> google.protobuf.Empty
-	33, // 64: users.UserService.HandleGroupJoinRequest:output_type -> google.protobuf.Empty
-	33, // 65: users.UserService.LeaveGroup:output_type -> google.protobuf.Empty
-	33, // 66: users.UserService.RemoveFromGroup:output_type -> google.protobuf.Empty
-	31, // 67: users.UserService.CreateGroup:output_type -> google.protobuf.Int64Value
-	33, // 68: users.UserService.UpdateGroup:output_type -> google.protobuf.Empty
-	32, // 69: users.UserService.GetBasicUserInfo:output_type -> common.User
-	34, // 70: users.UserService.GetBatchBasicUserInfo:output_type -> common.ListUsers
-	0,  // 71: users.UserService.GetUserProfile:output_type -> users.UserProfileResponse
-	34, // 72: users.UserService.SearchUsers:output_type -> common.ListUsers
-	0,  // 73: users.UserService.UpdateUserProfile:output_type -> users.UserProfileResponse
-	33, // 74: users.UserService.UpdateProfilePrivacy:output_type -> google.protobuf.Empty
-	41, // [41:75] is the sub-list for method output_type
-	7,  // [7:41] is the sub-list for method input_type
+	14, // 24: users.UserService.GetPendingGroupJoinRequests:input_type -> users.GroupMembersRequest
+	14, // 25: users.UserService.GetFollowersNotInvitedToGroup:input_type -> users.GroupMembersRequest
+	17, // 26: users.UserService.SearchGroups:input_type -> users.GroupSearchRequest
+	18, // 27: users.UserService.InviteToGroup:input_type -> users.InviteToGroupRequest
+	13, // 28: users.UserService.IsGroupMember:input_type -> users.GeneralGroupRequest
+	19, // 29: users.UserService.RequestJoinGroup:input_type -> users.GroupJoinRequest
+	19, // 30: users.UserService.CancelJoinGroupRequest:input_type -> users.GroupJoinRequest
+	20, // 31: users.UserService.RespondToGroupInvite:input_type -> users.HandleGroupInviteRequest
+	21, // 32: users.UserService.HandleGroupJoinRequest:input_type -> users.HandleJoinRequest
+	13, // 33: users.UserService.LeaveGroup:input_type -> users.GeneralGroupRequest
+	22, // 34: users.UserService.RemoveFromGroup:input_type -> users.RemoveFromGroupRequest
+	23, // 35: users.UserService.CreateGroup:input_type -> users.CreateGroupRequest
+	24, // 36: users.UserService.UpdateGroup:input_type -> users.UpdateGroupRequest
+	31, // 37: users.UserService.GetBasicUserInfo:input_type -> google.protobuf.Int64Value
+	30, // 38: users.UserService.GetBatchBasicUserInfo:input_type -> common.UserIds
+	25, // 39: users.UserService.GetUserProfile:input_type -> users.GetUserProfileRequest
+	26, // 40: users.UserService.SearchUsers:input_type -> users.UserSearchRequest
+	27, // 41: users.UserService.UpdateUserProfile:input_type -> users.UpdateProfileRequest
+	28, // 42: users.UserService.UpdateProfilePrivacy:input_type -> users.UpdateProfilePrivacyRequest
+	2,  // 43: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
+	32, // 44: users.UserService.LoginUser:output_type -> common.User
+	33, // 45: users.UserService.UpdateUserPassword:output_type -> google.protobuf.Empty
+	33, // 46: users.UserService.UpdateUserEmail:output_type -> google.protobuf.Empty
+	34, // 47: users.UserService.GetFollowersPaginated:output_type -> common.ListUsers
+	34, // 48: users.UserService.GetFollowingPaginated:output_type -> common.ListUsers
+	8,  // 49: users.UserService.FollowUser:output_type -> users.FollowUserResponse
+	33, // 50: users.UserService.UnFollowUser:output_type -> google.protobuf.Empty
+	33, // 51: users.UserService.HandleFollowRequest:output_type -> google.protobuf.Empty
+	30, // 52: users.UserService.GetFollowingIds:output_type -> common.UserIds
+	34, // 53: users.UserService.GetFollowSuggestions:output_type -> common.ListUsers
+	35, // 54: users.UserService.IsFollowing:output_type -> google.protobuf.BoolValue
+	35, // 55: users.UserService.AreFollowingEachOther:output_type -> google.protobuf.BoolValue
+	12, // 56: users.UserService.GetAllGroupsPaginated:output_type -> users.GroupArr
+	12, // 57: users.UserService.GetUserGroupsPaginated:output_type -> users.GroupArr
+	11, // 58: users.UserService.GetGroupInfo:output_type -> users.Group
+	16, // 59: users.UserService.GetGroupMembers:output_type -> users.GroupUserArr
+	34, // 60: users.UserService.GetPendingGroupJoinRequests:output_type -> common.ListUsers
+	34, // 61: users.UserService.GetFollowersNotInvitedToGroup:output_type -> common.ListUsers
+	12, // 62: users.UserService.SearchGroups:output_type -> users.GroupArr
+	33, // 63: users.UserService.InviteToGroup:output_type -> google.protobuf.Empty
+	35, // 64: users.UserService.IsGroupMember:output_type -> google.protobuf.BoolValue
+	33, // 65: users.UserService.RequestJoinGroup:output_type -> google.protobuf.Empty
+	33, // 66: users.UserService.CancelJoinGroupRequest:output_type -> google.protobuf.Empty
+	33, // 67: users.UserService.RespondToGroupInvite:output_type -> google.protobuf.Empty
+	33, // 68: users.UserService.HandleGroupJoinRequest:output_type -> google.protobuf.Empty
+	33, // 69: users.UserService.LeaveGroup:output_type -> google.protobuf.Empty
+	33, // 70: users.UserService.RemoveFromGroup:output_type -> google.protobuf.Empty
+	31, // 71: users.UserService.CreateGroup:output_type -> google.protobuf.Int64Value
+	33, // 72: users.UserService.UpdateGroup:output_type -> google.protobuf.Empty
+	32, // 73: users.UserService.GetBasicUserInfo:output_type -> common.User
+	34, // 74: users.UserService.GetBatchBasicUserInfo:output_type -> common.ListUsers
+	0,  // 75: users.UserService.GetUserProfile:output_type -> users.UserProfileResponse
+	34, // 76: users.UserService.SearchUsers:output_type -> common.ListUsers
+	0,  // 77: users.UserService.UpdateUserProfile:output_type -> users.UserProfileResponse
+	33, // 78: users.UserService.UpdateProfilePrivacy:output_type -> google.protobuf.Empty
+	43, // [43:79] is the sub-list for method output_type
+	7,  // [7:43] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name

@@ -528,6 +528,76 @@ func (s *UsersHandler) GetGroupMembers(ctx context.Context, req *pb.GroupMembers
 	return groupUsersToPB(resp), nil
 }
 
+func (s *UsersHandler) GetPendingGroupJoinRequests(ctx context.Context, req *pb.GroupMembersRequest) (*cm.ListUsers, error) {
+	tele.Info(ctx, "GetPendingGroupJoinRequests called with @1", "request", req)
+
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "GetPendingGroupJoinRequests: request is nil")
+	}
+	userId := req.GetUserId()
+	if err := invalidId("userId", userId); err != nil {
+		return nil, err
+	}
+
+	groupId := req.GetGroupId()
+	if err := invalidId("groupId", groupId); err != nil {
+		return nil, err
+	}
+
+	limit := req.Limit
+	offset := req.Offset
+	if err := checkLimOff(limit, offset); err != nil {
+		return nil, err
+	}
+
+	resp, err := s.Application.GetPendingGroupJoinRequests(ctx, models.GroupMembersReq{
+		UserId:  ct.Id(userId),
+		GroupId: ct.Id(groupId),
+		Limit:   ct.Limit(limit),
+		Offset:  ct.Offset(offset),
+	})
+	if err != nil {
+		tele.Error(ctx, "Error in GetPendingGroupJoinRequests. @1", "error", err.Error(), "request", req)
+		return nil, ce.GRPCStatus(err)
+	}
+	return usersToPB(resp), nil
+}
+
+func (s *UsersHandler) GetFollowersNotInvitedToGroup(ctx context.Context, req *pb.GroupMembersRequest) (*cm.ListUsers, error) {
+	tele.Info(ctx, "GetFollowersNotInvitedToGroup called with @1", "request", req)
+
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "GetFollowersNotInvitedToGroup: request is nil")
+	}
+	userId := req.GetUserId()
+	if err := invalidId("userId", userId); err != nil {
+		return nil, err
+	}
+
+	groupId := req.GetGroupId()
+	if err := invalidId("groupId", groupId); err != nil {
+		return nil, err
+	}
+
+	limit := req.Limit
+	offset := req.Offset
+	if err := checkLimOff(limit, offset); err != nil {
+		return nil, err
+	}
+
+	resp, err := s.Application.GetFollowersNotInvitedToGroup(ctx, models.GroupMembersReq{
+		UserId:  ct.Id(userId),
+		GroupId: ct.Id(groupId),
+		Limit:   ct.Limit(limit),
+		Offset:  ct.Offset(offset),
+	})
+	if err != nil {
+		tele.Error(ctx, "Error in GetFollowersNotInvitedToGroup. @1", "error", err.Error(), "request", req)
+		return nil, ce.GRPCStatus(err)
+	}
+	return usersToPB(resp), nil
+}
+
 func (s *UsersHandler) SearchGroups(ctx context.Context, req *pb.GroupSearchRequest) (*pb.GroupArr, error) {
 	tele.Info(ctx, "SearchGroups called with @1", "request", req)
 

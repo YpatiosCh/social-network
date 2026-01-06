@@ -87,6 +87,10 @@ service UserService {
   // Calls users and media service for user info and avatar urls.
   rpc GetGroupMembers (GroupMembersRequest) returns (GroupUserArr);
 
+  rpc GetPendingGroupJoinRequests (GroupMembersRequest) returns (common.ListUsers);
+
+  rpc GetFollowersNotInvitedToGroup (GroupMembersRequest) returns (common.ListUsers);
+
 // Searches active groups by title and description using substring and fuzzy
 // matching, ranks results by relevance, and annotates whether the requesting
 // user is a member or owner. Results are ordered by score and popularity and
