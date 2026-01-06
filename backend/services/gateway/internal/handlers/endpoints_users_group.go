@@ -585,7 +585,7 @@ func (s *Handlers) respondToGroupInvite() http.HandlerFunc {
 		}
 
 		type reqBody struct {
-			GroupId int64 `json:"group_id"`
+			GroupId ct.Id `json:"group_id"`
 			Accept  bool  `json:"accept"`
 		}
 
@@ -597,7 +597,7 @@ func (s *Handlers) respondToGroupInvite() http.HandlerFunc {
 
 		req := &users.HandleGroupInviteRequest{
 			InvitedId: claims.UserId,
-			GroupId:   body.GroupId,
+			GroupId:   body.GroupId.Int64(),
 			Accepted:  body.Accept,
 		}
 
@@ -680,7 +680,7 @@ func (s *Handlers) getPendingGroupJoinRequests() http.HandlerFunc {
 		}
 
 		type reqBody struct {
-			GroupId int64 `json:"group_id"`
+			GroupId ct.Id `json:"group_id"`
 			Limit   int32 `json:"limit"`
 			Offset  int32 `json:"offset"`
 		}
@@ -693,7 +693,7 @@ func (s *Handlers) getPendingGroupJoinRequests() http.HandlerFunc {
 
 		req := &users.GroupMembersRequest{
 			UserId:  claims.UserId,
-			GroupId: body.GroupId,
+			GroupId: body.GroupId.Int64(),
 			Limit:   body.Limit,
 			Offset:  body.Offset,
 		}
