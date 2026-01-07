@@ -12,13 +12,21 @@ import (
 	redis_connector "social-network/shared/go/redis"
 	"social-network/shared/go/retrievemedia"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+type UserInfoRetriever interface {
+	GetBasicUserInfo(ctx context.Context, req *wrapperspb.Int64Value, opts ...grpc.CallOption) (*cm.User, error)
+	GetBatchBasicUserInfo(ctx context.Context, req *cm.UserIds, opts ...grpc.CallOption) (*cm.ListUsers, error)
+}
+
 type UserRetriever struct {
-	GetBatchBasicUserInfo GetBatchBasicUserInfo
-	cache                 RedisCache
-	mediaRetriever        *retrievemedia.MediaRetriever
-	ttl                   time.Duration
+	client         UserInfoRetriever
+	cache          RedisCache
+	mediaRetriever *retrievemedia.MediaRetriever
+	ttl            time.Duration
 }
 
 // UserRetriever provides a function that abstracts the process of populating a map[ct.Id]models.User
@@ -27,8 +35,8 @@ type UserRetriever struct {
 //  1. GetBatchBasicUserInfo function provided by an initiator that holds a connection to social-network user service.
 //  2. A cache interface that implements GetObj() and SetObj() methods.
 //  3. The retrievemedia package.
-func NewUserRetriever(userClient GetBatchBasicUserInfo, cache *redis_connector.RedisClient, mediaRetriever *retrievemedia.MediaRetriever, ttl time.Duration) *UserRetriever {
-	return &UserRetriever{GetBatchBasicUserInfo: userClient, cache: cache, mediaRetriever: mediaRetriever, ttl: ttl}
+func NewUserRetriever(client UserInfoRetriever, cache *redis_connector.RedisClient, mediaRetriever *retrievemedia.MediaRetriever, ttl time.Duration) *UserRetriever {
+	return &UserRetriever{client: client, cache: cache, mediaRetriever: mediaRetriever, ttl: ttl}
 }
 
 // GetUsers returns a map[userID]User, using cache + batch RPC.
@@ -62,7 +70,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 
 	// Batch RPC for missing users
 	if len(missing) > 0 {
-		resp, err := h.GetBatchBasicUserInfo(ctx, &cm.UserIds{Values: missing.Int64()})
+		resp, err := h.client.GetBatchBasicUserInfo(ctx, &cm.UserIds{Values: missing.Int64()})
 		if err != nil {
 			return nil, ce.ParseGrpcErr(err, input)
 		}
@@ -114,6 +122,59 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 	return users, nil
 }
 
-// func (h *UserRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant media.FileVariant) (map[int64]string, []int64, error) {
-// 	return h.mediaRetriever.GetImages(ctx, imageIds, variant)
-// }
+func (h *UserRetriever) GetUser(ctx context.Context, userID ct.Id) (models.User, error) {
+	input := fmt.Sprintf("user retriever: get user: id: %v", userID)
+
+	//========================== STEP 1 : get user info from users ===============================================
+
+	// Redis lookup
+	var u models.User
+
+	key, err := ct.BasicUserInfoKey{Id: userID}.String()
+	if err != nil {
+		fmt.Printf("RETRIEVE USERS - failed to construct redis key for id %v: %v\n", userID, err)
+	}
+
+	var user models.User
+	if err := h.cache.GetObj(ctx, key, &user); err == nil {
+		fmt.Println("RETRIEVE USERS - found user on redis:", u)
+		return user, nil
+	}
+	resp, err := h.client.GetBasicUserInfo(ctx, wrapperspb.Int64(userID.Int64()))
+	if err != nil {
+		return models.User{}, ce.ParseGrpcErr(err, input)
+	}
+
+	user = models.User{
+		UserId:   ct.Id(resp.UserId),
+		Username: ct.Username(resp.Username),
+		AvatarId: ct.Id(resp.Avatar),
+	}
+
+	key, err = ct.BasicUserInfoKey{Id: user.UserId}.String()
+	if err == nil {
+		_ = h.cache.SetObj(ctx,
+			key,
+			user,
+			h.ttl,
+		)
+	} else {
+		fmt.Printf("RETRIEVE USERS - failed to construct redis key for user %v: %v\n", user.UserId, err)
+	}
+
+	//========================== STEP 2 : get avatars from media ===============================================
+	// Get image urls for users
+
+	if user.AvatarId > 0 { //exclude 0 imageIds
+
+		// Use shared MediaRetriever for images (handles caching and fetching)
+		imageUrl, err := h.mediaRetriever.GetImage(ctx, user.AvatarId.Int64(), media.FileVariant_THUMBNAIL)
+		if err != nil {
+			return models.User{}, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
+		}
+
+		u.AvatarURL = imageUrl
+	}
+
+	return user, nil
+}

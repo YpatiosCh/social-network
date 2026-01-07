@@ -17,6 +17,7 @@ import (
 // MediaInfoRetriever defines the interface for fetching media info (usually gRPC client).
 type MediaInfoRetriever interface {
 	GetImages(ctx context.Context, in *media.GetImagesRequest, opts ...grpc.CallOption) (*media.GetImagesResponse, error)
+	GetImage(ctx context.Context, in *media.GetImageRequest, opts ...grpc.CallOption) (*media.GetImageResponse, error)
 }
 
 type MediaRetriever struct {
@@ -118,9 +119,47 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 
 // GetImage returns a single image url, using cache + batch RPC.
 func (h *MediaRetriever) GetImage(ctx context.Context, imageId int64, variant media.FileVariant) (string, error) {
-	images, _, err := h.GetImages(ctx, ct.Ids{ct.Id(imageId)}, variant)
-	if err != nil {
-		return "", err
+	input := fmt.Sprintf("id %v, variant: %v", imageId, variant)
+
+	ctVariant := mapping.PbToCtFileVariant(variant)
+	if err := ctVariant.Validate(); err != nil {
+		return "", ce.New(ce.ErrInvalidArgument, err, input)
 	}
-	return images[imageId], nil
+
+	// Redis lookup for images
+	key, err := ct.ImageKey{Id: ct.Id(imageId), Variant: ctVariant}.String()
+	if err != nil {
+		fmt.Printf("RETRIEVE MEDIA - failed to construct redis key for image %v: %v\n", imageId, err)
+	}
+
+	imageURL, err := h.cache.GetStr(ctx, key)
+	if err == nil {
+		fmt.Println("Got Image from redis")
+		return imageURL.(string), nil
+	}
+
+	imageURL = &media.GetImageRequest{
+		ImageId: imageId,
+		Variant: variant,
+	}
+
+	resp, err := h.client.GetImage(ctx, &media.GetImageRequest{
+		ImageId: imageId,
+		Variant: variant,
+	})
+	if err != nil {
+		return "", ce.ParseGrpcErr(err, input)
+	}
+
+	//if err, check if need to delete image
+
+	// Cache the new result
+	key, err = ct.ImageKey{Id: ct.Id(imageId), Variant: ctVariant}.String()
+	if err == nil {
+		_ = h.cache.SetStr(ctx, key, resp.DownloadUrl, h.ttl)
+	} else {
+		fmt.Printf("RETRIEVE MEDIA - failed to construct redis key for caching image %v: %v\n", imageId, err)
+	}
+
+	return resp.DownloadUrl, nil
 }

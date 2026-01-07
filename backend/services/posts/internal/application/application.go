@@ -67,14 +67,14 @@ func NewApplication(db *ds.Queries, pool *pgxpool.Pool, clients *client.Clients,
 		}
 	}
 
-	cachedMedia := retrievemedia.NewMediaRetriever(clients.MediaClient, redisConnector, 3*time.Minute)
+	retrieveMedia := retrievemedia.NewMediaRetriever(clients.MediaClient, redisConnector, 3*time.Minute)
 
 	return &Application{
 		db:             db,
 		txRunner:       txRunner,
 		clients:        clients,
-		mediaRetriever: cachedMedia,
-		userRetriever:  ur.NewUserRetriever(clients.GetBatchBasicUserInfo, redisConnector, cachedMedia, 3*time.Minute),
+		mediaRetriever: retrieveMedia,
+		userRetriever:  ur.NewUserRetriever(clients.UserClient, redisConnector, retrieveMedia, 3*time.Minute),
 	}, nil
 }
 

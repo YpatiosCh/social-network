@@ -36,7 +36,6 @@ func NewApplication(db ds.Querier, txRunner TxRunner, pool *pgxpool.Pool, client
 
 // ClientsInterface defines the methods that Application needs from clients.
 type ClientsInterface interface {
-	GetImage(ctx context.Context, imageId int64) (string, error)
 	GetObj(ctx context.Context, key string, dest any) error
 	SetObj(ctx context.Context, key string, value any, exp time.Duration) error
 	CreateNotification(ctx context.Context, req models.CreateNotificationRequest) error

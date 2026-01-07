@@ -118,12 +118,12 @@ func Run() error {
 	// // if err != nil{
 	// // 	tele.Warn(ctx, "failed to produce")
 	// // }
+	retrieveMedia := retrievemedia.NewMediaRetriever(clients.MediaClient, clients.RedisClient, 3*time.Minute)
 
 	retriveUsers := retrieveusers.NewUserRetriever(
-		clients.GetBatchBasicUserInfo,
+		clients.UserClient,
 		clients.RedisClient,
-		retrievemedia.NewMediaRetriever(
-			clients.MediaClient, clients.RedisClient, 3*time.Minute),
+		retrieveMedia,
 		3*time.Minute,
 	)
 

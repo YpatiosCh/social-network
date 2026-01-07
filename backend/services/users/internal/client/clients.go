@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	chatpb "social-network/shared/gen-go/chat"
+	"social-network/shared/gen-go/media"
 	mediapb "social-network/shared/gen-go/media"
 	"social-network/shared/gen-go/notifications"
 	"social-network/shared/go/models"
@@ -28,7 +29,7 @@ func NewClients(chatClient chatpb.ChatServiceClient, notifClient notifications.N
 	return c
 }
 
-func (c *Clients) GetImage(ctx context.Context, imageId int64) (string, error) {
+func (c *Clients) GetImage(ctx context.Context, imageId int64, variant media.FileVariant) (string, error) {
 	req := &mediapb.GetImageRequest{
 		ImageId: imageId,
 		Variant: 1,
