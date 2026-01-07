@@ -50,6 +50,7 @@ export default function Modal({
     const defaultFooter = onConfirm && !footer ? (
         <>
             <button
+                type="button"
                 onClick={onClose}
                 disabled={isLoading}
                 className="rounded-full bg-(--muted)/5 hover:bg-(--muted)/12 px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
@@ -57,6 +58,7 @@ export default function Modal({
                 {cancelText}
             </button>
             <button
+                type="button"
                 onClick={onConfirm}
                 disabled={isLoading}
                 className="px-3 py-1.5 font-medium text-sm transition-colors cursor-pointer btn-primary flex items-center gap-2"

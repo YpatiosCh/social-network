@@ -239,6 +239,15 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			RateLimit(USERID, 20, 5).
 			Finalize(h.leaveGroup()))
 
+	mux.HandleFunc("/group/remove",
+		Chain("/group/remove").
+			AllowedMethod("POST").
+			RateLimit(IP, 20, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 20, 5).
+			Finalize(h.removeFromGroup()))
+
 	mux.HandleFunc("/group/join",
 		Chain("/group/join").
 			AllowedMethod("POST").
@@ -248,6 +257,15 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			RateLimit(USERID, 20, 5).
 			Finalize(h.requestJoinGroup()))
 
+	mux.HandleFunc("/group/cancel-request",
+		Chain("/group/cancek-request").
+			AllowedMethod("POST").
+			RateLimit(IP, 20, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 20, 5).
+			Finalize(h.cancelGroupJoinRequest()))
+
 	mux.HandleFunc("/group/invite/response",
 		Chain("/group/invite/response").
 			AllowedMethod("POST").
@@ -256,6 +274,33 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			EnrichContext().
 			RateLimit(USERID, 20, 5).
 			Finalize(h.respondToGroupInvite()))
+
+	mux.HandleFunc("/group/pending",
+		Chain("/group/pending").
+			AllowedMethod("POST").
+			RateLimit(IP, 20, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 20, 5).
+			Finalize(h.getPendingGroupJoinRequests()))
+
+	mux.HandleFunc("/group/pending-count",
+		Chain("/group/pending-count").
+			AllowedMethod("POST").
+			RateLimit(IP, 20, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 20, 5).
+			Finalize(h.getPendingGroupJoinRequestsCount()))
+
+	mux.HandleFunc("/group/notinvited",
+		Chain("/group/notinvited").
+			AllowedMethod("POST").
+			RateLimit(IP, 20, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 20, 5).
+			Finalize(h.GetFollowersNotInvitedToGroup()))
 
 	mux.HandleFunc("/search/group",
 		Chain("/search/group").
@@ -347,6 +392,15 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 			EnrichContext().
 			RateLimit(USERID, 20, 5).
 			Finalize(h.getUserPostsPaginated()))
+
+	mux.HandleFunc("/group/posts",
+		Chain("/group/posts").
+			AllowedMethod("POST").
+			RateLimit(IP, 20, 5).
+			Auth().
+			EnrichContext().
+			RateLimit(USERID, 20, 5).
+			Finalize(h.getGroupPostsPaginated()))
 
 	mux.HandleFunc("/post/",
 		Chain("/post/").

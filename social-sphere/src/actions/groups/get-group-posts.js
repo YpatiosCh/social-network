@@ -2,21 +2,27 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function requestJoinGroup({ groupId }) {
+export async function getGroupPosts({ groupId, limit, offset }) {
     try {
-        const response = await serverApiRequest("/group/join", {
+        console.log("what: ", groupId);
+        const response = await serverApiRequest("/group/posts", {
             method: "POST",
             body: JSON.stringify({
                 group_id: groupId,
+                limit: limit,
+                offset: offset,
             }),
             forwardCookies: true,
             headers: {
                 "Content-Type": "application/json"
             }
         });
+
+        // Return success wrapper (use 'data' for consistency)
         return { success: true, data: response };
+
     } catch (error) {
-        console.error("Error requesting to join group:", error);
+        console.error("Error fetching groups:", error);
         return { success: false, error: error.message };
     }
 }

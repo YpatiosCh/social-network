@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Heart, MessageCircle, Pencil, Trash2, MoreHorizontal, Share2, Globe, Lock, Users, User, ChevronDown } from "lucide-react";
+import { Heart, MessageCircle, Pencil, Trash2,  User, ChevronDown } from "lucide-react";
 import PostImage from "./PostImage";
 import Modal from "./Modal";
 import { useStore } from "@/store/store";
@@ -13,19 +12,21 @@ import { editComment } from "@/actions/posts/edit-comment";
 import { deleteComment } from "@/actions/posts/delete-comment";
 import { validateUpload } from "@/actions/auth/validate-upload";
 import { getFollowers } from "@/actions/users/get-followers";
+import { getPost } from "@/actions/posts/get-post";
 import { getRelativeTime } from "@/lib/time";
 import { toggleReaction } from "@/actions/posts/toggle-reaction";
 import { getComments } from "@/actions/posts/get-comments";
 import { createComment } from "@/actions/posts/create-comment";
 import Tooltip from "./Tooltip";
 
-export default function SinglePostCard({ post }) {
+export default function GroupPostCard({ post, onDelete }) {
     const user = useStore((state) => state.user);
     const [image, setImage] = useState(post.image_url);
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [draftComment, setDraftComment] = useState("");
     const [postContent, setPostContent] = useState(post.post_body ?? "");
     const [isEditingPost, setIsEditingPost] = useState(false);
@@ -63,12 +64,11 @@ export default function SinglePostCard({ post }) {
     const commentFileInputRef = useRef(null);
     const editingCommentFileInputRef = useRef(null);
     const dropdownRef = useRef(null);
-    const router = useRouter();
 
     const isOwnPost = Boolean(
         user &&
         post?.post_user?.id &&
-        post.post_user.id === user.id
+        String(post.post_user.id) === String(user.id)
     );
 
     // Close dropdown when clicking outside
@@ -97,29 +97,29 @@ export default function SinglePostCard({ post }) {
     }, [post.created_at]);
 
     useEffect(() => {
-        if (composerRef.current) {
+        if (isExpanded && composerRef.current) {
             composerRef.current.focus();
         }
-    }, []);
+    }, [isExpanded]);
 
-    // Fetch 3 latest comments on mount
+    // Fetch comments when expanded
     useEffect(() => {
-        fetchLatestComments();
-    }, []);
+        if (isExpanded && comments.length === 0) {
+            fetchLastComment();
+        }
+    }, [isExpanded]);
 
-    const fetchLatestComments = async () => {
+    const fetchLastComment = async () => {
         setLoading(true);
         try {
             const result = await getComments({
                 postId: post.post_id,
-                limit: 3,
+                limit: 1,
                 offset: 0
             });
 
             if (result.success && result.comments) {
-                // Backend returns newest first, reverse to show oldest->newest (top to bottom)
-                const reversedComments = [...result.comments].reverse();
-                setComments(reversedComments);
+                setComments(result.comments);
                 // Initialize comment reactions state
                 const reactionsState = {};
                 result.comments.forEach(comment => {
@@ -131,10 +131,10 @@ export default function SinglePostCard({ post }) {
                 });
                 setCommentReactions(reactionsState);
                 // Check if there are more comments to load
-                setHasMore(commentsCount > 3);
+                setHasMore(commentsCount > 1);
             }
         } catch (error) {
-            console.error("Failed to fetch comments:", error);
+            console.error("Failed to fetch last comment:", error);
         } finally {
             setLoading(false);
         }
@@ -214,16 +214,25 @@ export default function SinglePostCard({ post }) {
     const handleStartEditPost = async (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // Fetch full post data to get selected_audience_users
+        const fetchedPost = await getPost(post.post_id);
+        if (!fetchedPost) {
+            setError("Failed to load post data");
+            return;
+        }
+
         setPostDraft(postContent);
-        const postPrivacy = post.audience || "everyone";
+        const postPrivacy = fetchedPost.audience || "everyone";
         setPrivacy(postPrivacy);
 
         // If privacy is "selected", load the followers and set the selected ones
         if (postPrivacy === "selected") {
             await fetchFollowers();
-            // Set selected followers from post's selected_audience_users
-            if (post.selected_audience_users && Array.isArray(post.selected_audience_users)) {
-                setSelectedFollowers(post.selected_audience_users.map(user => String(user.id)));
+            // Set selected followers from fetched post's selected_audience_users
+            if (fetchedPost.selected_audience_users && Array.isArray(fetchedPost.selected_audience_users)) {
+                // Ensure IDs are strings for consistent comparison
+                setSelectedFollowers(fetchedPost.selected_audience_users.map(user => String(user.id)));
             }
         }
 
@@ -335,7 +344,7 @@ export default function SinglePostCard({ post }) {
 
             setPostContent(postDraft);
             setIsEditingPost(false);
-            //window.location.reload();
+            window.location.reload();
 
         } catch (err) {
             console.error("Failed to edit post:", err);
@@ -363,8 +372,17 @@ export default function SinglePostCard({ post }) {
                 return;
             }
 
-            // Successfully deleted - redirect to feed
-            router.push("/feed/public");
+            // Successfully deleted
+            setShowDeleteModal(false);
+            setIsDeleting(false);
+
+            // If onDelete callback is provided (from feed), use it for smooth animation
+            // Otherwise reload the page (for single post page)
+            if (onDelete) {
+                onDelete(post.post_id);
+            } else {
+                window.location.reload();
+            }
 
         } catch (err) {
             console.error("Failed to delete post:", err);
@@ -405,6 +423,12 @@ export default function SinglePostCard({ post }) {
         } finally {
             setIsReactionPending(false);
         }
+    };
+
+    const handleToggleComments = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsExpanded(!isExpanded);
     };
 
     const handleSubmitComment = async (e) => {
@@ -464,7 +488,7 @@ export default function SinglePostCard({ post }) {
             // Refresh to show the new comment
             setError("");
             setComments([]);
-            fetchLatestComments();
+            fetchLastComment();
         } catch (err) {
             console.error("Failed to create comment:", err);
             setError("Failed to create comment. Please try again.");
@@ -620,7 +644,7 @@ export default function SinglePostCard({ post }) {
             // Refresh to show updated image if changed
             if (editingCommentImageFile || removeCommentExistingImage) {
                 setComments([]);
-                fetchLatestComments();
+                fetchLastComment();
             }
         } catch (err) {
             console.error("Failed to edit comment:", err);
@@ -725,7 +749,7 @@ export default function SinglePostCard({ post }) {
     return (
         <div
             ref={cardRef}
-            className="group bg-background border border-(--border) rounded-2xl transition-all hover:border-(--muted)/40 hover:shadow-sm"
+            className="group bg-background border border-(--border) rounded-2xl transition-all hover:border-(--muted)/40 hover:shadow-sm mb-6"
         >
             {/* Header */}
             <div className="p-5 flex items-start justify-between">
@@ -766,7 +790,7 @@ export default function SinglePostCard({ post }) {
                         <Tooltip content="Delete Post">
                             <button
                                 onClick={handleDeleteClick}
-                                className="p-2 text-(--muted) hover:text-red-500 hover:bg-red-500/5 rounded-full transition-colors cursor-pointer"
+                                className="p-2 text-(--muted) hover:text-red-500 hover:bg-red-500/5 rounded-full transition-colors cursor-pointer" 
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -833,25 +857,22 @@ export default function SinglePostCard({ post }) {
                                 </p>
                                 <div className="space-y-1.5 max-h-32 overflow-y-auto">
                                     {followers.length > 0 ? (
-                                        followers.map((follower, index) => {
-                                            const isChecked = selectedFollowers.includes(String(follower.id));
-                                            return (
-                                                <label
-                                                    key={follower.id || `follower-${index}`}
-                                                    className="flex items-center gap-2 cursor-pointer hover:bg-(--muted)/10 rounded-lg px-2 py-1.5 transition-colors"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isChecked}
-                                                        onChange={() => toggleFollower(follower.id)}
-                                                        className="rounded border-gray-300"
-                                                    />
-                                                    <span className="text-sm">
-                                                        @{follower.username}
-                                                    </span>
-                                                </label>
-                                            );
-                                        })
+                                        followers.map((follower, index) => (
+                                            <label
+                                                key={follower.id || `follower-${index}`}
+                                                className="flex items-center gap-2 cursor-pointer hover:bg-(--muted)/10 rounded-lg px-2 py-1.5 transition-colors"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedFollowers.includes(String(follower.id))}
+                                                    onChange={() => toggleFollower(follower.id)}
+                                                    className="rounded border-gray-300"
+                                                />
+                                                <span className="text-sm">
+                                                    @{follower.username}
+                                                </span>
+                                            </label>
+                                        ))
                                     ) : (
                                         <p className="text-xs text-(--muted) text-center py-2">
                                             {isLoadingFollowers ? "Loading followers..." : "No followers to select"}
@@ -930,7 +951,7 @@ export default function SinglePostCard({ post }) {
                                 </button>
                                 <button
                                     type="button"
-                                    className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50 cursor-pointer" 
+                                    className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50 cursor-pointer"
                                     disabled={!postDraft.trim()}
                                     onClick={handleSaveEditPost}
                                 >
@@ -940,9 +961,11 @@ export default function SinglePostCard({ post }) {
                         </div>
                     </div>
                 ) : (
-                    <p className="text-[15px] leading-relaxed text-(--foreground)/90 whitespace-pre-wrap">
-                        {postContent}
-                    </p>
+                    <Link href={`/posts/${post.post_id}`} prefetch={false}>
+                        <p className="text-[15px] leading-relaxed text-(--foreground)/90 whitespace-pre-wrap">
+                            {postContent}
+                        </p>
+                    </Link>
                 )}
 
                 {/* Error Message (for non-edit operations like delete) */}
@@ -968,283 +991,288 @@ export default function SinglePostCard({ post }) {
                             <button
                                 onClick={handleHeartClick}
                                 disabled={isReactionPending}
-                                className="flex items-center gap-2 text-(--muted) hover:text-red-500 transition-colors group/heart disabled:opacity-50"
+                                className="flex items-center gap-2 text-(--muted) hover:text-red-500 cursor-pointer transition-colors group/heart disabled:opacity-50"
                             >
-                                <Heart className={`w-5 h-5 transition-transform group-hover/heart:scale-110 cursor-pointer ${likedByUser ? "fill-red-500 text-red-500" : ""}`} />
+                                <Heart className={`w-5 h-5 transition-transform group-hover/heart:scale-110  ${likedByUser ? "fill-red-500 text-red-500" : ""}`} />
                                 <span className="text-sm font-medium">{reactionsCount}</span>
                             </button>
 
-                            <div className="flex items-center gap-2 text-(--accent) cursor-pointer">
-                                <MessageCircle className="w-5 h-5 fill-(--accent)/10" />
+                            <button
+                                onClick={handleToggleComments}
+                                className={`flex items-center gap-2 transition-colors group/comment cursor-pointer ${isExpanded ? "text-(--accent)" : "text-(--muted) hover:text-(--accent)"}`}
+                            >
+                                <MessageCircle className={`w-5 h-5 transition-transform group-hover/comment:scale-110 ${isExpanded ? "fill-(--accent)/10" : ""}`} />
                                 <span className="text-sm font-medium">{commentsCount}</span>
-                            </div>
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Comments Section - Always Expanded */}
-            <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                {/* Comments List */}
-                {loading ? (
-                    <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-8 text-center">
-                        <p className="text-sm text-(--muted)">Loading comments...</p>
-                    </div>
-                ) : comments.length > 0 ? (
-                    <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-4">
-                        {/* Load More Button */}
-                        {hasMore && (
-                            <button
-                                onClick={handleLoadMore}
-                                disabled={loadingMore}
-                                className="w-full text-left text-xs font-medium text-(--muted) hover:text-(--accent) mb-4 pl-11 transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                                {loadingMore ? "Loading..." : "Load more comments"}
-                            </button>
-                        )}
+            {/* Expanded Section: Comments + Composer */}
+            {isExpanded && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Comments List */}
+                    {loading ? (
+                        <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-8 text-center">
+                            <p className="text-sm text-(--muted)">Loading comments...</p>
+                        </div>
+                    ) : comments.length > 0 ? (
+                        <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-4">
+                            {/* Load More Button */}
+                            {hasMore && (
+                                <button
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
+                                    className="w-full text-left text-xs font-medium text-(--muted) hover:text-(--accent) mb-4 pl-11 transition-colors disabled:opacity-50 cursor-pointer"
+                                >
+                                    {loadingMore ? "Loading..." : "Load more comments"}
+                                </button>
+                            )}
 
-                        <div className="flex flex-col gap-4">
-                            {comments.map((comment) => {
-                                const isOwner = user && String(comment.user?.id) === String(user.id);
-                                const isEditing = editingCommentId === comment.comment_id;
-                                return (
-                                    <div key={comment.comment_id} className="flex gap-3 group/comment-item">
-                                        <Link href={`/profile/${comment.user.id}`} prefetch={false} className="shrink-0">
-                                            <div className="w-8 h-8 rounded-full overflow-hidden border border-(--border) bg-(--muted)/10 flex items-center justify-center">
-                                                {comment.user.avatar_url ? (
-                                                    <img src={comment.user.avatar_url} alt={comment.user.username} className="w-full h-full object-cover" />
+                            <div className="flex flex-col gap-4">
+                                {comments.map((comment) => {
+                                    const isOwner = user && String(comment.user?.id) === String(user.id);
+                                    const isEditing = editingCommentId === comment.comment_id;
+                                    return (
+                                        <div key={comment.comment_id} className="flex gap-3 group/comment-item">
+                                            <Link href={`/profile/${comment.user.id}`} prefetch={false} className="shrink-0">
+                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-(--border) bg-(--muted)/10 flex items-center justify-center">
+                                                    {comment.user.avatar_url ? (
+                                                        <img src={comment.user.avatar_url} alt={comment.user.username} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <User className="w-4 h-4 text-(--muted)" />
+                                                    )}
+                                                </div>
+                                            </Link>
+                                            <div className="flex-1 min-w-0">
+                                                {isEditing ? (
+                                                    <div className="space-y-2">
+                                                        <textarea
+                                                            className="w-full rounded-xl border border-(--muted)/30 px-4 py-3 text-sm bg-(--muted)/5 focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all resize-none"
+                                                            rows={3}
+                                                            value={editingText}
+                                                            onChange={(e) => setEditingText(e.target.value)}
+                                                        />
+
+                                                        {/* Image Preview for Edit - New Image */}
+                                                        {editingCommentImagePreview && (
+                                                            <div className="relative inline-block">
+                                                                <img
+                                                                    src={editingCommentImagePreview}
+                                                                    alt="Upload preview"
+                                                                    className="max-w-full max-h-48 rounded-xl border border-(--border)"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleRemoveEditingCommentImage}
+                                                                    className="absolute -top-2 -right-2 bg-background text-(--muted) hover:text-red-500 rounded-full p-1.5 border border-(--border) shadow-sm transition-colors cursor-pointer"
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Existing Image in Edit Mode */}
+                                                        {!editingCommentImagePreview && comment?.image_url && !removeCommentExistingImage && (
+                                                            <div className="relative inline-block">
+                                                                <img
+                                                                    src={comment.image_url}
+                                                                    alt="Comment image"
+                                                                    className="max-w-full max-h-48 rounded-xl border border-(--border)"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleRemoveCommentExistingImage}
+                                                                    className="absolute -top-2 -right-2 bg-background text-(--muted) hover:text-red-500 rounded-full p-1.5 border border-(--border) shadow-sm transition-colors cursor-pointer"
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <input
+                                                                ref={editingCommentFileInputRef}
+                                                                type="file"
+                                                                accept="image/jpeg,image/png,image/gif"
+                                                                onChange={handleEditingCommentImageSelect}
+                                                                className="hidden"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => editingCommentFileInputRef.current?.click()}
+                                                                className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors cursor-pointer"
+                                                            >
+                                                                {editingCommentImagePreview || comment.image_url ? "Change Image" : "Add Image"}
+                                                            </button>
+
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors cursor-pointer"
+                                                                    onClick={handleCancelEditComment}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50 cursor-pointer"
+                                                                    disabled={!editingText.trim()}
+                                                                    onClick={() => handleSaveEditComment(comment)}
+                                                                >
+                                                                    Save
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 ) : (
-                                                    <User className="w-4 h-4 text-(--muted)" />
+                                                    <div className="bg-background rounded-2xl rounded-tl-none px-4 py-2 border border-(--border) relative">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <Link href={`/profile/${comment.user.id}`} prefetch={false}>
+                                                                <span className="text-xs font-bold hover:underline">@{comment.user.username}</span>
+                                                            </Link>
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="text-[10px] text-(--muted)">{getRelativeTime(comment.created_at)}</span>
+                                                                {isOwner && (
+                                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover/comment-item:opacity-100 transition-opacity ml-2">
+                                                                        <Tooltip content="Edit Comment">
+                                                                            <button
+                                                                                onClick={() => handleStartEditComment(comment)}
+                                                                                className="p-1 text-(--muted) hover:text-(--accent) hover:bg-(--accent)/5 rounded-full transition-colors cursor-pointer"
+                                                                            >
+                                                                                <Pencil className="w-3 h-3" />
+                                                                            </button>
+                                                                        </Tooltip>
+                                                                        <Tooltip content="Delete Comment">
+                                                                            <button
+                                                                                onClick={(e) => handleDeleteCommentClick(comment, e)}
+                                                                                className="p-1 text-(--muted) hover:text-red-500 hover:bg-red-500/5 rounded-full transition-colors cursor-pointer"
+                                                                            >
+                                                                                <Trash2 className="w-3 h-3" />
+                                                                            </button>
+                                                                        </Tooltip>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-(--foreground)/90 leading-relaxed whitespace-pre-wrap">
+                                                            {comment.comment_body}
+                                                        </p>
+                                                        {/* Comment Image */}
+                                                        {comment.image_url && (
+                                                            <div className="mt-2">
+                                                                <img
+                                                                    src={comment.image_url}
+                                                                    alt="Comment attachment"
+                                                                    className="max-w-full max-h-48 rounded-lg border border-(--border) object-cover"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {/* Comment Reactions */}
+                                                        {commentReactions[comment.comment_id] && (
+                                                            <div className="mt-2">
+                                                                <button
+                                                                    onClick={(e) => handleCommentReactionClick(comment.comment_id, e)}
+                                                                    disabled={commentReactions[comment.comment_id].pending}
+                                                                    className="flex items-center gap-1 text-(--muted) hover:text-red-500 transition-colors group/comment-heart disabled:opacity-50"
+                                                                >
+                                                                    <Heart className={`w-4 h-4 transition-transform group-hover/comment-heart:scale-110 cursor-pointer ${commentReactions[comment.comment_id].liked ? "fill-red-500 text-red-500" : ""}`} />
+                                                                    <span className="text-xs font-medium">{commentReactions[comment.comment_id].count}</span>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
-                                        </Link>
-                                        <div className="flex-1 min-w-0">
-                                            {isEditing ? (
-                                                <div className="space-y-2">
-                                                    <textarea
-                                                        className="w-full rounded-xl border border-(--muted)/30 px-4 py-3 text-sm bg-(--muted)/5 focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all resize-none"
-                                                        rows={3}
-                                                        value={editingText}
-                                                        onChange={(e) => setEditingText(e.target.value)}
-                                                    />
-
-                                                    {/* Image Preview for Edit - New Image */}
-                                                    {editingCommentImagePreview && (
-                                                        <div className="relative inline-block">
-                                                            <img
-                                                                src={editingCommentImagePreview}
-                                                                alt="Upload preview"
-                                                                className="max-w-full max-h-48 rounded-xl border border-(--border)"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleRemoveEditingCommentImage}
-                                                                className="absolute -top-2 -right-2 bg-background text-(--muted) hover:text-red-500 rounded-full p-1.5 border border-(--border) shadow-sm transition-colors cursor-pointer"
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Existing Image in Edit Mode */}
-                                                    {!editingCommentImagePreview && comment?.image_url && !removeCommentExistingImage && (
-                                                        <div className="relative inline-block">
-                                                            <img
-                                                                src={comment.image_url}
-                                                                alt="Comment image"
-                                                                className="max-w-full max-h-48 rounded-xl border border-(--border)"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleRemoveCommentExistingImage}
-                                                                className="absolute -top-2 -right-2 bg-background text-(--muted) hover:text-red-500 rounded-full p-1.5 border border-(--border) shadow-sm transition-colors cursor-pointer"
-                                                            >
-                                                                <Trash2 className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <input
-                                                            ref={editingCommentFileInputRef}
-                                                            type="file"
-                                                            accept="image/jpeg,image/png,image/gif"
-                                                            onChange={handleEditingCommentImageSelect}
-                                                            className="hidden"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => editingCommentFileInputRef.current?.click()}
-                                                            className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors cursor-pointer"
-                                                        >
-                                                            {editingCommentImagePreview || comment.image_url ? "Change Image" : "Add Image"}
-                                                        </button>
-
-                                                        <div className="flex items-center gap-2">
-                                                            <button
-                                                                type="button"
-                                                                className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors"
-                                                                onClick={handleCancelEditComment}
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50"
-                                                                disabled={!editingText.trim()}
-                                                                onClick={() => handleSaveEditComment(comment)}
-                                                            >
-                                                                Save
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="bg-background rounded-2xl rounded-tl-none px-4 py-2 border border-(--border) relative">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <Link href={`/profile/${comment.user.id}`} prefetch={false}>
-                                                            <span className="text-xs font-bold hover:underline">@{comment.user.username}</span>
-                                                        </Link>
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="text-[10px] text-(--muted)">{getRelativeTime(comment.created_at)}</span>
-                                                            {isOwner && (
-                                                                <div className="flex items-center gap-0.5 opacity-0 group-hover/comment-item:opacity-100 transition-opacity ml-2">
-                                                                    <Tooltip content="Edit Comment">
-                                                                        <button
-                                                                            onClick={() => handleStartEditComment(comment)}
-                                                                            className="p-1 text-(--muted) hover:text-(--accent) hover:bg-(--accent)/5 rounded-full transition-colors cursor-pointer"
-                                                                        >
-                                                                            <Pencil className="w-3 h-3" />
-                                                                        </button>
-                                                                    </Tooltip>
-                                                                    <Tooltip content="Delete Comment">
-                                                                        <button
-                                                                            onClick={(e) => handleDeleteCommentClick(comment, e)}
-                                                                            className="p-1 text-(--muted) hover:text-red-500 hover:bg-red-500/5 rounded-full transition-colors cursor-pointer"
-                                                                        >
-                                                                            <Trash2 className="w-3 h-3" />
-                                                                        </button>
-                                                                    </Tooltip>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-sm text-(--foreground)/90 leading-relaxed whitespace-pre-wrap">
-                                                        {comment.comment_body}
-                                                    </p>
-                                                    {/* Comment Image */}
-                                                    {comment.image_url && (
-                                                        <div className="mt-2">
-                                                            <img
-                                                                src={comment.image_url}
-                                                                alt="Comment attachment"
-                                                                className="max-w-full max-h-48 rounded-lg border border-(--border) object-cover"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                    {/* Comment Reactions */}
-                                                    {commentReactions[comment.comment_id] && (
-                                                        <div className="mt-2">
-                                                            <button
-                                                                onClick={(e) => handleCommentReactionClick(comment.comment_id, e)}
-                                                                disabled={commentReactions[comment.comment_id].pending}
-                                                                className="flex items-center gap-1 text-(--muted) hover:text-red-500 transition-colors group/comment-heart disabled:opacity-50"
-                                                            >
-                                                                <Heart className={`w-4 h-4 transition-transform group-hover/comment-heart:scale-110 cursor-pointer ${commentReactions[comment.comment_id].liked ? "fill-red-500 text-red-500" : ""}`} />
-                                                                <span className="text-xs font-medium">{commentReactions[comment.comment_id].count}</span>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
                                         </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-8 text-center">
+                            <p className="text-sm text-(--muted)">No comments yet. Be the first to comment!</p>
+                        </div>
+                    )}
+
+                    {/* Comment Composer */}
+                    <div className="border-t border-(--border) p-4 bg-(--muted)/5">
+                        <div className="flex gap-3">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-(--muted)/10 shrink-0 flex items-center justify-center">
+                                {user?.avatar_url ? (
+                                    <img src={user.avatar_url} alt="My Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User className="w-4 h-4 text-(--muted)" />
+                                )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                                <textarea
+                                    ref={composerRef}
+                                    value={draftComment}
+                                    onChange={(e) => setDraftComment(e.target.value)}
+                                    rows={1}
+                                    className="w-full rounded-2xl border border-(--muted)/30 px-4 py-2.5 text-sm bg-transparent focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all resize-none min-h-[42px]"
+                                    placeholder="Write a comment..."
+                                />
+
+                                {/* Image Preview */}
+                                {commentImagePreview && (
+                                    <div className="relative inline-block">
+                                        <img
+                                            src={commentImagePreview}
+                                            alt="Comment image preview"
+                                            className="max-w-full max-h-32 rounded-xl border border-(--border)"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveCommentImage}
+                                            className="absolute -top-2 -right-2 bg-background text-(--muted) hover:text-red-500 rounded-full p-1.5 border border-(--border) shadow-sm transition-colors cursor-pointer"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ) : (
-                    <div className="bg-(--muted)/5 border-t border-(--border) px-5 py-8 text-center">
-                        <p className="text-sm text-(--muted)">No comments yet. Be the first to comment!</p>
-                    </div>
-                )}
+                                )}
 
-                {/* Comment Composer */}
-                <div className="border-t border-(--border) p-4 bg-(--muted)/5">
-                    <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-(--muted)/10 shrink-0 flex items-center justify-center">
-                            {user?.avatar_url ? (
-                                <img src={user.avatar_url} alt="My Avatar" className="w-full h-full object-cover" />
-                            ) : (
-                                <User className="w-4 h-4 text-(--muted)" />
-                            )}
-                        </div>
-                        <div className="flex-1 space-y-2">
-                            <textarea
-                                ref={composerRef}
-                                value={draftComment}
-                                onChange={(e) => setDraftComment(e.target.value)}
-                                rows={1}
-                                className="w-full rounded-2xl border border-(--muted)/30 px-4 py-2.5 text-sm bg-transparent focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all resize-none min-h-[42px]"
-                                placeholder="Write a comment..."
-                            />
-
-                            {/* Image Preview */}
-                            {commentImagePreview && (
-                                <div className="relative inline-block">
-                                    <img
-                                        src={commentImagePreview}
-                                        alt="Comment image preview"
-                                        className="max-w-full max-h-32 rounded-xl border border-(--border)"
+                                <div className="flex items-center justify-between gap-2">
+                                    <input
+                                        ref={commentFileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/gif"
+                                        onChange={handleCommentImageSelect}
+                                        className="hidden"
                                     />
                                     <button
                                         type="button"
-                                        onClick={handleRemoveCommentImage}
-                                        className="absolute -top-2 -right-2 bg-background text-(--muted) hover:text-red-500 rounded-full p-1.5 border border-(--border) shadow-sm transition-colors cursor-pointer"
-                                    >
-                                        <Trash2 className="w-3 h-3" />
-                                    </button>
-                                </div>
-                            )}
-
-                            <div className="flex items-center justify-between gap-2">
-                                <input
-                                    ref={commentFileInputRef}
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/gif"
-                                    onChange={handleCommentImageSelect}
-                                    className="hidden"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => commentFileInputRef.current?.click()}
-                                    className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors cursor-pointer"
-                                >
-                                    {commentImageFile ? "Change Image" : "Add Image"}
-                                </button>
-
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={handleCancelComposer}
+                                        onClick={() => commentFileInputRef.current?.click()}
                                         className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors cursor-pointer"
                                     >
-                                        Cancel
+                                        {commentImageFile ? "Change Image" : "Add Image"}
                                     </button>
-                                    <button
-                                        type="button"
-                                        disabled={!draftComment.trim()}
-                                        onClick={handleSubmitComment}
-                                        className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50 cursor-pointer"
-                                    >
-                                        Reply
-                                    </button>
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelComposer}
+                                            className="px-3 py-1.5 text-xs font-medium text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-colors cursor-pointer"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={!draftComment.trim()}
+                                            onClick={handleSubmitComment}
+                                            className="px-4 py-1.5 text-xs font-medium bg-(--accent) text-white hover:bg-(--accent-hover) rounded-full transition-colors disabled:opacity-50 cursor-pointer"
+                                        >
+                                            Reply
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Delete Post Confirmation Modal */}
             <Modal

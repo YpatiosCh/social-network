@@ -224,7 +224,8 @@ func (s *Handlers) getAllGroupsPaginated() http.HandlerFunc {
 				MembersCount:     group.MembersCount,
 				IsMember:         group.IsMember,
 				IsOwner:          group.IsOwner,
-				IsPending:        group.IsPending,
+				PendingRequest:   group.PendingRequest,
+				PendingInvite:    group.PendingInvite,
 			}
 			resp = append(resp, newGroup)
 		}
@@ -273,7 +274,8 @@ func (s *Handlers) getGroupInfo() http.HandlerFunc {
 			MembersCount:     grpcResp.MembersCount,
 			IsMember:         grpcResp.IsMember,
 			IsOwner:          grpcResp.IsOwner,
-			IsPending:        grpcResp.IsPending,
+			PendingRequest:   grpcResp.PendingRequest,
+			PendingInvite:    grpcResp.PendingInvite,
 		}
 
 		utils.WriteJSON(ctx, w, http.StatusOK, resp)
@@ -289,7 +291,7 @@ func (s *Handlers) getGroupMembers() http.HandlerFunc {
 		}
 
 		type reqBody struct {
-			GroupId int64 `json:"group_id"`
+			GroupId ct.Id `json:"group_id"`
 			Limit   int32 `json:"limit"`
 			Offset  int32 `json:"offset"`
 		}
@@ -302,7 +304,7 @@ func (s *Handlers) getGroupMembers() http.HandlerFunc {
 
 		req := &users.GroupMembersRequest{
 			UserId:  claims.UserId,
-			GroupId: body.GroupId,
+			GroupId: body.GroupId.Int64(),
 			Limit:   body.Limit,
 			Offset:  body.Offset,
 		}
@@ -375,7 +377,8 @@ func (s *Handlers) getUserGroupsPaginated() http.HandlerFunc {
 				MembersCount:     group.MembersCount,
 				IsMember:         group.IsMember,
 				IsOwner:          group.IsOwner,
-				IsPending:        group.IsPending,
+				PendingRequest:   group.PendingRequest,
+				PendingInvite:    group.PendingInvite,
 			}
 			resp = append(resp, newGroup)
 		}
@@ -410,6 +413,36 @@ func (s *Handlers) handleGroupJoinRequest() http.HandlerFunc {
 		if err != nil {
 			utils.ReturnHttpError(ctx, w, err)
 			//utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "Could not handle group join request: "+err.Error())
+			return
+		}
+
+		utils.WriteJSON(ctx, w, http.StatusOK, nil)
+	}
+}
+
+func (s *Handlers) cancelGroupJoinRequest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
+
+		body, err := utils.JSON2Struct(&models.GroupJoinRequest{}, r)
+		if err != nil {
+			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "Bad JSON data received")
+			return
+		}
+
+		req := &users.GroupJoinRequest{
+			GroupId:     body.GroupId.Int64(),
+			RequesterId: claims.UserId,
+		}
+
+		_, err = s.UsersService.CancelJoinGroupRequest(ctx, req)
+		if err != nil {
+			utils.ReturnHttpError(ctx, w, err)
+			//utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "Could not cancel group join request: "+err.Error())
 			return
 		}
 
@@ -480,6 +513,37 @@ func (s *Handlers) leaveGroup() http.HandlerFunc {
 	}
 }
 
+func (s *Handlers) removeFromGroup() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
+
+		body, err := utils.JSON2Struct(&models.RemoveFromGroupRequest{}, r)
+		if err != nil {
+			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "Bad JSON data received")
+			return
+		}
+
+		req := &users.RemoveFromGroupRequest{
+			GroupId:  body.GroupId.Int64(),
+			MemberId: body.MemberId.Int64(),
+			OwnerId:  claims.UserId,
+		}
+
+		_, err = s.UsersService.RemoveFromGroup(ctx, req)
+		if err != nil {
+			utils.ReturnHttpError(ctx, w, err)
+			//utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "Could not leave group: "+err.Error())
+			return
+		}
+
+		utils.WriteJSON(ctx, w, http.StatusOK, nil)
+	}
+}
+
 // request to join a group
 func (s *Handlers) requestJoinGroup() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -511,7 +575,7 @@ func (s *Handlers) requestJoinGroup() http.HandlerFunc {
 	}
 }
 
-// accept or decline an invitation to 
+// accept or decline an invitation to
 func (s *Handlers) respondToGroupInvite() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -521,7 +585,7 @@ func (s *Handlers) respondToGroupInvite() http.HandlerFunc {
 		}
 
 		type reqBody struct {
-			GroupId int64 `json:"group_id"`
+			GroupId ct.Id `json:"group_id"`
 			Accept  bool  `json:"accept"`
 		}
 
@@ -533,7 +597,7 @@ func (s *Handlers) respondToGroupInvite() http.HandlerFunc {
 
 		req := &users.HandleGroupInviteRequest{
 			InvitedId: claims.UserId,
-			GroupId:   body.GroupId,
+			GroupId:   body.GroupId.Int64(),
 			Accepted:  body.Accept,
 		}
 
@@ -596,10 +660,147 @@ func (s *Handlers) searchGroups() http.HandlerFunc {
 				MembersCount:     group.MembersCount,
 				IsMember:         group.IsMember,
 				IsOwner:          group.IsOwner,
-				IsPending:        group.IsPending,
+				PendingRequest:   group.PendingRequest,
+				PendingInvite:    group.PendingInvite,
 			}
 
 			resp.Groups = append(resp.Groups, newGroup)
+		}
+
+		utils.WriteJSON(ctx, w, http.StatusOK, resp)
+	}
+}
+
+func (s *Handlers) getPendingGroupJoinRequests() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
+
+		type reqBody struct {
+			GroupId ct.Id `json:"group_id"`
+			Limit   int32 `json:"limit"`
+			Offset  int32 `json:"offset"`
+		}
+
+		body, err := utils.JSON2Struct(&reqBody{}, r)
+		if err != nil {
+			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "Bad JSON data received")
+			return
+		}
+
+		req := &users.GroupMembersRequest{
+			UserId:  claims.UserId,
+			GroupId: body.GroupId.Int64(),
+			Limit:   body.Limit,
+			Offset:  body.Offset,
+		}
+
+		grpcResp, err := s.UsersService.GetPendingGroupJoinRequests(ctx, req)
+		if err != nil {
+			utils.ReturnHttpError(ctx, w, err)
+			//utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "Could not fetch group members: "+err.Error())
+			return
+		}
+
+		resp := &models.Users{}
+
+		for _, grpcUser := range grpcResp.Users {
+			user := models.User{
+				UserId:    ct.Id(grpcUser.UserId),
+				Username:  ct.Username(grpcUser.Username),
+				AvatarId:  ct.Id(grpcUser.Avatar),
+				AvatarURL: grpcUser.AvatarUrl,
+			}
+			resp.Users = append(resp.Users, user)
+		}
+
+		utils.WriteJSON(ctx, w, http.StatusOK, resp)
+	}
+}
+
+func (s *Handlers) getPendingGroupJoinRequestsCount() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
+
+		type reqBody struct {
+			GroupId ct.Id `json:"group_id"`
+		}
+
+		body, err := utils.JSON2Struct(&reqBody{}, r)
+		if err != nil {
+			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "Bad JSON data received")
+			return
+		}
+
+		req := &users.GeneralGroupRequest{
+			GroupId: body.GroupId.Int64(),
+			UserId:  claims.UserId,
+		}
+
+		grpcResp, err := s.UsersService.GetPendingGroupJoinRequestsCount(ctx, req)
+		if err != nil {
+			utils.ReturnHttpError(ctx, w, err)
+			//utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "Could not fetch group members: "+err.Error())
+			return
+		}
+
+		resp := grpcResp.Id
+
+		utils.WriteJSON(ctx, w, http.StatusOK, resp)
+	}
+}
+
+func (s *Handlers) GetFollowersNotInvitedToGroup() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
+		if !ok {
+			panic(1)
+		}
+
+		type reqBody struct {
+			GroupId ct.Id `json:"group_id"`
+			Limit   int32 `json:"limit"`
+			Offset  int32 `json:"offset"`
+		}
+
+		body, err := utils.JSON2Struct(&reqBody{}, r)
+		if err != nil {
+			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "Bad JSON data received")
+			return
+		}
+
+		req := &users.GroupMembersRequest{
+			UserId:  claims.UserId,
+			GroupId: body.GroupId.Int64(),
+			Limit:   body.Limit,
+			Offset:  body.Offset,
+		}
+
+		grpcResp, err := s.UsersService.GetFollowersNotInvitedToGroup(ctx, req)
+		if err != nil {
+			utils.ReturnHttpError(ctx, w, err)
+			//utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "Could not fetch group members: "+err.Error())
+			return
+		}
+
+		resp := &models.Users{}
+
+		for _, grpcUser := range grpcResp.Users {
+			user := models.User{
+				UserId:    ct.Id(grpcUser.UserId),
+				Username:  ct.Username(grpcUser.Username),
+				AvatarId:  ct.Id(grpcUser.Avatar),
+				AvatarURL: grpcUser.AvatarUrl,
+			}
+			resp.Users = append(resp.Users, user)
 		}
 
 		utils.WriteJSON(ctx, w, http.StatusOK, resp)

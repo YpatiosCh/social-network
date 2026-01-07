@@ -22,38 +22,43 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_RegisterUser_FullMethodName           = "/users.UserService/RegisterUser"
-	UserService_LoginUser_FullMethodName              = "/users.UserService/LoginUser"
-	UserService_UpdateUserPassword_FullMethodName     = "/users.UserService/UpdateUserPassword"
-	UserService_UpdateUserEmail_FullMethodName        = "/users.UserService/UpdateUserEmail"
-	UserService_GetFollowersPaginated_FullMethodName  = "/users.UserService/GetFollowersPaginated"
-	UserService_GetFollowingPaginated_FullMethodName  = "/users.UserService/GetFollowingPaginated"
-	UserService_FollowUser_FullMethodName             = "/users.UserService/FollowUser"
-	UserService_UnFollowUser_FullMethodName           = "/users.UserService/UnFollowUser"
-	UserService_HandleFollowRequest_FullMethodName    = "/users.UserService/HandleFollowRequest"
-	UserService_GetFollowingIds_FullMethodName        = "/users.UserService/GetFollowingIds"
-	UserService_GetFollowSuggestions_FullMethodName   = "/users.UserService/GetFollowSuggestions"
-	UserService_IsFollowing_FullMethodName            = "/users.UserService/IsFollowing"
-	UserService_AreFollowingEachOther_FullMethodName  = "/users.UserService/AreFollowingEachOther"
-	UserService_GetAllGroupsPaginated_FullMethodName  = "/users.UserService/GetAllGroupsPaginated"
-	UserService_GetUserGroupsPaginated_FullMethodName = "/users.UserService/GetUserGroupsPaginated"
-	UserService_GetGroupInfo_FullMethodName           = "/users.UserService/GetGroupInfo"
-	UserService_GetGroupMembers_FullMethodName        = "/users.UserService/GetGroupMembers"
-	UserService_SearchGroups_FullMethodName           = "/users.UserService/SearchGroups"
-	UserService_InviteToGroup_FullMethodName          = "/users.UserService/InviteToGroup"
-	UserService_IsGroupMember_FullMethodName          = "/users.UserService/IsGroupMember"
-	UserService_RequestJoinGroup_FullMethodName       = "/users.UserService/RequestJoinGroup"
-	UserService_RespondToGroupInvite_FullMethodName   = "/users.UserService/RespondToGroupInvite"
-	UserService_HandleGroupJoinRequest_FullMethodName = "/users.UserService/HandleGroupJoinRequest"
-	UserService_LeaveGroup_FullMethodName             = "/users.UserService/LeaveGroup"
-	UserService_CreateGroup_FullMethodName            = "/users.UserService/CreateGroup"
-	UserService_UpdateGroup_FullMethodName            = "/users.UserService/UpdateGroup"
-	UserService_GetBasicUserInfo_FullMethodName       = "/users.UserService/GetBasicUserInfo"
-	UserService_GetBatchBasicUserInfo_FullMethodName  = "/users.UserService/GetBatchBasicUserInfo"
-	UserService_GetUserProfile_FullMethodName         = "/users.UserService/GetUserProfile"
-	UserService_SearchUsers_FullMethodName            = "/users.UserService/SearchUsers"
-	UserService_UpdateUserProfile_FullMethodName      = "/users.UserService/UpdateUserProfile"
-	UserService_UpdateProfilePrivacy_FullMethodName   = "/users.UserService/UpdateProfilePrivacy"
+	UserService_RegisterUser_FullMethodName                     = "/users.UserService/RegisterUser"
+	UserService_LoginUser_FullMethodName                        = "/users.UserService/LoginUser"
+	UserService_UpdateUserPassword_FullMethodName               = "/users.UserService/UpdateUserPassword"
+	UserService_UpdateUserEmail_FullMethodName                  = "/users.UserService/UpdateUserEmail"
+	UserService_GetFollowersPaginated_FullMethodName            = "/users.UserService/GetFollowersPaginated"
+	UserService_GetFollowingPaginated_FullMethodName            = "/users.UserService/GetFollowingPaginated"
+	UserService_FollowUser_FullMethodName                       = "/users.UserService/FollowUser"
+	UserService_UnFollowUser_FullMethodName                     = "/users.UserService/UnFollowUser"
+	UserService_HandleFollowRequest_FullMethodName              = "/users.UserService/HandleFollowRequest"
+	UserService_GetFollowingIds_FullMethodName                  = "/users.UserService/GetFollowingIds"
+	UserService_GetFollowSuggestions_FullMethodName             = "/users.UserService/GetFollowSuggestions"
+	UserService_IsFollowing_FullMethodName                      = "/users.UserService/IsFollowing"
+	UserService_AreFollowingEachOther_FullMethodName            = "/users.UserService/AreFollowingEachOther"
+	UserService_GetAllGroupsPaginated_FullMethodName            = "/users.UserService/GetAllGroupsPaginated"
+	UserService_GetUserGroupsPaginated_FullMethodName           = "/users.UserService/GetUserGroupsPaginated"
+	UserService_GetGroupInfo_FullMethodName                     = "/users.UserService/GetGroupInfo"
+	UserService_GetGroupMembers_FullMethodName                  = "/users.UserService/GetGroupMembers"
+	UserService_GetPendingGroupJoinRequests_FullMethodName      = "/users.UserService/GetPendingGroupJoinRequests"
+	UserService_GetPendingGroupJoinRequestsCount_FullMethodName = "/users.UserService/GetPendingGroupJoinRequestsCount"
+	UserService_GetFollowersNotInvitedToGroup_FullMethodName    = "/users.UserService/GetFollowersNotInvitedToGroup"
+	UserService_SearchGroups_FullMethodName                     = "/users.UserService/SearchGroups"
+	UserService_InviteToGroup_FullMethodName                    = "/users.UserService/InviteToGroup"
+	UserService_IsGroupMember_FullMethodName                    = "/users.UserService/IsGroupMember"
+	UserService_RequestJoinGroup_FullMethodName                 = "/users.UserService/RequestJoinGroup"
+	UserService_CancelJoinGroupRequest_FullMethodName           = "/users.UserService/CancelJoinGroupRequest"
+	UserService_RespondToGroupInvite_FullMethodName             = "/users.UserService/RespondToGroupInvite"
+	UserService_HandleGroupJoinRequest_FullMethodName           = "/users.UserService/HandleGroupJoinRequest"
+	UserService_LeaveGroup_FullMethodName                       = "/users.UserService/LeaveGroup"
+	UserService_RemoveFromGroup_FullMethodName                  = "/users.UserService/RemoveFromGroup"
+	UserService_CreateGroup_FullMethodName                      = "/users.UserService/CreateGroup"
+	UserService_UpdateGroup_FullMethodName                      = "/users.UserService/UpdateGroup"
+	UserService_GetBasicUserInfo_FullMethodName                 = "/users.UserService/GetBasicUserInfo"
+	UserService_GetBatchBasicUserInfo_FullMethodName            = "/users.UserService/GetBatchBasicUserInfo"
+	UserService_GetUserProfile_FullMethodName                   = "/users.UserService/GetUserProfile"
+	UserService_SearchUsers_FullMethodName                      = "/users.UserService/SearchUsers"
+	UserService_UpdateUserProfile_FullMethodName                = "/users.UserService/UpdateUserProfile"
+	UserService_UpdateProfilePrivacy_FullMethodName             = "/users.UserService/UpdateProfilePrivacy"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -121,6 +126,19 @@ type UserServiceClient interface {
 	// Returns permission denied if requester is not a group member.
 	// Calls users and media service for user info and avatar urls.
 	GetGroupMembers(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*GroupUserArr, error)
+	// Returns all pending group requests with user information for group owner.
+	// Includes pagination, results are sorted by ascending join request date
+	// Returns permission denied if requester is not the group owner.
+	// Calls users and media service for user info and avatar urls.
+	GetPendingGroupJoinRequests(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error)
+	// Returns the total count of all pending group requests for group owner.
+	// Returns permission denied if requester is not the group owner.
+	GetPendingGroupJoinRequestsCount(ctx context.Context, in *GeneralGroupRequest, opts ...grpc.CallOption) (*CountResp, error)
+	// Returns paginated user's followers who have not yet been invited to join the group.
+	// Results are sorted by descending follow date.
+	// Returns permission denied if requester is not a group member.
+	// Calls users and media service for user info and avatar urls.
+	GetFollowersNotInvitedToGroup(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error)
 	// Searches active groups by title and description using substring and fuzzy
 	// matching, ranks results by relevance, and annotates whether the requesting
 	// user is a member or owner. Results are ordered by score and popularity and
@@ -133,6 +151,7 @@ type UserServiceClient interface {
 	SearchGroups(ctx context.Context, in *GroupSearchRequest, opts ...grpc.CallOption) (*GroupArr, error)
 	// Invites a list of users to join a group.
 	// Returns permission denied if inviter is not a group member.
+	// If invite already exists it's update to "pending".
 	InviteToGroup(ctx context.Context, in *InviteToGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Checks if the requester is a member of the given group.
 	// The onwer is also treated as a member.
@@ -140,6 +159,8 @@ type UserServiceClient interface {
 	// Creates a join request for the group.
 	// If the request already exists it updates to "pending".
 	RequestJoinGroup(ctx context.Context, in *GroupJoinRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Cancels a request to join the group.
+	CancelJoinGroupRequest(ctx context.Context, in *GroupJoinRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Accepts or declines a received group invite.
 	RespondToGroupInvite(ctx context.Context, in *HandleGroupInviteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Approves or rejects a user's join request.
@@ -148,6 +169,10 @@ type UserServiceClient interface {
 	// Removes user as member of the specified group.
 	// Returns permission denied if user wasn't a member of the group.
 	LeaveGroup(ctx context.Context, in *GeneralGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Removes a group member from the group.
+	// Returns permission denied if requester is not the owner of the group.
+	// Owner cannot be removed.
+	RemoveFromGroup(ctx context.Context, in *RemoveFromGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Creates a new group with requester as owner and returns its id.
 	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*wrapperspb.Int64Value, error)
 	// Updates group info (title, description, image).
@@ -358,6 +383,36 @@ func (c *userServiceClient) GetGroupMembers(ctx context.Context, in *GroupMember
 	return out, nil
 }
 
+func (c *userServiceClient) GetPendingGroupJoinRequests(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(common.ListUsers)
+	err := c.cc.Invoke(ctx, UserService_GetPendingGroupJoinRequests_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetPendingGroupJoinRequestsCount(ctx context.Context, in *GeneralGroupRequest, opts ...grpc.CallOption) (*CountResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CountResp)
+	err := c.cc.Invoke(ctx, UserService_GetPendingGroupJoinRequestsCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetFollowersNotInvitedToGroup(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*common.ListUsers, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(common.ListUsers)
+	err := c.cc.Invoke(ctx, UserService_GetFollowersNotInvitedToGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) SearchGroups(ctx context.Context, in *GroupSearchRequest, opts ...grpc.CallOption) (*GroupArr, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GroupArr)
@@ -398,6 +453,16 @@ func (c *userServiceClient) RequestJoinGroup(ctx context.Context, in *GroupJoinR
 	return out, nil
 }
 
+func (c *userServiceClient) CancelJoinGroupRequest(ctx context.Context, in *GroupJoinRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_CancelJoinGroupRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) RespondToGroupInvite(ctx context.Context, in *HandleGroupInviteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -422,6 +487,16 @@ func (c *userServiceClient) LeaveGroup(ctx context.Context, in *GeneralGroupRequ
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, UserService_LeaveGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RemoveFromGroup(ctx context.Context, in *RemoveFromGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, UserService_RemoveFromGroup_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -573,6 +648,19 @@ type UserServiceServer interface {
 	// Returns permission denied if requester is not a group member.
 	// Calls users and media service for user info and avatar urls.
 	GetGroupMembers(context.Context, *GroupMembersRequest) (*GroupUserArr, error)
+	// Returns all pending group requests with user information for group owner.
+	// Includes pagination, results are sorted by ascending join request date
+	// Returns permission denied if requester is not the group owner.
+	// Calls users and media service for user info and avatar urls.
+	GetPendingGroupJoinRequests(context.Context, *GroupMembersRequest) (*common.ListUsers, error)
+	// Returns the total count of all pending group requests for group owner.
+	// Returns permission denied if requester is not the group owner.
+	GetPendingGroupJoinRequestsCount(context.Context, *GeneralGroupRequest) (*CountResp, error)
+	// Returns paginated user's followers who have not yet been invited to join the group.
+	// Results are sorted by descending follow date.
+	// Returns permission denied if requester is not a group member.
+	// Calls users and media service for user info and avatar urls.
+	GetFollowersNotInvitedToGroup(context.Context, *GroupMembersRequest) (*common.ListUsers, error)
 	// Searches active groups by title and description using substring and fuzzy
 	// matching, ranks results by relevance, and annotates whether the requesting
 	// user is a member or owner. Results are ordered by score and popularity and
@@ -585,6 +673,7 @@ type UserServiceServer interface {
 	SearchGroups(context.Context, *GroupSearchRequest) (*GroupArr, error)
 	// Invites a list of users to join a group.
 	// Returns permission denied if inviter is not a group member.
+	// If invite already exists it's update to "pending".
 	InviteToGroup(context.Context, *InviteToGroupRequest) (*emptypb.Empty, error)
 	// Checks if the requester is a member of the given group.
 	// The onwer is also treated as a member.
@@ -592,6 +681,8 @@ type UserServiceServer interface {
 	// Creates a join request for the group.
 	// If the request already exists it updates to "pending".
 	RequestJoinGroup(context.Context, *GroupJoinRequest) (*emptypb.Empty, error)
+	// Cancels a request to join the group.
+	CancelJoinGroupRequest(context.Context, *GroupJoinRequest) (*emptypb.Empty, error)
 	// Accepts or declines a received group invite.
 	RespondToGroupInvite(context.Context, *HandleGroupInviteRequest) (*emptypb.Empty, error)
 	// Approves or rejects a user's join request.
@@ -600,6 +691,10 @@ type UserServiceServer interface {
 	// Removes user as member of the specified group.
 	// Returns permission denied if user wasn't a member of the group.
 	LeaveGroup(context.Context, *GeneralGroupRequest) (*emptypb.Empty, error)
+	// Removes a group member from the group.
+	// Returns permission denied if requester is not the owner of the group.
+	// Owner cannot be removed.
+	RemoveFromGroup(context.Context, *RemoveFromGroupRequest) (*emptypb.Empty, error)
 	// Creates a new group with requester as owner and returns its id.
 	CreateGroup(context.Context, *CreateGroupRequest) (*wrapperspb.Int64Value, error)
 	// Updates group info (title, description, image).
@@ -691,6 +786,15 @@ func (UnimplementedUserServiceServer) GetGroupInfo(context.Context, *GeneralGrou
 func (UnimplementedUserServiceServer) GetGroupMembers(context.Context, *GroupMembersRequest) (*GroupUserArr, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGroupMembers not implemented")
 }
+func (UnimplementedUserServiceServer) GetPendingGroupJoinRequests(context.Context, *GroupMembersRequest) (*common.ListUsers, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPendingGroupJoinRequests not implemented")
+}
+func (UnimplementedUserServiceServer) GetPendingGroupJoinRequestsCount(context.Context, *GeneralGroupRequest) (*CountResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPendingGroupJoinRequestsCount not implemented")
+}
+func (UnimplementedUserServiceServer) GetFollowersNotInvitedToGroup(context.Context, *GroupMembersRequest) (*common.ListUsers, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFollowersNotInvitedToGroup not implemented")
+}
 func (UnimplementedUserServiceServer) SearchGroups(context.Context, *GroupSearchRequest) (*GroupArr, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchGroups not implemented")
 }
@@ -703,6 +807,9 @@ func (UnimplementedUserServiceServer) IsGroupMember(context.Context, *GeneralGro
 func (UnimplementedUserServiceServer) RequestJoinGroup(context.Context, *GroupJoinRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestJoinGroup not implemented")
 }
+func (UnimplementedUserServiceServer) CancelJoinGroupRequest(context.Context, *GroupJoinRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelJoinGroupRequest not implemented")
+}
 func (UnimplementedUserServiceServer) RespondToGroupInvite(context.Context, *HandleGroupInviteRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RespondToGroupInvite not implemented")
 }
@@ -711,6 +818,9 @@ func (UnimplementedUserServiceServer) HandleGroupJoinRequest(context.Context, *H
 }
 func (UnimplementedUserServiceServer) LeaveGroup(context.Context, *GeneralGroupRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LeaveGroup not implemented")
+}
+func (UnimplementedUserServiceServer) RemoveFromGroup(context.Context, *RemoveFromGroupRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveFromGroup not implemented")
 }
 func (UnimplementedUserServiceServer) CreateGroup(context.Context, *CreateGroupRequest) (*wrapperspb.Int64Value, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateGroup not implemented")
@@ -1063,6 +1173,60 @@ func _UserService_GetGroupMembers_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetPendingGroupJoinRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetPendingGroupJoinRequests(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetPendingGroupJoinRequests_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetPendingGroupJoinRequests(ctx, req.(*GroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetPendingGroupJoinRequestsCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GeneralGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetPendingGroupJoinRequestsCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetPendingGroupJoinRequestsCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetPendingGroupJoinRequestsCount(ctx, req.(*GeneralGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetFollowersNotInvitedToGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GroupMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetFollowersNotInvitedToGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetFollowersNotInvitedToGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetFollowersNotInvitedToGroup(ctx, req.(*GroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_SearchGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GroupSearchRequest)
 	if err := dec(in); err != nil {
@@ -1135,6 +1299,24 @@ func _UserService_RequestJoinGroup_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CancelJoinGroupRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GroupJoinRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CancelJoinGroupRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CancelJoinGroupRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CancelJoinGroupRequest(ctx, req.(*GroupJoinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_RespondToGroupInvite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HandleGroupInviteRequest)
 	if err := dec(in); err != nil {
@@ -1185,6 +1367,24 @@ func _UserService_LeaveGroup_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).LeaveGroup(ctx, req.(*GeneralGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RemoveFromGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveFromGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RemoveFromGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RemoveFromGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RemoveFromGroup(ctx, req.(*RemoveFromGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1409,6 +1609,18 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_GetGroupMembers_Handler,
 		},
 		{
+			MethodName: "GetPendingGroupJoinRequests",
+			Handler:    _UserService_GetPendingGroupJoinRequests_Handler,
+		},
+		{
+			MethodName: "GetPendingGroupJoinRequestsCount",
+			Handler:    _UserService_GetPendingGroupJoinRequestsCount_Handler,
+		},
+		{
+			MethodName: "GetFollowersNotInvitedToGroup",
+			Handler:    _UserService_GetFollowersNotInvitedToGroup_Handler,
+		},
+		{
 			MethodName: "SearchGroups",
 			Handler:    _UserService_SearchGroups_Handler,
 		},
@@ -1425,6 +1637,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_RequestJoinGroup_Handler,
 		},
 		{
+			MethodName: "CancelJoinGroupRequest",
+			Handler:    _UserService_CancelJoinGroupRequest_Handler,
+		},
+		{
 			MethodName: "RespondToGroupInvite",
 			Handler:    _UserService_RespondToGroupInvite_Handler,
 		},
@@ -1435,6 +1651,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LeaveGroup",
 			Handler:    _UserService_LeaveGroup_Handler,
+		},
+		{
+			MethodName: "RemoveFromGroup",
+			Handler:    _UserService_RemoveFromGroup_Handler,
 		},
 		{
 			MethodName: "CreateGroup",

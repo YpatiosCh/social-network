@@ -118,13 +118,16 @@ func Batcher[T any](ctx context.Context, handler func([]T) error, poolingDuratio
 func BatcherTest() {
 	ctx := context.Background()
 	total := 0
+
 	handler := func(str []string) error {
 		total += len(str)
 		fmt.Println("batch:", len(str), "total:", total)
 		time.Sleep(time.Millisecond * 50)
 		return nil
 	}
+
 	inputChan, _ := Batcher(ctx, handler, time.Millisecond*time.Duration(150), 100)
+
 	wg := sync.WaitGroup{}
 	for range 10 {
 		wg.Go(func() {

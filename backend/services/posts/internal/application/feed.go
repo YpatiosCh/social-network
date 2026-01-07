@@ -253,6 +253,7 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 
 	var groupId pgtype.Int8
 	groupId.Int64 = req.GroupId.Int64()
+
 	if req.GroupId == 0 {
 		return nil, ce.New(ce.ErrInvalidArgument, fmt.Errorf("no group id given"), input).WithPublic("invalid arguments")
 	}
@@ -268,6 +269,9 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 
 	rows, err := s.db.GetGroupPostsPaginated(ctx, ds.GetGroupPostsPaginatedParams{
 		GroupID: groupId,
+		UserID:  req.RequesterId.Int64(),
+		Limit:   req.Limit.Int32(),
+		Offset:  req.Offset.Int32(),
 	})
 	if err != nil {
 		return nil, ce.New(ce.ErrInternal, err, input).WithPublic(genericPublic)
