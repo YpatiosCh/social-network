@@ -10,6 +10,7 @@ import (
 )
 
 // Converts a slice of ct.Ids representing users to models.User slice.
+// DEPRECATED
 func (c *Clients) UserIdsToUsers(ctx context.Context,
 	ids ct.Ids) (userInfo []md.User, err error) {
 	req := &cm.UserIds{Values: ids.Int64()}
@@ -54,4 +55,16 @@ func (c *Clients) IsGroupMember(ctx context.Context,
 		UserId:  userId.Int64(),
 	})
 	return resp.GetValue(), err
+}
+
+func (c *Clients) AreConnected(ctx context.Context, userA, userB ct.Id) (bool, error) {
+	resp, err := c.UserClient.AreFollowingEachOther(ctx, &users.FollowUserRequest{
+		FollowerId:   userA.Int64(),
+		TargetUserId: userB.Int64(),
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return resp != nil, nil
 }

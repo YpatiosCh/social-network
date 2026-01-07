@@ -1,81 +1,103 @@
 ------------------------------------------------------------
--- 1. Conversations
+-- 1. GROUP CONVERSATIONS
 ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS conversations (
+CREATE TABLE IF NOT EXISTS group_conversations (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    group_id BIGINT, -- In users service; NULL => DM
-    last_message_id BIGINT,
-    first_message_id BIGINT,
+    group_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ
 );
 
 -- One conversation per group (group chat)
-CREATE UNIQUE INDEX IF NOT EXISTS uq_conversations_group_id
-    ON conversations(group_id)
-    WHERE group_id IS NOT NULL;
-
+CREATE UNIQUE INDEX IF NOT EXISTS uq_group_conversations_group_id
+    ON group_conversations(group_id);
 
 ------------------------------------------------------------
--- 2. Messages
+-- 2. GROUP MESSAGES
 ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS messages (
+
+CREATE TABLE IF NOT EXISTS group_messages (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    conversation_id BIGINT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    sender_id BIGINT,
+    conversation_id BIGINT NOT NULL REFERENCES group_conversations(id),
+    sender_id BIGINT NOT NULL,
     message_text TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_messages_conversation ON messages(conversation_id);
-CREATE INDEX idx_messages_sender ON messages(sender_id);
-CREATE INDEX idx_messages_created_at ON messages(created_at);
-CREATE INDEX idx_messages_conversation_id_id
-    ON messages(conversation_id, id);
+CREATE INDEX idx_group_messages_conversation ON group_messages(conversation_id);
+CREATE INDEX idx_group_messages_sender ON group_messages(sender_id);
+CREATE INDEX idx_group_messages_created_at ON group_messages(created_at);
+CREATE INDEX idx_group_messages_conversation_id_id
+    ON group_messages(conversation_id, id);
+
+
+
+------------------------------------------------------------
+-- 4. PRIVATE CONVERSATIONS
+------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS private_conversations (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_a BIGINT NOT NULL,
+    user_b BIGINT NOT NULL,
+    last_read_message_id_a BIGINT,
+    last_read_message_id_b BIGINT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ,
+    CHECK (user_a < user_b)
+);
+
+
+CREATE UNIQUE INDEX uq_private_conversation_users
+ON private_conversations(user_a, user_b);
+
+
+
+------------------------------------------------------------
+-- 5. PRIVATE MESSAGES
+------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS private_messages (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES private_conversations(id),
+    sender_id BIGINT NOT NULL,
+    message_text TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_private_messages_conversation ON private_messages(conversation_id);
+CREATE INDEX idx_private_messages_sender ON private_messages(sender_id);
+CREATE INDEX idx_private_messages_created_at ON private_messages(created_at);
+CREATE INDEX idx_private_messages_conversation_id_id
+    ON private_messages(conversation_id, id);
 
 
 --------------------------------------------------------------
--- 2.1 ALTER CONVERSATIONS
+-- 6. ALTER PRIVATE CONVERSATIONS
 --------------------------------------------------------------
 
-ALTER TABLE conversations
-ADD CONSTRAINT conversations_last_message_id_fkey
-    FOREIGN KEY (last_message_id)
-    REFERENCES messages(id)
-    ON DELETE SET NULL;
+ALTER TABLE private_conversations
+    ADD CONSTRAINT private_conversations_last_read_message_id_a_id_fkey
+        FOREIGN KEY (last_read_message_id_a)
+        REFERENCES private_messages(id)
+        ON DELETE SET NULL;
 
-ALTER TABLE conversations
-    ADD CONSTRAINT conversations_first_message_id_fkey
-        FOREIGN KEY (first_message_id)
-        REFERENCES messages(id)
+ALTER TABLE private_conversations
+    ADD CONSTRAINT private_conversations_last_read_message_id_b_id_fkey
+        FOREIGN KEY (last_read_message_id_b)
+        REFERENCES private_messages(id)
         ON DELETE SET NULL;
 
 
-
-
 ------------------------------------------------------------
--- 3. Conversation Members
+-- 7. Triggers: Auto-update updated_at
 ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS conversation_members (
-    conversation_id BIGINT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    user_id BIGINT NOT NULL,
-    last_read_message_id BIGINT REFERENCES messages(id) ON DELETE SET NULL,
-    joined_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMPTZ,
-    PRIMARY KEY (conversation_id, user_id)
-);
 
-CREATE INDEX idx_conversation_members_user ON conversation_members(user_id);
-CREATE INDEX idx_conversation_members_last_read ON conversation_members(last_read_message_id);
-
-
-
-------------------------------------------------------------
--- 5. Triggers: Auto-update updated_at
-------------------------------------------------------------
 -- UPDATE TIMESTAMP
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
@@ -85,51 +107,53 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_conversations_modtime
-BEFORE UPDATE ON conversations
+CREATE TRIGGER trg_update_group_conversations_modtime
+BEFORE UPDATE ON group_conversations
 FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
-CREATE TRIGGER trg_update_messages_modtime
-BEFORE UPDATE ON messages
+CREATE TRIGGER trg_update_group_messages_modtime
+BEFORE UPDATE ON group_messages
 FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
-CREATE TRIGGER trg_update_conversation_members_modtime
-BEFORE UPDATE ON conversation_members
+-- CREATE TRIGGER trg_update_private_conversations_modtime
+-- BEFORE UPDATE ON private_conversations
+-- FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER trg_update_private_messages_modtime
+BEFORE UPDATE ON private_messages
 FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
 
--- UPDATE CONVERSATION FIRST AND LAST MESSAGE
-
-CREATE OR REPLACE FUNCTION update_conversation_first_message()
+-- UPDATE GROUP CONVERSATION updated_at WHEN NEW MESSAGE
+CREATE OR REPLACE FUNCTION touch_group_conversation()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE conversations
-    SET first_message_id = NEW.id
-    WHERE id = NEW.conversation_id
-      AND first_message_id IS NULL;
+    UPDATE group_conversations
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = NEW.conversation_id;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_set_first_message
-AFTER INSERT ON messages
+CREATE TRIGGER trg_touch_group_conversation
+AFTER INSERT ON group_messages
 FOR EACH ROW
-EXECUTE FUNCTION update_conversation_first_message();
+EXECUTE FUNCTION touch_group_conversation();
 
-CREATE OR REPLACE FUNCTION update_conversation_last_message()
-RETURNS trigger AS $$
+-- UPDATE PRIVATE CONVERSATION updated_at WHEN NEW MESSAGE
+CREATE OR REPLACE FUNCTION touch_private_conversation()
+RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE conversations
-       SET last_message_id = NEW.id,
-           updated_at = NEW.created_at
-     WHERE id = NEW.conversation_id;
+    UPDATE private_conversations
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = NEW.conversation_id;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-
-CREATE TRIGGER trg_update_conversation_last_message
-AFTER INSERT ON messages
+CREATE TRIGGER trg_touch_private_conversation
+AFTER INSERT ON private_messages
 FOR EACH ROW
-EXECUTE FUNCTION update_conversation_last_message();
+EXECUTE FUNCTION touch_private_conversation();

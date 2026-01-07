@@ -1,152 +1,21 @@
 package dbservice
 
 const (
-	// CONVERSATIONS
+	// GROUP_CONVERSATIONS
+
 	createGroupConv = `
-	INSERT INTO conversations (group_id)
+	INSERT INTO group_conversations (group_id)
 	VALUES ($1)
 	ON CONFLICT (group_id)
 	DO UPDATE SET updated_at = conversations.updated_at
 	RETURNING id;
 	`
 
-	addConversationMembers = `
-	INSERT INTO conversation_members (conversation_id, user_id, last_read_message_id)
-	SELECT $1, UNNEST($2::bigint[]), NULL
-	`
-
-	createPrivateConv = `
-	WITH existing AS (
-		SELECT c.id
-		FROM conversations c
-		JOIN conversation_members cm1 ON cm1.conversation_id = c.id AND cm1.user_id = $1
-		JOIN conversation_members cm2 ON cm2.conversation_id = c.id AND cm2.user_id = $2
-		WHERE c.group_id IS NULL
-	)
-	INSERT INTO conversations (group_id)
-	SELECT NULL
-	WHERE NOT EXISTS (SELECT 1 FROM existing)
-	RETURNING id
-	`
-
-	deleteConversationByExactMembers = `
-	WITH target_members AS (
-		SELECT unnest($1::bigint[]) AS user_id
-	),
-	matched_conversation AS (
-		SELECT cm.conversation_id
-		FROM conversation_members cm
-		JOIN target_members tm ON tm.user_id = cm.user_id
-		GROUP BY cm.conversation_id
-		HAVING 
-			-- same count of overlapping members
-			COUNT(*) = (SELECT COUNT(*) FROM target_members)
-			-- and the conversation has no extra members
-			AND COUNT(*) = (
-				SELECT COUNT(*) 
-				FROM conversation_members cm2 
-				WHERE cm2.conversation_id = cm.conversation_id
-				AND cm2.deleted_at IS NULL
-			)
-	)
-	UPDATE conversations c
-	SET deleted_at = NOW(),
-		updated_at = NOW()
-	WHERE c.id = (SELECT conversation_id FROM matched_conversation)
-	RETURNING id, group_id, created_at, updated_at, deleted_at
-	`
-
-	getUserConversations = `
-	WITH user_conversations AS (
-		SELECT c.id AS conversation_id,
-			c.created_at,
-			c.updated_at,
-			c.last_message_id,
-			cm.last_read_message_id
-		FROM conversations c
-		JOIN conversation_members cm
-			ON cm.conversation_id = c.id
-		WHERE cm.user_id = $1
-			AND cm.deleted_at IS NULL
-			AND c.group_id IS NOT DISTINCT FROM $4
-		ORDER BY c.last_message_id DESC
-		LIMIT $2 OFFSET $3
-	),
-
-	member_list AS (
-		SELECT uc.conversation_id,
-			json_agg(cm.user_id) FILTER (WHERE cm.user_id != $1) AS member_ids
-		FROM user_conversations uc
-		JOIN conversation_members cm
-			ON cm.conversation_id = uc.conversation_id
-		GROUP BY uc.conversation_id
-	),
-
-	unread AS (
-		SELECT uc.conversation_id,
-			COUNT(m.id) AS unread_count,
-			MIN(m.id) AS first_unread_message_id
-		FROM user_conversations uc
-		LEFT JOIN messages m
-		ON m.conversation_id = uc.conversation_id
-		AND m.id > COALESCE(uc.last_read_message_id, 0)
-		AND m.deleted_at IS NULL
-		GROUP BY uc.conversation_id
-	)
-
-	SELECT
-		uc.conversation_id,
-		uc.created_at,
-		uc.updated_at,
-		ml.member_ids,
-		u.unread_count,
-		u.first_unread_message_id
-	FROM user_conversations uc
-	JOIN member_list ml ON ml.conversation_id = uc.conversation_id
-	LEFT JOIN unread u ON u.conversation_id = uc.conversation_id
-	ORDER BY uc.last_message_id DESC;
-	`
-
-	// MEMBERS
-	getConversationMembers = `
-	SELECT cm2.user_id
-	FROM conversation_members cm1
-	JOIN conversation_members cm2
-	ON cm2.conversation_id = cm1.conversation_id
-	WHERE cm1.user_id = $2
-		AND cm2.conversation_id = $1
-		AND cm2.user_id <> $2
-		AND cm2.deleted_at IS NULL
-	`
-
-	deleteConversationMember = `
-	UPDATE conversation_members to_delete
-	SET deleted_at = NOW()
-	FROM conversation_members owner
-	WHERE to_delete.conversation_id = $1
-		AND to_delete.user_id = $2
-		AND to_delete.deleted_at IS NULL
-		AND owner.conversation_id = $1
-		AND owner.user_id = $3
-		AND owner.deleted_at IS NULL
-	RETURNING to_delete.conversation_id, to_delete.user_id, to_delete.last_read_message_id, cm_target.joined_at, cm_target.deleted_at
-	`
-
-	// MESSAGES
-	createMessageWithMembersJoin = `
-	INSERT INTO messages (conversation_id, sender_id, message_text)
-	SELECT $1, $2, $3
-	FROM conversation_members
-	WHERE conversation_id = $1
-	AND user_id = $2
-	AND deleted_at IS NULL
-	RETURNING id, conversation_id, sender_id, message_text, created_at, updated_at, deleted_at
-`
-	createMessage = `
-	INSERT INTO messages (conversation_id, sender_id, message_text)
+	createGroupMessage = `
+	INSERT INTO group_messages (conversation_id, sender_id, message_text)
 	SELECT c.id, $2, $3
-	FROM conversations c
-	WHERE c.id = $1
+	FROM group_conversations c
+	WHERE c.group_id = $1
 	AND c.deleted_at IS NULL
 	RETURNING
 		id,
@@ -157,60 +26,162 @@ const (
 		updated_at,
 		deleted_at;
 	`
-	getPrevMessages = `
-	SELECT 
-		m.id,
-		m.conversation_id,
-		m.sender_id,
-		m.message_text,
-		m.created_at,
-		m.updated_at,
-		m.deleted_at,
-		c.first_message_id
-	FROM messages m
-	JOIN conversations c
-		ON c.id = m.conversation_id
-	JOIN conversation_members cm
-		ON cm.conversation_id = m.conversation_id
-	WHERE m.conversation_id = $2
-	AND cm.user_id = $3
-	AND m.deleted_at IS NULL
-  	AND (
-        ($1 IS NULL AND m.id <= c.last_message_id)  -- inclusive when $1 is null
-        OR
-        ($1 IS NOT NULL AND m.id < $1)              -- strict when $1 is supplied
-    	)
-	ORDER BY m.id DESC
+
+	// PRIVATE_CONVERSATIONS
+	getOrCreatePrivateConv = `
+    INSERT INTO private_conversations (user_a, user_b)
+    VALUES (LEAST($1, $2), GREATEST($1, $2))
+    ON CONFLICT (user_a, user_b) DO UPDATE
+    SET updated_at = private_conversations.updated_at
+    RETURNING *;
+	`
+
+	newPrivateMessage = `
+    WITH inserted_message AS (
+        INSERT INTO private_messages (conversation_id, sender_id, message_text)
+        SELECT
+            c.id,
+            $2 AS sender_id,
+            $3 AS message_text
+        FROM private_conversations c
+        WHERE c.id = $1
+          AND c.deleted_at IS NULL
+          AND ($2 = c.user_a OR $2 = c.user_b)
+        RETURNING
+            id,
+            conversation_id,
+            sender_id,
+            message_text,
+            created_at,
+            updated_at,
+            deleted_at
+    ),
+    updated_conversation AS (
+        UPDATE private_conversations pc
+        SET
+            last_read_message_id_a = CASE
+                WHEN pc.user_a = im.sender_id THEN im.id
+                ELSE pc.last_read_message_id_a
+            END,
+            last_read_message_id_b = CASE
+                WHEN pc.user_b = im.sender_id THEN im.id
+                ELSE pc.last_read_message_id_b
+            END
+        FROM inserted_message im
+        WHERE pc.id = im.conversation_id
+    )
+    SELECT * FROM inserted_message;
+    `
+
+	getPrivateConvs = `
+	WITH user_conversations AS (
+		SELECT
+			pc.id AS conversation_id,
+			pc.updated_at,
+
+			-- determine other user
+			CASE
+				WHEN pc.user_id_a = $1 THEN pc.user_id_b
+				ELSE pc.user_id_a
+			END AS other_user_id,
+
+			-- determine last read message for this user
+			CASE
+				WHEN pc.user_id_a = $1 THEN pc.last_read_message_id_a
+				ELSE pc.last_read_message_id_b
+			END AS last_read_message_id
+
+		FROM private_conversations pc
+		WHERE $1 IN (pc.user_id_a, pc.user_id_b)
+		AND pc.updated_at < $2
+	)
+
+	SELECT
+		uc.conversation_id,
+		uc.updated_at,
+		uc.other_user_id,
+
+		-- last message
+		lm.id           AS last_message_id,
+		lm.sender_id    AS last_message_sender_id,
+		lm.message_text AS last_message_text,
+		lm.created_at   AS last_message_created_at,
+
+		-- unread count
+		COUNT(pm.id) FILTER (
+			WHERE pm.id > COALESCE(uc.last_read_message_id, 0)
+		) AS unread_count
+
+	FROM user_conversations uc
+
+	-- last message per conversation
+	LEFT JOIN LATERAL (
+		SELECT pm.id, pm.sender_id, pm.message_text, pm.created_at
+		FROM private_messages pm
+		WHERE pm.conversation_id = uc.conversation_id
+		AND pm.deleted_at IS NULL
+		ORDER BY pm.id DESC
+		LIMIT 1
+	) lm ON true
+
+	-- unread messages
+	LEFT JOIN private_messages pm
+		ON pm.conversation_id = uc.conversation_id
+	AND pm.deleted_at IS NULL
+
+	GROUP BY
+		uc.conversation_id,
+		uc.updated_at,
+		uc.other_user_id,
+		uc.last_read_message_id,
+		lm.id,
+		lm.sender_id,
+		lm.message_text,
+		lm.created_at
+
+	ORDER BY uc.updated_at DESC
+	LIMIT $3;
+	`
+
+	getPrevPrivateMsgs = `
+	SELECT pm.*
+	FROM private_conversations pc
+	JOIN private_messages pm
+	ON pm.conversation_id = pc.id
+	WHERE pc.id = $1
+	AND $2 IN (pc.user_a, pc.user_b)
+	AND pm.deleted_at IS NULL
+	AND pm.id < $3
+	ORDER BY pm.id DESC
 	LIMIT $4;
-`
-	getNextMessages = `
-	SELECT 
-		m.id,
-		m.conversation_id,
-		m.sender_id,
-		m.message_text,
-		m.created_at,
-		m.updated_at,
-		m.deleted_at,
-		c.last_message_id
-	FROM messages m
-	JOIN conversations c
-		ON c.id = m.conversation_id
-	JOIN conversation_members cm
-		ON cm.conversation_id = m.conversation_id
-	WHERE m.conversation_id = $2
-	AND cm.user_id = $3
-	AND m.deleted_at IS NULL
-	AND m.id > $1
-	ORDER BY m.id ASC
+	`
+
+	getNextPrivateMsgs = `
+	SELECT pm.*
+	FROM private_conversations pc
+	JOIN private_messages pm
+	ON pm.conversation_id = pc.id
+	WHERE pc.id = $1
+	AND $2 IN (pc.user_a, pc.user_b)
+	AND pm.deleted_at IS NULL
+	AND pm.id > $3
+	ORDER BY pm.id ASC
 	LIMIT $4;
-`
+	`
+
 	updateLastReadMessage = `
-	UPDATE conversation_members cm
-	SET last_read_message_id = $3
-	WHERE cm.conversation_id = $1
-	AND cm.user_id = $2
-	AND cm.deleted_at IS NULL
-	RETURNING conversation_id, user_id, last_read_message_id, joined_at, deleted_at
-`
+	UPDATE private_conversations
+	SET
+		last_read_message_id_a = CASE
+			WHEN user_a = $2 THEN $3
+			ELSE last_read_message_id_a
+		END,
+		last_read_message_id_b = CASE
+			WHEN user_b = $2 THEN $3
+			ELSE last_read_message_id_b
+		END,
+	WHERE id = $1
+	AND (user_a = $3 OR user_b = $3)
+	AND deleted_at IS NULL;
+	`
 )

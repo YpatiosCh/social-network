@@ -4,48 +4,77 @@ import (
 	ct "social-network/shared/go/ct"
 )
 
-type AddConversationMembersParams struct {
-	ConversationId ct.Id
-	UserIds        ct.Ids
+type GetOrCreatePCRec struct {
+	User              ct.Id `json:"user"`
+	OtherUser         ct.Id `json:"other_user"`
+	RetrieveOtherUser bool  `json:"retrieve_other_user"`
 }
 
-type AddMembersToGroupConversationParams struct {
-	GroupId ct.Id
-	UserIds ct.Ids
+type GetOrCreatePCResp struct {
+	ConversationId  ct.Id
+	OtherUser       User
+	LastReadMessage ct.Id `validation:"nullable"`
+	IsNew           bool
 }
 
-type CreatePrivateConvParams struct {
-	UserA ct.Id `json:"user_a"`
-	UserB ct.Id `json:"user_b"`
-}
-
-type CreateGroupConvParams struct {
+type CreateGCParams struct {
 	GroupId ct.Id  `json:"group_id"`
-	UserIds ct.Ids `json:"users_id"`
+	UserIds ct.Ids `json:"user_ids"`
 }
 
-type CreateMessageParams struct {
+type CreateGMParams struct {
+	GroupId     ct.Id      `json:"group_id"`
+	SenderId    ct.Id      `json:"sender_id"`
+	MessageText ct.MsgBody `json:"message_text"`
+}
+
+type CreatePMParams struct {
+	ConversationId ct.Id      `json:"conversation_id"`
+	SenderId       ct.Id      `json:"sender_id"`
+	MessageText    ct.MsgBody `json:"message_text"`
+}
+
+type GetPMsParams struct {
+	ConversationId    ct.Id    `json:"conversation_id"`
+	UserId            ct.Id    `json:"user_id"`
+	BoundaryMessageId ct.Id    `json:"boundary_message_id" validation:"nullable"`
+	Limit             ct.Limit `json:"limit"`
+	RetrieveUsers     bool     `json:"retrieve_users"`
+}
+
+type GetPMsResp struct {
+	HaveMore bool
+	Messages []PM
+}
+
+type GetPCsReq struct {
+	UserId     ct.Id          `json:"user_id"`
+	BeforeDate ct.GenDateTime `json:"before_date"`
+	Limit      ct.Limit       `json:"limit"`
+}
+
+type PCsPreview struct {
 	ConversationId ct.Id
-	SenderId       ct.Id
-	MessageText    ct.MsgBody
+	UpdatedAt      ct.GenDateTime
+	OtherUser      User
+	LastMessage    PM
+	UnreadCount    int
 }
 
-type ConversationDeleteResp struct {
-	Id        ct.Id
-	GroupId   ct.Id
-	CreatedAt ct.GenDateTime
-	UpdatedAt ct.GenDateTime
-	DeletedAt ct.GenDateTime
-}
-
-type ConversationResponse struct {
+type PM struct {
 	Id             ct.Id
-	GroupId        ct.Id
-	LastMessageId  ct.Id
-	FirstMessageId ct.Id
-	CreatedAt      ct.GenDateTime
+	ConversationID ct.Id
+	Sender         User
+	MessageText    ct.MsgBody
+	CreatedAt      ct.GenDateTime `validation:"nullable"`
 	UpdatedAt      ct.GenDateTime `validation:"nullable"`
 	DeletedAt      ct.GenDateTime `validation:"nullable"`
+}
+
+type UpdateLastReadMsgParams struct {
+	ConversationId    ct.Id `json:"conversation_id"`
+	UserId            ct.Id `json:"user_id"`
+	LastReadMessageId ct.Id `json:"last_read_message_id"`
 }
 
 type ConversationMember struct {
@@ -54,87 +83,4 @@ type ConversationMember struct {
 	LastReadMessageId ct.Id `validation:"nullable"`
 	JoinedAt          ct.GenDateTime
 	DeletedAt         ct.GenDateTime `validation:"nullable"`
-}
-
-// All fields are required except LastReadMessgeId
-type ConversationMemberDeleted struct {
-	ConversationId    ct.Id
-	UserId            ct.Id
-	LastReadMessageId ct.Id `validation:"nullable"`
-	JoinedAt          ct.GenDateTime
-	DeletedAt         ct.GenDateTime
-}
-
-type GetConversationMembersParams struct {
-	ConversationId ct.Id
-	UserID         ct.Id
-}
-
-type GetPrevMessagesParams struct {
-	UserId            ct.Id
-	ConversationId    ct.Id
-	BoundaryMessageId ct.Id `validation:"nullable"`
-	Limit             ct.Limit
-	HydrateUsers      bool
-}
-
-type GetPrevMessagesResp struct {
-	FirstMessageId ct.Id
-	HaveMoreBefore bool
-	Messages       []MessageResp
-}
-
-type GetNextMessageParams struct {
-	BoundaryMessageId ct.Id
-	ConversationId    ct.Id
-	UserId            ct.Id
-	Limit             ct.Limit
-	RetrieveUsers     bool
-}
-
-type GetNextMessagesResp struct {
-	LastMessageId ct.Id
-	HaveMoreAfter bool
-	Messages      []MessageResp
-}
-
-type GetUserConversationsParams struct {
-	UserId       ct.Id
-	GroupId      ct.Id `validation:"nullable"`
-	Limit        ct.Limit
-	Offset       ct.Offset
-	HydrateUsers bool
-}
-
-type GetUserConversationsResp struct {
-	ConversationId    ct.Id
-	CreatedAt         ct.GenDateTime
-	UpdatedAt         ct.GenDateTime
-	Members           []User
-	UnreadCount       int64
-	LastReadMessageId ct.Id `validation:"nullable"`
-}
-
-// All fields are required except deleted at which in most cases is null.
-type MessageResp struct {
-	Id             ct.Id
-	ConversationID ct.Id
-	Sender         User
-	MessageText    ct.MsgBody
-	CreatedAt      ct.GenDateTime
-	UpdatedAt      ct.GenDateTime
-	DeletedAt      ct.GenDateTime `validation:"nullable"`
-}
-
-type DeleteConversationMemberParams struct {
-	ConversationID ct.Id
-	Owner          ct.Id
-	ToDelete       ct.Id
-}
-
-// Last Read message is not nullable. If it is null then request is invalid.
-type UpdateLastReadMessageParams struct {
-	ConversationId    ct.Id
-	UserID            ct.Id
-	LastReadMessageId ct.Id
 }

@@ -1,14 +1,14 @@
 -- Drop triggers
-DROP TRIGGER IF EXISTS trg_update_conversation_members_modtime ON conversation_members;
-DROP TRIGGER IF EXISTS trg_update_messages_modtime ON messages;
-DROP TRIGGER IF EXISTS trg_update_conversations_modtime ON conversations;
-DROP TRIGGER IF EXISTS trg_update_conversation_last_message ON messages;
+DROP TRIGGER IF EXISTS trg_update_group_conversations_modtime ON group_conversations;
+DROP TRIGGER IF EXISTS trg_update_group_messages_modtime ON group_messages;
+DROP TRIGGER IF EXISTS trg_update_private_conversations_modtime ON private_conversations;
+DROP TRIGGER IF EXISTS trg_update_private_messages_modtime ON private_messages;
 
 -- Drop trigger functions
 DROP FUNCTION IF EXISTS update_timestamp();
-DROP FUNCTION IF EXISTS update_conversation_last_message();
 
 -- Drop tables
-DROP TABLE IF EXISTS conversation_members;
-DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS conversations;
+DROP TABLE IF EXISTS group_messages;
+DROP TABLE IF EXISTS private_messages;
+DROP TABLE IF EXISTS group_conversations;
+DROP TABLE IF EXISTS private_conversations;

@@ -17,7 +17,6 @@ import (
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
 	"social-network/shared/go/gorpc"
-	"social-network/shared/go/kafgo"
 	postgresql "social-network/shared/go/postgre"
 	rds "social-network/shared/go/redis"
 	"social-network/shared/go/retrievemedia"
@@ -29,14 +28,18 @@ import (
 )
 
 type configs struct {
-	RedisAddr           string `env:"REDIS_ADDR"`
-	RedisPassword       string `env:"REDIS_PASSWORD"`
-	RedisDB             int    `env:"REDIS_DB"`
-	DatabaseConn        string `env:"DATABASE_URL"`
-	GrpcServerPort      string `env:"GRPC_SERVER_PORT"`
-	NotificationsAdress string `env:"NOTIFICATIONS_ADDRESS"`
-	UsersAdress         string `env:"USERS_ADDRESS"`
-	MediaGRPCAddr       string `env:"MEDIA_GRPC_ADDR"`
+	RedisAddr                 string `env:"REDIS_ADDR"`
+	RedisPassword             string `env:"REDIS_PASSWORD"`
+	RedisDB                   int    `env:"REDIS_DB"`
+	DatabaseConn              string `env:"DATABASE_URL"`
+	GrpcServerPort            string `env:"GRPC_SERVER_PORT"`
+	NotificationsAdress       string `env:"NOTIFICATIONS_ADDRESS"`
+	UsersAdress               string `env:"USERS_ADDRESS"`
+	MediaGRPCAddr             string `env:"MEDIA_GRPC_ADDR"`
+	EnableDebugLogs           bool   `env:"ENABLE_DEBUG_LOGS"`
+	SimplePrint               bool   `env:"ENABLE_SIMPLE_PRINT"`
+	OtelResourceAttributes    string `end:"OTEL_RESOURCE_ATTRIBUTES"`
+	TelemetryCollectorAddress string `env:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 }
 
 var cfgs configs
@@ -53,7 +56,22 @@ func init() {
 
 func Run() error {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stopSignal() //TODO check if this is ok
+	defer stopSignal()
+
+	closeTele, err := tele.InitTelemetry(ctx,
+		"chat",
+		"CHAT",
+		cfgs.TelemetryCollectorAddress,
+		ct.CommonKeys(),
+		cfgs.EnableDebugLogs,
+		cfgs.SimplePrint,
+	)
+	if err != nil {
+		tele.Fatalf("failed to init telemetry: %s", err.Error())
+	}
+	defer closeTele()
+
+	tele.Info(ctx, "initialized telemetry")
 
 	clients := initClients()
 
@@ -61,45 +79,45 @@ func Run() error {
 	//
 	//
 	// KAFKA CONSUMER
-	consumer, err := kafgo.NewKafkaConsumer([]string{"localhost:9092"}, "chat")
-	if err != nil {
-		fmt.Println("yo")
-	}
-
-	memberChannel, err := consumer.RegisterTopic("group_memberships1")
-	_, err = consumer.RegisterTopic("group_memberships2")
-
-	close, err := consumer.StartConsuming(ctx)
-	if err != nil {
-		fmt.Println("bla")
-	}
-	defer close()
-
-	tele.Debug(ctx, "my channel @1", "chan", memberChannel)
-
-	//usage example:
-	// for record := range memberChannel {
-	// 	fmt.Println(string(record.Data()))
-	// 	record.Commit(ctx)
+	// consumer, err := kafgo.NewKafkaConsumer([]string{"localhost:9092"}, "chat")
+	// if err != nil {
+	// 	fmt.Println("yo")
 	// }
 
-	//
-	//
-	//
-	// KAFKA PRODUCER
+	// memberChannel, err := consumer.RegisterTopic("group_memberships1")
+	// _, err = consumer.RegisterTopic("group_memberships2")
 
-	producer, close, err := kafgo.NewKafkaProducer([]string{"localhost:9092"})
-	if err != nil {
-		tele.Fatal("wtf")
-	}
-	defer close()
-
-	tele.Debug(ctx, "my producer: @1", "producer", producer)
-	//usage example
-	// err = producer.Send(ctx, "notifications", "sdf")
-	// if err != nil{
-	// 	tele.Warn(ctx, "failed to produce")
+	// close, err := consumer.StartConsuming(ctx)
+	// if err != nil {
+	// 	fmt.Println("bla")
 	// }
+	// defer close()
+
+	// tele.Debug(ctx, "my channel @1", "chan", memberChannel)
+
+	// //usage example:
+	// // for record := range memberChannel {
+	// // 	fmt.Println(string(record.Data()))
+	// // 	record.Commit(ctx)
+	// // }
+
+	// //
+	// //
+	// //
+	// // KAFKA PRODUCER
+
+	// producer, close, err := kafgo.NewKafkaProducer([]string{"localhost:9092"})
+	// if err != nil {
+	// 	tele.Fatal("wtf")
+	// }
+	// defer close()
+
+	// tele.Debug(ctx, "my producer: @1", "producer", producer)
+	// //usage example
+	// // err = producer.Send(ctx, "notifications", "sdf")
+	// // if err != nil{
+	// // 	tele.Warn(ctx, "failed to produce")
+	// // }
 
 	retriveUsers := retrieveusers.NewUserRetriever(
 		clients.GetBatchBasicUserInfo,

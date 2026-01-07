@@ -16,6 +16,10 @@ import (
 // TxRunner defines the interface for running database transactions
 type TxRunner interface {
 	RunTx(ctx context.Context, fn func(*dbservice.Queries) error) error
+	RunTxSerializable(
+		ctx context.Context,
+		fn func(*dbservice.Queries) error,
+	) error
 }
 
 // Holds logic for requests and calls
@@ -34,9 +38,14 @@ type Clients interface {
 	// Verifies that user with userId is a member of group with groupId.
 	IsGroupMember(ctx context.Context,
 		groupId ct.Id, userId ct.Id) (bool, error)
+
+	// Returns true if either user is following the other.
+	AreConnected(ctx context.Context, userA, userB ct.Id) (bool, error)
 }
 
-func NewChatService(pool *pgxpool.Pool, clients *client.Clients, queries dbservice.Querier, userRetriever *retrieveusers.UserRetriever) (*ChatService, error) {
+func NewChatService(pool *pgxpool.Pool,
+	clients *client.Clients, queries dbservice.Querier,
+	userRetriever *retrieveusers.UserRetriever) (*ChatService, error) {
 	var txRunner TxRunner
 	var err error
 	if pool != nil {

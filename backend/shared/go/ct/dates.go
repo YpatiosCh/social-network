@@ -197,6 +197,7 @@ func (edt EventDateTime) ToProto() *timestamppb.Timestamp {
 
 // GenDateTime (Generic) allows null values.
 // It Umarshals to time.Time type but Marshals to time.RFC3339 format.
+// If is Z
 //
 // Usage convert to proto type '*timestamppb.Timestamp':
 //
@@ -208,6 +209,9 @@ type GenDateTime time.Time
 // Marshal to RFC3339
 func (g GenDateTime) MarshalJSON() ([]byte, error) {
 	t := time.Time(g)
+	if t.IsZero() {
+		return []byte("null"), nil
+	}
 	return json.Marshal(t.UTC().Format(genDateTimeLayout))
 }
 
