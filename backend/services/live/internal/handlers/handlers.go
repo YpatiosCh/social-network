@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"social-network/shared/go/eventsub"
 	middleware "social-network/shared/go/http-middleware"
 	"social-network/shared/go/ratelimit"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 type Handlers struct {
 	CacheService CacheService
+	EventBox     eventsub.EventBox[int64, []byte]
 }
 
 type CacheService interface {
@@ -22,12 +24,10 @@ type CacheService interface {
 	TestRedisConnection() error
 }
 
-func NewHandlers(
-	serviceName string,
-	CacheService CacheService,
-) *http.ServeMux {
+func NewHandlers(serviceName string, CacheService CacheService, eventBox eventsub.EventBox[int64, []byte]) *http.ServeMux {
 	handlers := Handlers{
 		CacheService: CacheService,
+		EventBox:     eventBox,
 	}
 	return handlers.BuildMux(serviceName)
 }

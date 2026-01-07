@@ -72,10 +72,11 @@ func (h *Handlers) Connect() http.HandlerFunc {
 		}
 		defer cancelConn()
 
-		channel := make(chan []byte)
+		messageChannel, close := h.EventBox.Sub(clientId)
+		defer close()
 
 		var wg sync.WaitGroup
-		wg.Go(func() { websocketSender(ctx, channel, websocketConn) })
+		wg.Go(func() { websocketSender(ctx, messageChannel, websocketConn) })
 		go func() {
 			for i := range 10000 {
 				time.Sleep(time.Second)

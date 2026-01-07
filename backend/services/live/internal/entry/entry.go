@@ -3,6 +3,7 @@ package entry
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -11,10 +12,13 @@ import (
 	"social-network/services/live/internal/handlers"
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
+	"social-network/shared/go/eventsub"
 	redis_connector "social-network/shared/go/redis"
 	tele "social-network/shared/go/telemetry"
 	"syscall"
 	"time"
+
+	"github.com/nats-io/nats.go"
 )
 
 func Run() {
@@ -52,10 +56,39 @@ func Run() {
 	//
 	//
 	//
+	//
+	// EventBox
+	eventBox := eventsub.NewEventBox[int64, []byte](1000, time.Second*5, 10)
+
+	natsConn, err := nats.Connect("nats:")
+	if err != nil {
+		tele.Fatalf("failed to connect to nats: %s", err.Error())
+	}
+	defer natsConn.Drain()
+
+	sub, _ := natsConn.SubscribeSync("greet.*")
+
+	go func() {
+		for {
+			msg, _ := sub.NextMsg(10 * time.Hour)
+			tele.Info(ctx, "message received from nats: @1", "msg", string(msg.Data))
+
+		}
+	}()
+
+	for i := range 1000 {
+		natsConn.Publish("greet.joe", []byte(fmt.Sprint("hello:", i)))
+		time.Sleep(time.Millisecond * 100)
+	}
+
+	//
+	//
+	//
 	// HANDLER
 	liveMux := handlers.NewHandlers(
 		"live",
 		CacheService,
+		eventBox,
 	)
 
 	//
@@ -116,23 +149,24 @@ type configs struct {
 	TelemetryCollectorAddress string `env:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 	PassSecret                string `env:"PASSWORD_SECRET"`
 	EncrytpionKey             string `env:"ENC_KEY"`
+
+	NatsAddress string `env:"NATS_ADDRESS"`
 }
 
 func getConfigs() configs { // sensible defaults
 	cfgs := configs{
-		RedisAddr:     "redis:6379",
-		RedisPassword: "",
-		RedisDB:       0,
-
-		HTTPAddr:        "0.0.0.0:8082",
-		ShutdownTimeout: 5,
-
+		RedisAddr:                 "redis:6379",
+		RedisPassword:             "",
+		RedisDB:                   0,
+		HTTPAddr:                  "0.0.0.0:8082",
+		ShutdownTimeout:           5,
 		EnableDebugLogs:           true,
 		SimplePrint:               true,
 		OtelResourceAttributes:    "service.name=live,service.namespace=social-network,deployment.environment=dev",
 		TelemetryCollectorAddress: "alloy:4317",
 		PassSecret:                "a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=",
 		EncrytpionKey:             "a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=",
+		NatsAddress:               "nats:8222",
 	}
 
 	// load environment variables if present
