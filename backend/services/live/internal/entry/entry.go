@@ -12,7 +12,6 @@ import (
 	"social-network/services/live/internal/handlers"
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
-	"social-network/shared/go/eventsub"
 	redis_connector "social-network/shared/go/redis"
 	tele "social-network/shared/go/telemetry"
 	"syscall"
@@ -56,30 +55,19 @@ func Run() {
 	//
 	//
 	//
-	//
-	// EventBox
-	eventBox := eventsub.NewEventBox[int64, []byte](1000, time.Second*5, 10)
-
+	// NATS
 	natsConn, err := nats.Connect("nats:")
 	if err != nil {
 		tele.Fatalf("failed to connect to nats: %s", err.Error())
 	}
 	defer natsConn.Drain()
 
-	sub, _ := natsConn.SubscribeSync("greet.*")
-
 	go func() {
-		for {
-			msg, _ := sub.NextMsg(10 * time.Hour)
-			tele.Info(ctx, "message received from nats: @1", "msg", string(msg.Data))
-
+		for i := range 10000 {
+			natsConn.Publish("chatmsg.1", []byte(fmt.Sprintf("{\"hello\": %d}", i)))
+			time.Sleep(time.Millisecond * 1000)
 		}
 	}()
-
-	for i := range 1000 {
-		natsConn.Publish("greet.joe", []byte(fmt.Sprint("hello:", i)))
-		time.Sleep(time.Millisecond * 100)
-	}
 
 	//
 	//
@@ -88,7 +76,7 @@ func Run() {
 	liveMux := handlers.NewHandlers(
 		"live",
 		CacheService,
-		eventBox,
+		natsConn,
 	)
 
 	//

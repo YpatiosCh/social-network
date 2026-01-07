@@ -10,10 +10,13 @@ import (
 	utils "social-network/shared/go/http-utils"
 	"social-network/shared/go/jwt"
 	tele "social-network/shared/go/telemetry"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/nats-io/nats.go"
 )
 
 // FOUND FROM DOCUMENTATION:
@@ -72,22 +75,17 @@ func (h *Handlers) Connect() http.HandlerFunc {
 		}
 		defer cancelConn()
 
-		messageChannel, close := h.EventBox.Sub(clientId)
-		defer close()
+		wsChannel := make(chan []byte) //send listens to this and forwards messages to user using the websocket
+
+		natsHandler := func(msg *nats.Msg) { //handles nats messages, just forwards them to the above channel
+			wsChannel <- msg.Data
+			tele.Info(ctx, "forwarded nats message to websocket @1", "connection", connectionId)
+		}
 
 		var wg sync.WaitGroup
-		wg.Go(func() { websocketSender(ctx, messageChannel, websocketConn) })
-		go func() {
-			for i := range 10000 {
-				time.Sleep(time.Second)
-				err := websocketConn.WriteMessage(websocket.TextMessage, []byte("health check: "+fmt.Sprint(i)))
-				if err != nil {
-					tele.Error(ctx, "health check failed:", "error", err.Error())
-				}
-			}
-		}()
+		wg.Go(func() { h.websocketSender(ctx, wsChannel, websocketConn) })
+		h.websocketListener(ctx, websocketConn, clientId, connectionId, natsHandler)
 
-		websocketListener(ctx, websocketConn, clientId, connectionId)
 		wg.Wait()
 
 		tele.Info(ctx, "ws handler closing")
@@ -95,7 +93,27 @@ func (h *Handlers) Connect() http.HandlerFunc {
 }
 
 // routine that reads data coming from this client connection
-func websocketListener(ctx context.Context, websocketConn *websocket.Conn, clientId int64, connectionId string) {
+func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websocket.Conn, clientId int64, connectionId string, handler nats.MsgHandler) {
+	subcriptions := make(map[string]*nats.Subscription)
+	tele.Info(ctx, "websocket listener started for connection @1", "connection", connectionId)
+	key := "chatmsg." + strconv.Itoa(int(clientId))
+	sub, err := h.Nats.Subscribe(key, handler)
+	tele.Info(ctx, "subscribed to conversation @1 using key @2", "conversation", clientId, "key", key)
+	if err != nil {
+		tele.Error(ctx, "websocket subscription @1", "error", err.Error())
+		return
+	}
+	subcriptions[key] = sub
+
+	defer func() { //unsub from all
+		for _, sub := range subcriptions {
+			err := sub.Unsubscribe()
+			if err != nil {
+				tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
+			}
+		}
+	}()
+
 	for {
 		_, msg, err := websocketConn.ReadMessage()
 		if err != nil {
@@ -115,14 +133,40 @@ func websocketListener(ctx context.Context, websocketConn *websocket.Conn, clien
 
 		tele.Info(ctx, "received: @1 from @2", "message", messageString, "connection", connectionId)
 
-		//do something with message received
-		//forward to chat service
-		//send to chat client
+		parts := strings.Split(messageString, ":")
+		if len(parts) != 2 {
+			tele.Error(ctx, "malformed message received: @1 from @2", "message", messageString, "connection", connectionId)
+		}
+
+		msgType := parts[0]
+		eventValue := parts[1]
+
+		switch msgType {
+		case "conversation":
+			//TODO verify that they are allowed to subscribe there
+			tele.Info(ctx, "subscribing to conversation @1", "conversation", eventValue)
+			sub, err := h.Nats.Subscribe(eventValue, handler)
+			if err != nil {
+				tele.Error(ctx, "websocket subscription @1", "error", err.Error())
+				continue
+			}
+			subcriptions[eventValue] = sub
+		case "unsub":
+			sub := subcriptions[eventValue]
+			tele.Info(ctx, "unsubscribing from conversation @1", "conversation", eventValue)
+			err := sub.Unsubscribe()
+			if err != nil {
+				tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
+			}
+			delete(subcriptions, eventValue)
+		case "chatMessage":
+			//call chat service grpc
+		}
 	}
 }
 
 // Goroutine that sends data to this connection, it can pool messages if they arrive fast enough
-func websocketSender(ctx context.Context, channel <-chan []byte, conn *websocket.Conn) {
+func (h *Handlers) websocketSender(ctx context.Context, channel <-chan []byte, conn *websocket.Conn) {
 	payloadBytes := []byte{}
 
 	//handler is given to batcher, so that the batcher calls it with many accumulated messages at once
@@ -161,20 +205,20 @@ func websocketSender(ctx context.Context, channel <-chan []byte, conn *websocket
 	}
 }
 
-func sendErrorToWS(ctx context.Context, websocketConn *websocket.Conn, payload string) {
-	errorMessage := []string{payload}
+// func sendErrorToWS(ctx context.Context, websocketConn *websocket.Conn, payload string) {
+// 	errorMessage := []string{payload}
 
-	bundledMessage, err := json.Marshal(errorMessage)
-	if err != nil {
-		tele.Error(ctx, "this isn't supposed to happen")
-		panic(1) //???
-	}
+// 	bundledMessage, err := json.Marshal(errorMessage)
+// 	if err != nil {
+// 		tele.Error(ctx, "this isn't supposed to happen")
+// 		panic(1) //???
+// 	}
 
-	err = websocketConn.WriteMessage(websocket.TextMessage, bundledMessage)
-	if err != nil {
-		tele.Info(ctx, "failed to inform user that they have too many tabs open")
-	}
-}
+// 	err = websocketConn.WriteMessage(websocket.TextMessage, bundledMessage)
+// 	if err != nil {
+// 		tele.Info(ctx, "failed to inform user that they have too many tabs open")
+// 	}
+// }
 
 func upgradeConnection(ctx context.Context, w http.ResponseWriter, r *http.Request) (*websocket.Conn, func(), error) {
 	websocketConn, err := upgrader.Upgrade(w, r, nil)
