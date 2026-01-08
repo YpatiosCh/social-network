@@ -93,13 +93,17 @@ SELECT
     p.created_at,
     p.updated_at,
 
-    (SELECT i.id    
-     FROM images i
-     WHERE i.parent_id = p.id
-       AND i.deleted_at IS NULL
-     ORDER BY i.sort_order
-     LIMIT 1
-    ) AS image,
+    COALESCE(
+        (
+            SELECT i.id
+            FROM images i
+            WHERE i.parent_id = p.id
+              AND i.deleted_at IS NULL
+            ORDER BY i.sort_order ASC
+            LIMIT 1
+        ),
+        0
+    )::bigint AS image,
 
 
     (p.reactions_count + p.comments_count) AS popularity_score     -- popularity metric (likes + comments)
