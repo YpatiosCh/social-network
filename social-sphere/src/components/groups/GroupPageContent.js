@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Container from "@/components/layout/Container";
 import CreatePostGroup from "@/components/groups/CreatePostGroup";
-import PostCard from "@/components/ui/PostCard";
+import GroupPostCard from "@/components/groups/GroupPostCard";
 import { getGroupPosts } from "@/actions/groups/get-group-posts";
 
 export default function GroupPageContent({ group, firstPosts }) {
@@ -163,7 +163,7 @@ export default function GroupPageContent({ group, firstPosts }) {
                                                         }}
                                                         layout
                                                     >
-                                                        <PostCard
+                                                        <GroupPostCard
                                                             post={post}
                                                             onDelete={(postId) => setPosts(prev => prev.filter(p => p.post_id !== postId))}
                                                         />
@@ -182,9 +182,9 @@ export default function GroupPageContent({ group, firstPosts }) {
 
                                             {/* End of feed message */}
                                             {!hasMore && posts.length > 0 && (
-                                                <div className="text-center py-8 text-sm text-(--muted)">
-                                                    You've reached the end of the feed
-                                                </div>
+                                                <div className="text-center py-8 text-xl font-bold text-(--muted)">
+                                .
+                            </div>
                                             )}
                                         </div>
                                     ) : (
