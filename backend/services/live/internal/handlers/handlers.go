@@ -7,11 +7,14 @@ import (
 	middleware "social-network/shared/go/http-middleware"
 	"social-network/shared/go/ratelimit"
 	"time"
+
+	"github.com/nats-io/nats.go"
 )
 
 type Handlers struct {
 	CacheService CacheService
 	EventBox     eventsub.EventBox[int64, []byte]
+	Nats         *nats.Conn
 }
 
 type CacheService interface {
@@ -24,10 +27,10 @@ type CacheService interface {
 	TestRedisConnection() error
 }
 
-func NewHandlers(serviceName string, CacheService CacheService, eventBox eventsub.EventBox[int64, []byte]) *http.ServeMux {
+func NewHandlers(serviceName string, CacheService CacheService, nats *nats.Conn) *http.ServeMux {
 	handlers := Handlers{
 		CacheService: CacheService,
-		EventBox:     eventBox,
+		Nats:         nats,
 	}
 	return handlers.BuildMux(serviceName)
 }
