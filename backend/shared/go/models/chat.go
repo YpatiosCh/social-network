@@ -71,6 +71,29 @@ type PrivateMsg struct {
 	DeletedAt      ct.GenDateTime `validation:"nullable"`
 }
 
+type GetGroupMsgsReq struct {
+	GroupId           ct.Id    `json:"user_id"`
+	MemberId          ct.Id    `json:"member_id"`
+	BoundaryMessageId ct.Id    `json:"boundary_message_id" validation:"nullable"`
+	Limit             ct.Limit `json:"limit"`
+}
+
+type GroupMsg struct {
+	Id            ct.Id
+	ConvesationId ct.Id
+	GroupId       ct.Id
+	Sender        User
+	MessageText   ct.MsgBody
+	CreatedAt     ct.GenDateTime `validation:"nullable"`
+	UpdatedAt     ct.GenDateTime `validation:"nullable"`
+	DeletedAt     ct.GenDateTime `validation:"nullable"`
+}
+
+type GetGetGroupMsgsResp struct {
+	HaveMore bool
+	Messages []GroupMsg
+}
+
 type UpdateLastReadMsgParams struct {
 	ConversationId    ct.Id `json:"conversation_id"`
 	UserId            ct.Id `json:"user_id"`

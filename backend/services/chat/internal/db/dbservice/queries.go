@@ -1,7 +1,9 @@
 package dbservice
 
 const (
+	// ====================================
 	// GROUP_CONVERSATIONS
+	// ====================================
 
 	createGroupConv = `
 	INSERT INTO group_conversations (group_id)
@@ -27,7 +29,53 @@ const (
 		deleted_at;
 	`
 
+	getNextGroupMsgs = `
+    SELECT
+        gm.id,
+        gm.conversation_id,
+        gm.sender_id,
+        gm.message_text,
+        gm.created_at,
+        gm.updated_at,
+        gm.deleted_at,
+
+        -- from group_conversations
+        gc.group_id
+    FROM group_conversations gc
+    JOIN group_messages gm
+        ON gm.conversation_id = gc.id
+    WHERE gc.group_id = $1
+      AND gm.deleted_at IS NULL
+      AND gm.id > $3
+    ORDER BY gm.id ASC
+    LIMIT $4;
+	`
+	getPrevGroupMsgs = `
+    SELECT
+        gm.id,
+        gm.conversation_id,
+        gm.sender_id,
+        gm.message_text,
+        gm.created_at,
+        gm.updated_at,
+        gm.deleted_at,
+
+        -- from group_conversations
+        gc.group_id
+    FROM group_conversations gc
+    JOIN group_messages gm
+        ON gm.conversation_id = gc.id
+    WHERE gc.group_id = $1
+      AND gm.deleted_at IS NULL
+      AND gm.id < $3
+    ORDER BY gm.id DESC
+    LIMIT $4;
+	`
+
+	// ====================================
 	// PRIVATE_CONVERSATIONS
+	// ====================================
+
 	getOrCreatePrivateConv = `
     INSERT INTO private_conversations (user_a, user_b)
     VALUES (LEAST($1, $2), GREATEST($1, $2))

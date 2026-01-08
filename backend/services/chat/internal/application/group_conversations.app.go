@@ -34,39 +34,29 @@ type CreateMessageInGroupReq struct {
 }
 
 func (c *ChatService) CreateMessageInGroup(ctx context.Context,
-	params CreateMessageInGroupReq) (msg md.PrivateMsg, err error) {
-	input := fmt.Sprintf("params: %#v", params)
+	req CreateMessageInGroupReq) (res md.PrivateMsg, err error) {
+	input := fmt.Sprintf("params: %#v", req)
 
-	if err := ct.ValidateStruct(params); err != nil {
-		return msg, ce.New(ce.ErrInvalidArgument, err, input)
+	if err := ct.ValidateStruct(req); err != nil {
+		return res, ce.New(ce.ErrInvalidArgument, err, input)
 	}
 
-	// Call UserService to check if sender is a member of group
-	isMember, err := c.Clients.IsGroupMember(ctx, params.GroupId, params.SenderId)
-	if err != nil {
-		return msg, ce.ParseGrpcErr(err, input)
-	}
-	if !isMember {
-		return msg,
-			ce.New(ce.ErrPermissionDenied,
-				fmt.Errorf("user id: %d not a member of group id: %d",
-					params.SenderId, params.GroupId),
-				input,
-			)
+	if err := c.isMember(ctx, req.GroupId, req.SenderId, input); err != nil {
+		return res, ce.Wrap(nil, err)
 	}
 
 	err = c.txRunner.RunTx(ctx,
 		func(q *dbservice.Queries) error {
 			// Create or get conversation
-			convId, err := q.CreateGroupConv(ctx, params.GroupId)
+			convId, err := q.CreateGroupConv(ctx, req.GroupId)
 			if err != nil {
 				return ce.Wrap(nil, err, input)
 			}
 			// Add message
-			msg, err = c.Queries.CreateNewGroupMessage(ctx, md.CreateGroupMsgReq{
+			res, err = c.Queries.CreateNewGroupMessage(ctx, md.CreateGroupMsgReq{
 				GroupId:     convId,
-				SenderId:    params.SenderId,
-				MessageText: params.MessageBody,
+				SenderId:    req.SenderId,
+				MessageText: req.MessageBody,
 			})
 
 			if err != nil {
@@ -74,5 +64,62 @@ func (c *ChatService) CreateMessageInGroup(ctx context.Context,
 			}
 			return nil
 		})
-	return msg, nil
+	return res, nil
+}
+
+func (c *ChatService) GetPrevGroupMessages(ctx context.Context,
+	req md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, err error) {
+
+	input := fmt.Sprintf("req: %#v", req)
+	if err := ct.ValidateStruct(req); err != nil {
+		return res, ce.Wrap(ce.ErrInvalidArgument, err, input)
+	}
+
+	if err := c.isMember(ctx, req.GroupId, req.MemberId, input); err != nil {
+		return res, ce.Wrap(nil, err)
+	}
+
+	res, err = c.Queries.GetPrevGroupMessages(ctx, req)
+	if err != nil {
+		return res, ce.Wrap(nil, err, input)
+	}
+	return res, nil
+}
+
+func (c *ChatService) GetNextGroupMessages(ctx context.Context,
+	req md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, err error) {
+
+	input := fmt.Sprintf("req: %#v", req)
+	if err := ct.ValidateStruct(req); err != nil {
+		return res, ce.Wrap(ce.ErrInvalidArgument, err, input)
+	}
+
+	if err := c.isMember(ctx, req.GroupId, req.MemberId, input); err != nil {
+		return res, ce.Wrap(nil, err)
+	}
+
+	res, err = c.Queries.GetNextGroupMessages(ctx, req)
+	if err != nil {
+		return res, ce.Wrap(nil, err, input)
+	}
+
+	return res, nil
+}
+
+// Returns a commonerrors Error type with public message if user is not a group member.
+// Input is the caller function contextual details.
+func (c *ChatService) isMember(ctx context.Context, groupId, memberId ct.Id, input string) error {
+	isMember, err := c.Clients.IsGroupMember(ctx, groupId, memberId)
+	if err != nil {
+		return ce.ParseGrpcErr(err, input)
+	}
+
+	if !isMember {
+		return ce.New(ce.ErrPermissionDenied,
+			fmt.Errorf("user id: %d not a member of group id: %d",
+				memberId, groupId),
+			input,
+		).WithPublic("user not a group member")
+	}
+	return nil
 }

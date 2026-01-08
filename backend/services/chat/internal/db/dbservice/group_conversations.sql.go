@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	ce "social-network/shared/go/commonerrors"
 	ct "social-network/shared/go/ct"
 	md "social-network/shared/go/models"
@@ -57,4 +58,103 @@ func (q *Queries) CreateNewGroupMessage(ctx context.Context,
 	return msg, err
 }
 
-// TODO: GetBefore and after messages
+func (q *Queries) GetPrevGroupMessages(ctx context.Context,
+	req md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, err error) {
+	input := fmt.Sprintf("arg: %#v", req)
+
+	if err := ct.ValidateStruct(req); err != nil {
+		return res, ce.New(ce.ErrInvalidArgument, err, input)
+	}
+
+	if req.BoundaryMessageId == 0 {
+		req.BoundaryMessageId = math.MaxInt64
+	}
+
+	rows, err := q.db.Query(ctx,
+		getPrevGroupMsgs,
+		req.GroupId,
+		req.MemberId,
+		req.BoundaryMessageId,
+		req.Limit+1,
+	)
+	if err != nil {
+		return res, ce.New(ce.ErrInternal, err, input)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var message md.GroupMsg
+		if err := rows.Scan(
+			&message.Id,
+			&message.ConvesationId,
+			&message.Sender,
+			&message.MessageText,
+			&message.CreatedAt,
+			&message.UpdatedAt,
+			&message.DeletedAt,
+
+			// Join from conversation
+			&message.GroupId,
+		); err != nil {
+			return res, ce.New(ce.ErrInternal, err, input)
+		}
+		res.Messages = append(res.Messages, message)
+	}
+
+	if len(res.Messages) > int(req.Limit) {
+		res.Messages = res.Messages[:req.Limit]
+		res.HaveMore = true
+	}
+	return res, nil
+}
+
+func (q *Queries) GetNextGroupMessages(ctx context.Context,
+	arg md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, err error) {
+	input := fmt.Sprintf("arg: %#v", arg)
+
+	if err := ct.ValidateStruct(arg); err != nil {
+		return res, ce.New(ce.ErrInvalidArgument, err, input)
+	}
+
+	if arg.BoundaryMessageId == 0 {
+		arg.BoundaryMessageId = math.MinInt64
+	}
+
+	rows, err := q.db.Query(ctx,
+		getNextGroupMsgs,
+		arg.GroupId,
+		arg.MemberId,
+		arg.BoundaryMessageId,
+		arg.Limit+1,
+	)
+	if err != nil {
+		return res, ce.New(ce.ErrInternal, err, input)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var message md.GroupMsg
+		if err := rows.Scan(
+			&message.Id,
+			&message.ConvesationId,
+			&message.Sender,
+			&message.MessageText,
+			&message.CreatedAt,
+			&message.UpdatedAt,
+			&message.DeletedAt,
+
+			// Join from conversation
+			&message.GroupId,
+		); err != nil {
+			return res, ce.New(ce.ErrInternal, err, input)
+		}
+		res.Messages = append(res.Messages, message)
+	}
+
+	if len(res.Messages) > int(arg.Limit) {
+		res.Messages = res.Messages[:arg.Limit]
+		res.HaveMore = true
+	}
+
+	return res, nil
+}

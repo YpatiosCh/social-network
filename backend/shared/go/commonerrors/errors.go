@@ -204,16 +204,16 @@ func ParseGrpcErr(err error, input ...string) error {
 
 	st, ok := status.FromError(err)
 	if !ok {
-		return err
+		return New(ErrUnknown, err, getInput(input...)).WithPublic(err.Error())
 	}
 
 	code := st.Code() // codes.NotFound, codes.Internal, etc.
 	message := st.Message()
 
 	if domainErr, ok := grpcToErrorClass[code]; ok {
-		return New(domainErr, errors.New(message), getInput(input...))
+		return New(domainErr, errors.New(message), getInput(input...)).WithPublic(message)
 	}
-	return New(ErrUnknown, err, getInput(input...))
+	return New(ErrUnknown, err, getInput(input...)).WithPublic(err.Error())
 }
 
 // Converts a commonerrors type Error to grpc status error. Handles context errors first.

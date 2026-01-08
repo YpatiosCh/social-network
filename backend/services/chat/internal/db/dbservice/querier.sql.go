@@ -92,6 +92,14 @@ type Querier interface {
 
 	// Updates the given user's last read message in given private conversation to given message id.
 	UpdateLastReadPrivateMsg(ctx context.Context, arg md.UpdateLastReadMsgParams) error
+
+	// Gets paginated group messages that are updated before a given date time.
+	GetPrevGroupMessages(ctx context.Context,
+		req md.GetGroupMsgsReq) (msgs md.GetGetGroupMsgsResp, err error)
+
+	// Gets paginated group messages that are updated after a given date time.
+	GetNextGroupMessages(ctx context.Context,
+		req md.GetGroupMsgsReq) (msgs md.GetGetGroupMsgsResp, err error)
 }
 
 var _ Querier = (*Queries)(nil)
