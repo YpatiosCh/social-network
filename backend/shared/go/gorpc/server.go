@@ -1,7 +1,7 @@
 package gorpc
 
 import (
-	"log"
+	"fmt"
 	"net"
 
 	"google.golang.org/grpc"
@@ -23,7 +23,7 @@ import (
 func CreateGRpcServer[T any](register func(grpc.ServiceRegistrar, T), handler T, port string, contextKeys contextKeys) (func() error, func(), error) {
 	listener, err := net.Listen("tcp", port)
 	if err != nil {
-		log.Fatalf("Failed to listen on %s: %v", port, err)
+		return nil, nil, fmt.Errorf("Failed to listen on %s: %v", port, err)
 	}
 
 	customUnaryInterceptor, err := UnaryServerInterceptorWithContextKeys(contextKeys)

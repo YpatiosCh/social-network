@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 
 	pb "social-network/shared/gen-go/chat"
 	ce "social-network/shared/go/commonerrors"
@@ -59,7 +60,9 @@ func (h *ChatHandler) CreatePrivateMessage(
 	params *pb.CreatePrivateMessageRequest,
 ) (*pb.PrivateMessage, error) {
 
-	tele.Info(ctx, "create private message called @1", "request", params)
+	tele.Info(ctx, "wtf is going on?")
+	tele.Info(ctx, "wtf is going on?2")
+	tele.Info(ctx, "wtf is going on?3")
 
 	// Call application layer
 	msg, err := h.Application.CreatePrivateMessage(ctx, md.CreatePrivatMsgReq{
@@ -75,12 +78,27 @@ func (h *ChatHandler) CreatePrivateMessage(
 		return nil, ce.GRPCStatus(err)
 	}
 
+	tele.Info(ctx, "test: "+fmt.Sprint(params))
+	tele.Info(ctx, "create private message called @1", "params", fmt.Sprint(params))
+
 	resp := mp.MapPMToProto(msg)
 
 	tele.Info(ctx, "create private message success. @1 @2",
 		"request", params,
 		"response", resp,
 	)
+
+	//TODO message payload need to be more intricate
+	err = h.Application.NatsConn.Publish(ct.PrivateMessageKey(params.SenderId), []byte(params.MessageText))
+	if err != nil {
+		tele.Error(ctx, "failed to publish private message to nats: @1", "error", err.Error())
+	}
+
+	//TODO find the other party
+	// err = h.Application.NatsConn.Publish(ct.PrivateMessageKey(params.SenderId), []byte(params.MessageText))
+	// if err != nil {
+	// 	tele.Error(ctx, "failed to publish private message to nats: @1", "error", err.Error())
+	// }
 
 	return resp, nil
 }

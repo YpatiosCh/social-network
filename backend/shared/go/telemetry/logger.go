@@ -71,6 +71,8 @@ func newBasicLogger() *logging {
 	}
 }
 
+//TODO find issue with malformed context breaking formatArgs due to out of index [2] 2
+
 func (l *logging) log(ctx context.Context, level slog.Level, msg string, args ...any) {
 	if level == slog.LevelDebug && l.enableDebug == false {
 		return
@@ -163,7 +165,7 @@ func kvPairsToAttrs(pairs []any) []slog.Attr {
 func formatArgs(builder *strings.Builder, alreadyPrinted []bool, args ...any) {
 	prefixPrinted := false
 	for i, arg := range args {
-		if alreadyPrinted[i] {
+		if len(alreadyPrinted) > i && alreadyPrinted[i] {
 			continue
 		}
 		if prefixPrinted == false {

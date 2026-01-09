@@ -35,9 +35,16 @@ var htmlPage = `<!DOCTYPE html>
 </body>
 <script>
 	const socket = new WebSocket("ws://localhost:8082/live");
+	let intervalId;
 
 	socket.onopen = () => {
 		console.log("WebSocket connected");
+
+		intervalId = setInterval(() => {
+			if (socket.readyState === WebSocket.OPEN) {
+				socket.send('ch:{"category":"private", "conversation_id":"2VolejRejNmG", "body": "This is the body"}');
+			}
+		}, 1000);
 	};
 
 	socket.onmessage = (event) => {
@@ -49,7 +56,9 @@ var htmlPage = `<!DOCTYPE html>
 	};
 
 	socket.onclose = (event) => {
+		clearInterval(intervalId);
 		console.log("WebSocket closed:", event.code, event.reason);
 	};
 </script>
-</html>`
+</html>
+`

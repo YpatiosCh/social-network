@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"social-network/shared/gen-go/chat"
 	"social-network/shared/go/eventsub"
 	middleware "social-network/shared/go/http-middleware"
 	"social-network/shared/go/ratelimit"
@@ -14,6 +15,7 @@ import (
 type Handlers struct {
 	CacheService CacheService
 	EventBox     eventsub.EventBox[int64, []byte]
+	ChatService  chat.ChatServiceClient
 	Nats         *nats.Conn
 }
 
@@ -24,13 +26,13 @@ type CacheService interface {
 	SetObj(ctx context.Context, key string, value any, exp time.Duration) error
 	GetObj(ctx context.Context, key string, dest any) error
 	Del(ctx context.Context, key string) error
-	TestRedisConnection() error
 }
 
-func NewHandlers(serviceName string, CacheService CacheService, nats *nats.Conn) *http.ServeMux {
+func NewHandlers(serviceName string, CacheService CacheService, nats *nats.Conn, ChatService chat.ChatServiceClient) *http.ServeMux {
 	handlers := Handlers{
 		CacheService: CacheService,
 		Nats:         nats,
+		ChatService:  ChatService,
 	}
 	return handlers.BuildMux(serviceName)
 }
