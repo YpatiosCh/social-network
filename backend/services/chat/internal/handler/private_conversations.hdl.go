@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 
 	pb "social-network/shared/gen-go/chat"
 	ce "social-network/shared/go/commonerrors"
@@ -75,18 +75,33 @@ func (h *ChatHandler) CreatePrivateMessage(
 		return nil, ce.GRPCStatus(Err)
 	}
 
-	tele.Info(ctx, "test: "+fmt.Sprint(params))
-	tele.Info(ctx, "create private message called @1", "params", fmt.Sprint(params))
-
 	resp := mp.MapPMToProto(msg)
 
+<<<<<<< HEAD
+	tele.Debug(ctx, "create private message success. @1 @2",
+=======
 	tele.Info(ctx, "create private message success. @1 @2",
+>>>>>>> e19fdc364357094cd8adb47be9c3b35d3079fe5e
 		"request", params.String(),
 		"response", resp.String(),
 	)
 
+	type chatMessage struct {
+		SenderId ct.Id      `json:"sender_id"`
+		Body     ct.MsgBody `json:"body"`
+	}
+
+	messageBytes, err := json.Marshal(chatMessage{
+		SenderId: ct.Id(resp.Sender.UserId),
+		Body:     ct.MsgBody(resp.MessageText),
+	})
+	if err != nil {
+		tele.Error(ctx, "failed to marshal private message for nats: @1", "error", err.Error())
+		return resp, nil
+	}
+
 	//TODO message payload need to be more intricate
-	err := h.Application.NatsConn.Publish(ct.PrivateMessageKey(params.SenderId), []byte(params.MessageText))
+	err = h.Application.NatsConn.Publish(ct.PrivateMessageKey(params.SenderId), messageBytes)
 	if err != nil {
 		tele.Error(ctx, "failed to publish private message to nats: @1", "error", err.Error())
 	}
