@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { updateProfileInfo } from "@/actions/profile/update-profile";
 import { validateUpload } from "@/actions/auth/validate-upload";
+import { validateProfileForm } from "@/lib/validation";
 import { useStore } from "@/store/store";
 
 export default function ProfileForm({ user }) {
@@ -48,6 +49,14 @@ export default function ProfileForm({ user }) {
         }
 
         try {
+            // Validate profile data and avatar
+            const validation = await validateProfileForm(profileData, avatarFile);
+            if (!validation.valid) {
+                setMessage({ success: false, text: validation.error });
+                setIsLoading(false);
+                return;
+            }
+
             // Step 1: Update profile (with or without avatar metadata)
             const resp = await updateProfileInfo(profileData);
 
@@ -75,7 +84,9 @@ export default function ProfileForm({ user }) {
                     } else {
                         // Validate upload
                         const validateResp = await validateUpload(resp.FileId);
-                        if (validateResp.success && validateResp.download_url) {
+                        if (!validateResp.success) {
+                            setMessage({ success: false, text: validateResp.error || "Failed to validate upload" });
+                        } else if (validateResp.download_url) {
                             newAvatarUrl = validateResp.download_url;
                         }
                     }
@@ -124,7 +135,7 @@ export default function ProfileForm({ user }) {
                         type="file"
                         onChange={handleAvatarChange}
                         className="hidden"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
                     />
                 </div>
                 <p className="text-sm text-(--muted)">Click to change avatar</p>

@@ -205,7 +205,7 @@ export default function UpdateGroupModal({ isOpen, onClose, onSuccess, group }) 
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="image/jpeg,image/png,image/gif"
+                                accept="image/jpeg,image/png,image/gif,image/webp"
                                 onChange={handleImageSelect}
                                 disabled={isSubmitting}
                                 className="hidden"

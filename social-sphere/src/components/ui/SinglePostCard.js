@@ -908,7 +908,7 @@ export default function SinglePostCard({ post }) {
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="image/jpeg,image/png,image/gif"
+                                accept="image/jpeg,image/png,image/gif,image/webp"
                                 onChange={handleImageSelect}
                                 className="hidden"
                             />
@@ -1068,7 +1068,7 @@ export default function SinglePostCard({ post }) {
                                                         <input
                                                             ref={editingCommentFileInputRef}
                                                             type="file"
-                                                            accept="image/jpeg,image/png,image/gif"
+                                                            accept="image/jpeg,image/png,image/gif,image/webp"
                                                             onChange={handleEditingCommentImageSelect}
                                                             className="hidden"
                                                         />
@@ -1211,7 +1211,7 @@ export default function SinglePostCard({ post }) {
                                 <input
                                     ref={commentFileInputRef}
                                     type="file"
-                                    accept="image/jpeg,image/png,image/gif"
+                                    accept="image/jpeg,image/png,image/gif,image/webp"
                                     onChange={handleCommentImageSelect}
                                     className="hidden"
                                 />

@@ -224,7 +224,7 @@ export default function CreatePostGroup({ onPostCreated=null, groupId=null }) {
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/jpeg,image/png,image/gif"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
                             onChange={handleImageSelect}
                             className="hidden"
                         />
