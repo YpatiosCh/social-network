@@ -29,7 +29,7 @@ func (q *Queries) GetOrCreatePrivateConv(ctx context.Context,
 ) (res NewPrivateConversation, err error) {
 	input := fmt.Sprintf("arg: %#v", arg)
 	var pm NewPrivateConversation
-	row := q.db.QueryRow(ctx, getOrCreatePrivateConv, arg.UserId, arg.OtherUserId)
+	row := q.db.QueryRow(ctx, getOrCreatePrivateConv, arg.UserId.Int64(), arg.OtherUserId.Int64())
 	err = row.Scan(
 		&pm.Id,
 		// TODO: Check if the order is correct
