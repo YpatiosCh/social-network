@@ -12,6 +12,7 @@ import { deletePost } from "@/actions/posts/delete-post";
 import { editComment } from "@/actions/posts/edit-comment";
 import { deleteComment } from "@/actions/posts/delete-comment";
 import { validateUpload } from "@/actions/auth/validate-upload";
+import { validateImage } from "@/lib/validation";
 import { getFollowers } from "@/actions/users/get-followers";
 import { getPost } from "@/actions/posts/get-post";
 import { getRelativeTime } from "@/lib/time";
@@ -258,9 +259,16 @@ export default function PostCard({ post, onDelete }) {
         }
     };
 
-    const handleImageSelect = (e) => {
+    const handleImageSelect = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Validate image file (type, size, dimensions)
+        const validation = await validateImage(file);
+        if (!validation.valid) {
+            setError(validation.error);
+            return;
+        }
 
         setImageFile(file);
         setError("");

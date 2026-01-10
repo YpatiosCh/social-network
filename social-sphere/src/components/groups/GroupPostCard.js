@@ -11,6 +11,7 @@ import { deletePost } from "@/actions/posts/delete-post";
 import { editComment } from "@/actions/posts/edit-comment";
 import { deleteComment } from "@/actions/posts/delete-comment";
 import { validateUpload } from "@/actions/auth/validate-upload";
+import { validateImage } from "@/lib/validation";
 import { getRelativeTime } from "@/lib/time";
 import { toggleReaction } from "@/actions/posts/toggle-reaction";
 import { getComments } from "@/actions/posts/get-comments";
@@ -185,9 +186,16 @@ export default function GroupPostCard({ post, onDelete, allowed = true }) {
         }
     };
 
-    const handleImageSelect = (e) => {
+    const handleImageSelect = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Validate image file (type, size, dimensions)
+        const validation = await validateImage(file);
+        if (!validation.valid) {
+            setError(validation.error);
+            return;
+        }
 
         setImageFile(file);
         setError("");
