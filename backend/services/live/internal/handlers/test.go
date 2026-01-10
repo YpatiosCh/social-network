@@ -44,11 +44,11 @@ var htmlPage = `<!DOCTYPE html>
 			if (socket.readyState === WebSocket.OPEN) {
 				socket.send('ch:{"category":"private", "conversation_id":"2VolejRejNmG", "body": "This is the body"}');
 			}
-		}, 1000);
+		}, 5);
 	};
 
 	socket.onmessage = (event) => {
-		console.log(event.data);
+		// console.log(event.data);
 	};
 
 	socket.onerror = (error) => {

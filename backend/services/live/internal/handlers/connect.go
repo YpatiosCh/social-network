@@ -77,7 +77,7 @@ func (h *Handlers) Connect() http.HandlerFunc {
 		}
 		defer cancelConn()
 
-		wsChannel := make(chan []byte) //send listens to this and forwards messages to user using the websocket
+		wsChannel := make(chan []byte, 100) //send listens to this and forwards messages to user using the websocket
 
 		natsHandler := func(msg *nats.Msg) { //handles nats messages, just forwards them to the above channel
 			wsChannel <- msg.Data
@@ -106,6 +106,7 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 		return
 	}
 	subcriptions[key] = sub
+	var lastSub string
 
 	defer func() { //unsub from all
 		for _, sub := range subcriptions {
@@ -145,17 +146,34 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 		payload := parts[1]
 
 		switch msgType {
-		case "conversation":
+		case "sub":
+			if lastSub != "" {
+				sub, ok := subcriptions[payload]
+				if ok {
+					err := sub.Unsubscribe()
+					if err != nil {
+						tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
+					}
+					delete(subcriptions, payload)
+				}
+			}
 			//TODO verify that they are allowed to subscribe there
 			tele.Info(ctx, "subscribing to conversation @1", "conversation", payload)
-			sub, err := h.Nats.Subscribe(payload, handler)
+
+			sub, err := h.Nats.Subscribe(ct.GroupMessageKey(payload), handler)
 			if err != nil {
 				tele.Error(ctx, "websocket subscription @1", "error", err.Error())
 				continue
 			}
+			lastSub = payload
 			subcriptions[payload] = sub
+
 		case "unsub":
-			sub := subcriptions[payload]
+			sub, ok := subcriptions[payload]
+			if !ok {
+				continue
+			}
+			lastSub = ""
 			tele.Info(ctx, "unsubscribing from conversation @1", "conversation", payload)
 			err := sub.Unsubscribe()
 			if err != nil {
@@ -203,15 +221,17 @@ func (h *Handlers) websocketSender(ctx context.Context, channel <-chan []byte, c
 	//handler is given to batcher, so that the batcher calls it with many accumulated messages at once
 	handler := func(messages []json.RawMessage) error {
 		var err error
-		tele.Info(ctx, "about to marshal and send @1 messages to websocket, @2", "count", len(messages), "rawBody", messages)
+
 		payloadBytes, err = json.Marshal(messages)
 		if err != nil {
 			return err
 		}
+		tele.Debug(ctx, "about to write message to websocket")
 		err = conn.WriteMessage(websocket.TextMessage, payloadBytes)
 		if err != nil {
 			return err
 		}
+		tele.Debug(ctx, "finished writing to websocket")
 		return nil
 	}
 
