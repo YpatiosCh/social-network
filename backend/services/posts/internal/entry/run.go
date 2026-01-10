@@ -151,7 +151,7 @@ type configs struct {
 	PostsGRPCAddr  string `env:"POSTS_GRPC_ADDR"`
 	ChatGRPCAddr   string `env:"CHAT_GRPC_ADDR"`
 	MediaGRPCAddr  string `env:"MEDIA_GRPC_ADDR"`
-	NotifGRPCAddr  string `env:"NOTIFICATIONS_ADDRESS"`
+	NotifGRPCAddr  string `env:"NOTIFICATIONS_GRPC_ADDR"`
 	GrpcServerPort string `env:"GRPC_SERVER_PORT"`
 
 	HTTPAddr        string `env:"HTTP_ADDR"`

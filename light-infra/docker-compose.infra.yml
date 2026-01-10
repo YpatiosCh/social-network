@@ -11,6 +11,7 @@ volumes:
   minio_data:
   victoria-logs-data:
   alloy-data:
+  grafana-storage: {}
 
 services:
   users-db:
@@ -114,20 +115,20 @@ services:
   # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
   # SOCIAL-SPHERE FRONTEND BACKEND: Next.js frontend service, it serves the web application and communicates with the API Gateway
   # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  # social-sphere:
-  #   networks:
-  #     - social-network
-  #   build:
-  #     context: ../social-sphere/.
-  #     dockerfile: Dockerfile
-  #   container_name: social-sphere
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=production
-  #     - SERVER_API_BASE=http://host.docker.internal:8081
-  #     - NEXT_PUBLIC_API_URL=http://host.docker.internal:8081
-  #   restart: unless-stopped
+  social-sphere:
+    networks:
+      - social-network
+    build:
+      context: ../social-sphere/.
+      dockerfile: Dockerfile
+    container_name: social-sphere
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SERVER_API_BASE=http://host.docker.internal:8081
+      - NEXT_PUBLIC_API_URL=http://host.docker.internal:8081
+    restart: unless-stopped
 
   
   #
@@ -172,3 +173,93 @@ services:
       - "--storage.path=/var/lib/alloy/data"
       - "/etc/alloy/config.alloy"
       
+
+
+  #
+  #
+  #
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  # GRAFANA: visualization and analytics platform for monitoring data
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    networks:
+      - social-network
+    environment:
+      GF_LOG_LEVEL: debug
+      GF_SERVER_ROOT_URL: "http://my.grafana.server/"
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../backend/services/monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ../backend/services/monitoring/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - grafana-storage:/var/lib/grafana
+    restart: unless-stopped
+  
+
+  #
+  #
+  #
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  # KAFKA: Message streaming platform for reliably pushing notifications to the notifications service
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  kafka:
+    networks:
+      - social-network
+    image: apache/kafka-native:4.1.1
+    container_name: kafka
+    ports:
+      - "9092:9092"   # host access
+    environment:
+      # Kafka listeners
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:29093,PLAINTEXT_HOST://:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Node / controller configuration
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+
+      # Cluster and replication
+      CLUSTER_ID: '4L6g3nShT-eMCtK--X86sw'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+    volumes:
+      - ../backend/services/kafka/config:/mnt/shared/config
+
+
+
+  #
+  #
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  # NATS: Lightweight, high-performance messaging system for inter-service communication. Used to find the live service replica that contains the users websocket
+  # ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  nats:
+    image: nats
+    ports:
+      - "8222:8222" #monitoring
+      - "4222:4222" #for clients
+    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --http_port 8222 "
+    networks: ["social-network"]
+  nats-1:
+    image: nats
+    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --routes=nats://ruser:T0pS3cr3t@nats:6222"
+    networks: ["social-network"]
+    depends_on: ["nats"]
+  nats-2:
+    image: nats
+    command: "--cluster_name NATS --cluster nats://0.0.0.0:6222 --routes=nats://ruser:T0pS3cr3t@nats:6222"
+    networks: ["social-network"]
+    depends_on: ["nats"]
+

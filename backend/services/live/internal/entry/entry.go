@@ -57,7 +57,7 @@ func Run() {
 	//
 	//
 	// NATS
-	natsConn, err := nats.Connect("nats:")
+	natsConn, err := nats.Connect(cfgs.NatsHost + ":")
 	if err != nil {
 		tele.Fatalf("failed to connect to nats: %s", err.Error())
 	}
@@ -147,7 +147,7 @@ type configs struct {
 	PassSecret                string `env:"PASSWORD_SECRET"`
 	EncrytpionKey             string `env:"ENC_KEY"`
 
-	NatsAddress string `env:"NATS_ADDRESS"`
+	NatsHost string `env:"NATS_HOST"`
 
 	ChatGRPCAddr string `env:"CHAT_GRPC_ADDR"`
 }
@@ -165,7 +165,7 @@ func getConfigs() configs { // sensible defaults
 		TelemetryCollectorAddress: "alloy:4317",
 		PassSecret:                "a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=",
 		EncrytpionKey:             "a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=",
-		NatsAddress:               "nats:8222",
+		NatsHost:                  "nats",
 		ChatGRPCAddr:              "chat:50051",
 	}
 

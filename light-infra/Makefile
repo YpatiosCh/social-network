@@ -23,10 +23,9 @@ export TELEMETRY_COLLECTOR_ADDR=localhost:4317
 export USERS_GRPC_ADDR=localhost:50051
 export POSTS_GRPC_ADDR=localhost:50052
 export CHAT_GRPC_ADDR=localhost:50053
-export NOTIFICATIONS_ADDRESS=localhost:50054
+export NOTIFICATIONS_GRPC_ADDR=localhost:50054
 export MEDIA_GRPC_ADDR=localhost:50055
 
-export HTTP_ADDR=0.0.0.0:8081
 export SHUTDOWN_TIMEOUT_SECONDS=5
 export ENABLE_DEBUG_LOGS=true
 export ENABLE_SIMPLE_PRINT=true
@@ -64,6 +63,7 @@ run-all:
 	DATABASE_URL=postgres://postgres:secret@localhost:5435/social_chat?sslmode=disable \
 	MIGRATE_PATH=services/chat/internal/db/migrations \
 	GRPC_SERVER_PORT=:50053 \
+	NATS_HOST=localhost \
 	go run -C ../backend ./services/chat/cmd/server/main.go 2>&1 | sed 's/^/[CHAT] /' & \
 	\
 	DATABASE_URL=postgres://postgres:secret@localhost:5434/social_posts?sslmode=disable \
@@ -80,6 +80,12 @@ run-all:
 	GRPC_SERVER_PORT=:50054 \
 	go run -C ../backend ./services/notifications/cmd/server/main.go 2>&1 | sed 's/^/[NOTIFICATIONS] /' & \
 	\
+	ENC_KEY=a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= \
+	JWT_KEY=a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= \
+	PASSWORD_SECRET=a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= \
+	NATS_HOST=localhost \
+    go run -C ../backend ./services/live/cmd/main.go 2>&1 | sed 's/^/[LIVE] /' & \
+	\
 	wait
 
 build-all:
@@ -92,7 +98,8 @@ build-all:
 	go build -o "$$OUTDIR/chat.social" ./services/chat/cmd/server/main.go; \
 	go build -o "$$OUTDIR/posts.social" ./services/posts/cmd/server/main.go; \
 	go build -o "$$OUTDIR/users.social" ./services/users/cmd/server/main.go; \
-# 	go build -o "$$OUTDIR/notifs.social" ./services/notifications/cmd/server/main.go
+ 	go build -o "$$OUTDIR/notifs.social" ./services/notifications/cmd/server/main.go; \
+ 	go build -o "$$OUTDIR/live.social" ./services/live/cmd/main.go; \
 	@echo "Finished building!"
 
 
@@ -119,6 +126,7 @@ run-built:
 	DATABASE_URL=postgres://postgres:secret@localhost:5435/social_chat?sslmode=disable \
 	MIGRATE_PATH=services/chat/internal/db/migrations \
 	GRPC_SERVER_PORT=:50053 \
+	NATS_HOST=localhost \
 	./chat.social 2>&1 | sed 's/^/[CHAT] /' & \
 	\
 	DATABASE_URL=postgres://postgres:secret@localhost:5434/social_posts?sslmode=disable \
@@ -130,10 +138,16 @@ run-built:
 	GRPC_SERVER_PORT=:50051 \
 	./users.social 2>&1 | sed 's/^/[USERS] /' & \
 	\
-# 	DATABASE_URL=postgres://postgres:secret@localhost:5436/social_notifications?sslmode=disable \
-# 	MIGRATE_PATH=services/notifications/internal/db/migrations \
-# 	GRPC_SERVER_PORT=:50054 \
-# 	./notifs.social 2>&1 | sed 's/^/[NOTIFICATIONS] /' & \
+	DATABASE_URL=postgres://postgres:secret@localhost:5436/social_notifications?sslmode=disable \
+	MIGRATE_PATH=services/notifications/internal/db/migrations \
+	GRPC_SERVER_PORT=:50054 \
+	./notifs.social 2>&1 | sed 's/^/[NOTIFICATIONS] /' & \
+	\
+	ENC_KEY=a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= \
+	JWT_KEY=a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= \
+	PASSWORD_SECRET=a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28= \
+	NATS_HOST=localhost \
+	./live.social 2>&1 | sed 's/^/[LIVE] /' & \
 	\
 	wait
 

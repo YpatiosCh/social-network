@@ -35,23 +35,26 @@ type configs struct {
 	RedisDB                   int    `env:"REDIS_DB"`
 	DatabaseConn              string `env:"DATABASE_URL"`
 	GrpcServerPort            string `env:"GRPC_SERVER_PORT"`
-	NotificationsAdress       string `env:"NOTIFICATIONS_ADDRESS"`
-	UsersAdress               string `env:"USERS_ADDRESS"`
+	NotificationsAdress       string `env:"NOTIFICATIONS_GRPC_ADDR"`
+	UsersAdress               string `env:"USERS_GRPC_ADDR"`
 	MediaGRPCAddr             string `env:"MEDIA_GRPC_ADDR"`
 	EnableDebugLogs           bool   `env:"ENABLE_DEBUG_LOGS"`
 	SimplePrint               bool   `env:"ENABLE_SIMPLE_PRINT"`
 	OtelResourceAttributes    string `end:"OTEL_RESOURCE_ATTRIBUTES"`
 	TelemetryCollectorAddress string `env:"OTEL_EXPORTER_OTLP_ENDPOINT"`
+	NatsHost                  string `env:"NATS_HOST"`
 }
 
 var cfgs configs
 
+// TODO add missing default values --V
 func init() {
 	cfgs = configs{
 		DatabaseConn:        "postgres://postgres:secret@chat-db:5432/social_chat?sslmode=disable",
 		GrpcServerPort:      ":50051",
 		NotificationsAdress: "notifications:50051",
 		UsersAdress:         "users:50051",
+		NatsHost:            "nats",
 	}
 	configutil.LoadConfigs(&cfgs)
 }
@@ -66,7 +69,7 @@ func Run() error {
 	// TELEMETRY
 	closeTele, err := tele.InitTelemetry(ctx,
 		"chat",
-		"CHAT",
+		"CHA",
 		cfgs.TelemetryCollectorAddress,
 		ct.CommonKeys(),
 		cfgs.EnableDebugLogs,
@@ -98,7 +101,7 @@ func Run() error {
 	//
 	//
 	// NATS
-	natsConn, err := nats.Connect("nats:")
+	natsConn, err := nats.Connect(cfgs.NatsHost + ":")
 	if err != nil {
 		tele.Fatalf("failed to connect to nats: %s", err.Error())
 	}
