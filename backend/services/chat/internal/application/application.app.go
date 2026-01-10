@@ -6,11 +6,13 @@ import (
 	"social-network/services/chat/internal/client"
 	"social-network/services/chat/internal/db/dbservice"
 	ct "social-network/shared/go/ct"
+	"social-network/shared/go/kafgo"
 	md "social-network/shared/go/models"
 	postgresql "social-network/shared/go/postgre"
 	"social-network/shared/go/retrieveusers"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nats-io/nats.go"
 )
 
 // TxRunner defines the interface for running database transactions
@@ -24,10 +26,12 @@ type TxRunner interface {
 
 // Holds logic for requests and calls
 type ChatService struct {
-	Clients      Clients
-	RetriveUsers *retrieveusers.UserRetriever
-	Queries      dbservice.Querier
-	txRunner     TxRunner
+	Clients       Clients
+	RetriveUsers  *retrieveusers.UserRetriever
+	Queries       dbservice.Querier
+	txRunner      TxRunner
+	EventProducer *kafgo.KafkaProducer
+	NatsConn      *nats.Conn
 }
 
 type Clients interface {
@@ -43,9 +47,14 @@ type Clients interface {
 	AreConnected(ctx context.Context, userA, userB ct.Id) (bool, error)
 }
 
-func NewChatService(pool *pgxpool.Pool,
-	clients *client.Clients, queries dbservice.Querier,
-	userRetriever *retrieveusers.UserRetriever) (*ChatService, error) {
+func NewChatService(
+	pool *pgxpool.Pool,
+	clients *client.Clients,
+	queries dbservice.Querier,
+	userRetriever *retrieveusers.UserRetriever,
+	eventProducer *kafgo.KafkaProducer,
+	natsConn *nats.Conn,
+) (*ChatService, error) {
 	var txRunner TxRunner
 	var err error
 	if pool != nil {
@@ -60,9 +69,11 @@ func NewChatService(pool *pgxpool.Pool,
 	}
 
 	return &ChatService{
-		Clients:      clients,
-		Queries:      queries,
-		txRunner:     txRunner,
-		RetriveUsers: userRetriever,
+		Clients:       clients,
+		Queries:       queries,
+		txRunner:      txRunner,
+		RetriveUsers:  userRetriever,
+		EventProducer: eventProducer,
+		NatsConn:      natsConn,
 	}, nil
 }

@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"social-network/shared/gen-go/chat"
 	"social-network/shared/go/batching"
 	"social-network/shared/go/ct"
 	utils "social-network/shared/go/http-utils"
 	"social-network/shared/go/jwt"
 	tele "social-network/shared/go/telemetry"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +18,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/nats-io/nats.go"
 )
+
+//TODO add redis call to ratelimit the number of open connections
 
 // FOUND FROM DOCUMENTATION:
 
@@ -96,7 +98,7 @@ func (h *Handlers) Connect() http.HandlerFunc {
 func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websocket.Conn, clientId int64, connectionId string, handler nats.MsgHandler) {
 	subcriptions := make(map[string]*nats.Subscription)
 	tele.Info(ctx, "websocket listener started for connection @1", "connection", connectionId)
-	key := "chatmsg." + strconv.Itoa(int(clientId))
+	key := ct.PrivateMessageKey(clientId)
 	sub, err := h.Nats.Subscribe(key, handler)
 	tele.Info(ctx, "subscribed to conversation @1 using key @2", "conversation", clientId, "key", key)
 	if err != nil {
@@ -128,39 +130,68 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 		messageString := string(msg)
 		if len(messageString) < 2 {
 			tele.Error(ctx, "invalid message received: @1 from @2", "message", messageString, "connection", connectionId)
-			return
+			continue
 		}
 
 		tele.Info(ctx, "received: @1 from @2", "message", messageString, "connection", connectionId)
 
-		parts := strings.Split(messageString, ":")
+		parts := strings.SplitN(messageString, ":", 2)
 		if len(parts) != 2 {
-			tele.Error(ctx, "malformed message received: @1 from @2", "message", messageString, "connection", connectionId)
+			tele.Error(ctx, "malformed message received: @1 from @2, @3", "message", messageString, "connection", connectionId, "parts", parts)
+			continue
 		}
 
 		msgType := parts[0]
-		eventValue := parts[1]
+		payload := parts[1]
 
 		switch msgType {
 		case "conversation":
 			//TODO verify that they are allowed to subscribe there
-			tele.Info(ctx, "subscribing to conversation @1", "conversation", eventValue)
-			sub, err := h.Nats.Subscribe(eventValue, handler)
+			tele.Info(ctx, "subscribing to conversation @1", "conversation", payload)
+			sub, err := h.Nats.Subscribe(payload, handler)
 			if err != nil {
 				tele.Error(ctx, "websocket subscription @1", "error", err.Error())
 				continue
 			}
-			subcriptions[eventValue] = sub
+			subcriptions[payload] = sub
 		case "unsub":
-			sub := subcriptions[eventValue]
-			tele.Info(ctx, "unsubscribing from conversation @1", "conversation", eventValue)
+			sub := subcriptions[payload]
+			tele.Info(ctx, "unsubscribing from conversation @1", "conversation", payload)
 			err := sub.Unsubscribe()
 			if err != nil {
 				tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
+				continue
 			}
-			delete(subcriptions, eventValue)
-		case "chatMessage":
-			//call chat service grpc
+			delete(subcriptions, payload)
+		case "ch":
+
+			_, err = h.ChatService.GetOrCreatePrivateConv(ctx, &chat.GetOrCreatePrivateConvRequest{
+				User:              clientId,
+				OtherUser:         3,
+				RetrieveOtherUser: false,
+			})
+			if err != nil {
+				tele.Error(ctx, "failed to get or create private conversation @1", "error", err.Error())
+			}
+
+			type chatMessage struct {
+				Category       string     `json:"category"`
+				ConversationId ct.Id      `json:"conversation_id"`
+				Body           ct.MsgBody `json:"body"`
+			}
+			message := &chatMessage{}
+			err = json.Unmarshal([]byte(payload), message)
+			if err != nil {
+				tele.Error(ctx, "failed to unmarshal chat message @1", "error", err.Error())
+			}
+			_, err = h.ChatService.CreatePrivateMessage(ctx, &chat.CreatePrivateMessageRequest{
+				ConversationId: message.ConversationId.Int64(),
+				SenderId:       clientId,
+				MessageText:    message.Body.String(),
+			})
+			if err != nil {
+				tele.Error(ctx, "failed to create private message @1", "error", err.Error())
+			}
 		}
 	}
 }

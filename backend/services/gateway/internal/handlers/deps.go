@@ -12,5 +12,4 @@ type CacheService interface {
 	SetObj(ctx context.Context, key string, value any, exp time.Duration) error
 	GetObj(ctx context.Context, key string, dest any) error
 	Del(ctx context.Context, key string) error
-	TestRedisConnection() error
 }

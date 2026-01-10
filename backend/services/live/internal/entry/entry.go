@@ -3,15 +3,16 @@ package entry
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 
 	"social-network/services/live/internal/handlers"
+	"social-network/shared/gen-go/chat"
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
+	"social-network/shared/go/gorpc"
 	redis_connector "social-network/shared/go/redis"
 	tele "social-network/shared/go/telemetry"
 	"syscall"
@@ -42,12 +43,12 @@ func Run() {
 	//
 	//
 	// CACHE
-	CacheService := redis_connector.NewRedisClient(
+	cacheService := redis_connector.NewRedisClient(
 		cfgs.RedisAddr,
 		cfgs.RedisPassword,
 		cfgs.RedisDB,
 	)
-	if err := CacheService.TestRedisConnection(); err != nil {
+	if err := cacheService.TestRedisConnection(); err != nil {
 		tele.Fatalf("connection test failed, ERROR: %v", err)
 	}
 	tele.Info(ctx, "Cache service connection started correctly")
@@ -61,13 +62,20 @@ func Run() {
 		tele.Fatalf("failed to connect to nats: %s", err.Error())
 	}
 	defer natsConn.Drain()
+	tele.Info(ctx, "NATS connected")
 
-	go func() {
-		for i := range 10000 {
-			natsConn.Publish("chatmsg.1", []byte(fmt.Sprintf("{\"hello\": %d}", i)))
-			time.Sleep(time.Millisecond * 1000)
-		}
-	}()
+	//
+	//
+	//
+	// GRPC SERVICES
+	ChatService, err := gorpc.GetGRpcClient(
+		chat.NewChatServiceClient,
+		cfgs.ChatGRPCAddr,
+		ct.CommonKeys(),
+	)
+	if err != nil {
+		tele.Fatalf("failed to connect to chat service: %v", err)
+	}
 
 	//
 	//
@@ -75,8 +83,9 @@ func Run() {
 	// HANDLER
 	liveMux := handlers.NewHandlers(
 		"live",
-		CacheService,
+		cacheService,
 		natsConn,
+		ChatService,
 	)
 
 	//
@@ -139,6 +148,8 @@ type configs struct {
 	EncrytpionKey             string `env:"ENC_KEY"`
 
 	NatsAddress string `env:"NATS_ADDRESS"`
+
+	ChatGRPCAddr string `env:"CHAT_GRPC_ADDR"`
 }
 
 func getConfigs() configs { // sensible defaults
@@ -155,6 +166,7 @@ func getConfigs() configs { // sensible defaults
 		PassSecret:                "a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=",
 		EncrytpionKey:             "a2F0LWFsZXgtdmFnLXlwYXQtc3RhbS16b25lMDEtZ28=",
 		NatsAddress:               "nats:8222",
+		ChatGRPCAddr:              "chat:50051",
 	}
 
 	// load environment variables if present

@@ -44,6 +44,7 @@ func Run() error {
 
 	//
 	//
+	//
 	// CLIENT SERVICES
 	chatClient, err := gorpc.GetGRpcClient(
 		chat.NewChatServiceClient,
@@ -71,6 +72,7 @@ func Run() error {
 	}
 
 	redisConnector := rds.NewRedisClient(cfgs.RedisAddr, cfgs.RedisPassword, cfgs.RedisDB)
+
 	//
 	//
 	// DATABASE
@@ -79,6 +81,11 @@ func Run() error {
 		return fmt.Errorf("failed to connect db: %v", err)
 	}
 	defer pool.Close()
+
+	pgxTxRunner, err := postgresql.NewPgxTxRunner(pool, ds.New(pool))
+	if err != nil {
+		tele.Fatal("failed to create pgxTxRunner")
+	}
 	tele.Info(ctx, "Connected to users-db database")
 
 	//
@@ -91,15 +98,10 @@ func Run() error {
 		redisConnector,
 	)
 
-	pgxTxRunner, err := postgresql.NewPgxTxRunner(pool, ds.New(pool))
-	if err != nil {
-		tele.Fatal("failed to create pgxTxRunner")
-	}
 	app := application.NewApplication(ds.New(pool), pgxTxRunner, pool, clients)
 	service := *handler.NewUsersHanlder(app)
 
-	// port := ":50051"
-
+	//
 	//
 	//
 	// SERVER

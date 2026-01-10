@@ -3,7 +3,6 @@ package entry
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"social-network/services/chat/internal/application"
@@ -17,6 +16,7 @@ import (
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
 	"social-network/shared/go/gorpc"
+	"social-network/shared/go/kafgo"
 	postgresql "social-network/shared/go/postgre"
 	rds "social-network/shared/go/redis"
 	"social-network/shared/go/retrievemedia"
@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"syscall"
+
+	"github.com/nats-io/nats.go"
 )
 
 type configs struct {
@@ -58,6 +60,10 @@ func Run() error {
 	ctx, stopSignal := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignal()
 
+	//
+	//
+	//
+	// TELEMETRY
 	closeTele, err := tele.InitTelemetry(ctx,
 		"chat",
 		"CHAT",
@@ -73,51 +79,12 @@ func Run() error {
 
 	tele.Info(ctx, "initialized telemetry")
 
+	//
+	//
+	//
+	// GRPC SERVICES
 	clients := initClients()
 
-	//
-	//
-	//
-	// KAFKA CONSUMER
-	// consumer, err := kafgo.NewKafkaConsumer([]string{"localhost:9092"}, "chat")
-	// if err != nil {
-	// 	fmt.Println("yo")
-	// }
-
-	// memberChannel, err := consumer.RegisterTopic("group_memberships1")
-	// _, err = consumer.RegisterTopic("group_memberships2")
-
-	// close, err := consumer.StartConsuming(ctx)
-	// if err != nil {
-	// 	fmt.Println("bla")
-	// }
-	// defer close()
-
-	// tele.Debug(ctx, "my channel @1", "chan", memberChannel)
-
-	// //usage example:
-	// // for record := range memberChannel {
-	// // 	fmt.Println(string(record.Data()))
-	// // 	record.Commit(ctx)
-	// // }
-
-	// //
-	// //
-	// //
-	// // KAFKA PRODUCER
-
-	// producer, close, err := kafgo.NewKafkaProducer([]string{"localhost:9092"})
-	// if err != nil {
-	// 	tele.Fatal("wtf")
-	// }
-	// defer close()
-
-	// tele.Debug(ctx, "my producer: @1", "producer", producer)
-	// //usage example
-	// // err = producer.Send(ctx, "notifications", "sdf")
-	// // if err != nil{
-	// // 	tele.Warn(ctx, "failed to produce")
-	// // }
 	retrieveMedia := retrievemedia.NewMediaRetriever(clients.MediaClient, clients.RedisClient, 3*time.Minute)
 
 	retriveUsers := retrieveusers.NewUserRetriever(
@@ -127,25 +94,61 @@ func Run() error {
 		3*time.Minute,
 	)
 
+	//
+	//
+	//
+	// NATS
+	natsConn, err := nats.Connect("nats:")
+	if err != nil {
+		tele.Fatalf("failed to connect to nats: %s", err.Error())
+	}
+	defer natsConn.Drain()
+	tele.Info(ctx, "NATS connected")
+
+	//
+	//
+	//
+	// KAFKA PRODUCER
+	eventProducer, close, err := kafgo.NewKafkaProducer([]string{"localhost:9092"})
+	if err != nil {
+		tele.Fatal("wtf")
+	}
+	defer close()
+	tele.Info(ctx, "initialized kafka producer")
+
+	//
+	//
+	//
+	// DATABASE
 	pool, err := postgresql.NewPool(ctx, cfgs.DatabaseConn)
 	if err != nil {
 		return fmt.Errorf("failed to connect db: %v", err)
 	}
 	defer pool.Close()
-	fmt.Println("Conneted to DB")
+	tele.Info(ctx, "Connected to DB")
 
+	//
+	//
+	//
+	// CORE SERVICE
 	app, err := application.NewChatService(
 		pool,
 		&clients,
 		dbservice.New(pool),
 		retriveUsers,
+		eventProducer,
+		natsConn,
 	)
 	if err != nil {
-		log.Fatal("failed to create chat service application: ", err)
+		tele.Fatalf("failed to create chat service application: %s", err.Error())
 	}
 
 	handler := handler.NewChatHandler(app)
 
+	//
+	//
+	//
+	// SERVER
 	startServerFunc, stopServerFunc, err := gorpc.CreateGRpcServer[chat.ChatServiceServer](
 		chat.RegisterChatServiceServer,
 		handler,
@@ -153,44 +156,51 @@ func Run() error {
 		ct.CommonKeys(),
 	)
 	if err != nil {
-		log.Fatal("failed to create server:", err.Error())
+		tele.Fatalf("failed to create server: %s", err.Error())
 	}
 
 	go func() {
-		fmt.Println("Starting grpc server at port: ", cfgs.GrpcServerPort)
+		tele.Info(ctx, "Starting grpc server at port: @1", "port", cfgs.GrpcServerPort)
 		err := startServerFunc()
 		if err != nil {
-			log.Fatal("server failed to start")
+			tele.Fatal("server failed to start")
 		}
-		fmt.Println("server finished")
+		tele.Info(ctx, "server finished")
 	}()
 
-	log.Printf("gRPC server listening on %s", cfgs.GrpcServerPort)
+	tele.Info(ctx, "gRPC server listening on @1", "port", cfgs.GrpcServerPort)
 
-	// wait here for process termination signal to initiate graceful shutdown
+	//
+	//
+	//
+	// SHUTDOWN: wait here for process termination signal to initiate graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	<-quit
 
-	log.Println("Shutting down server...")
+	tele.Info(ctx, "Shutting down server...")
 	stopServerFunc()
-	log.Println("Server stopped")
+	tele.Info(ctx, "Server stopped")
 	return nil
 }
 
 func initClients() client.Clients {
+	//
+	//
+	//
+	// GRPC SERVICES
 	notifClient, err := gorpc.GetGRpcClient(
 		notifications.NewNotificationServiceClient, cfgs.NotificationsAdress, ct.CommonKeys())
 	if err != nil {
-		log.Fatal("failed to create notification client: ", err)
+		tele.Fatalf("failed to create notification client: %s", err.Error())
 	}
 
 	userClient, err := gorpc.GetGRpcClient(
 		users.NewUserServiceClient, cfgs.UsersAdress, ct.CommonKeys(),
 	)
 	if err != nil {
-		log.Fatal("failed to create user client: ", err)
+		tele.Fatalf("failed to create user client: %s", err.Error())
 	}
 
 	mediaClient, err := gorpc.GetGRpcClient(
@@ -199,9 +209,13 @@ func initClients() client.Clients {
 		ct.CommonKeys(),
 	)
 	if err != nil {
-		log.Fatal("failed to create media client: ", err)
+		tele.Fatalf("failed to create media client: %s", err.Error())
 	}
 
+	//
+	//
+	//
+	// CACHE
 	redisClient := rds.NewRedisClient(
 		cfgs.RedisAddr, cfgs.RedisPassword, cfgs.RedisDB,
 	)

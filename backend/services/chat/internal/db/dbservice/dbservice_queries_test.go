@@ -8,6 +8,7 @@ import (
 
 	ct "social-network/shared/go/ct"
 	md "social-network/shared/go/models"
+	tele "social-network/shared/go/telemetry"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
@@ -63,7 +64,7 @@ func truncateTestTables(ctx context.Context, pool *pgxpool.Pool) {
 	for _, table := range tables {
 		_, err := pool.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
 		if err != nil {
-			fmt.Printf("Failed to truncate %s: %v\n", table, err)
+			tele.Error(ctx, "Failed to truncate @1 @2", "table", table, "error", err)
 		}
 	}
 }
