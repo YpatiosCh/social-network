@@ -57,6 +57,10 @@ func (e *Error) String() string {
 	return e.Error()
 }
 
+func (e *Error) Public() string {
+	return e.publicMsg
+}
+
 // Returns the original most underlying error by calling Unwrap until next err is nil.
 func GetSource(err error) string {
 	for {

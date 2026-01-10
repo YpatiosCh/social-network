@@ -164,14 +164,26 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 			}
 			delete(subcriptions, payload)
 		case "ch":
+
+			_, err = h.ChatService.GetOrCreatePrivateConv(ctx, &chat.GetOrCreatePrivateConvRequest{
+				User:              clientId,
+				OtherUser:         3,
+				RetrieveOtherUser: false,
+			})
+			if err != nil {
+				tele.Error(ctx, "failed to get or create private conversation @1", "error", err.Error())
+			}
+
 			type chatMessage struct {
 				Category       string     `json:"category"`
 				ConversationId ct.Id      `json:"conversation_id"`
 				Body           ct.MsgBody `json:"body"`
 			}
 			message := &chatMessage{}
-			err := json.Unmarshal([]byte(payload), message)
-
+			err = json.Unmarshal([]byte(payload), message)
+			if err != nil {
+				tele.Error(ctx, "failed to unmarshal chat message @1", "error", err.Error())
+			}
 			_, err = h.ChatService.CreatePrivateMessage(ctx, &chat.CreatePrivateMessageRequest{
 				ConversationId: message.ConversationId.Int64(),
 				SenderId:       clientId,

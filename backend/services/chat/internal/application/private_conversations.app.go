@@ -73,15 +73,16 @@ func (c *ChatService) GetOrCreatePrivateConv(ctx context.Context,
 // Respose per PC includes last message and unread count from users side.
 func (c *ChatService) GetPrivateConversations(ctx context.Context,
 	arg md.GetPrivateConvsReq,
-) (conversations []md.PrivateConvsPreview, err error) {
+) ([]md.PrivateConvsPreview, *ce.Error) {
 
 	input := fmt.Sprintf("arg: %#v", arg)
 
-	if err := ct.ValidateStruct(arg); err != nil {
+	err := ct.ValidateStruct(arg)
+	if err != nil {
 		return nil, ce.Wrap(ce.ErrInvalidArgument, err, input)
 	}
 
-	conversations, err = c.Queries.GetPrivateConvs(ctx, arg)
+	conversations, err := c.Queries.GetPrivateConvs(ctx, arg)
 	if err != nil {
 		return conversations, ce.Wrap(nil, err, input)
 	}
@@ -110,10 +111,11 @@ func (c *ChatService) GetPrivateConversations(ctx context.Context,
 // If user match of conversation_id and user_id fails returns error.
 // TODO: Implement call to live service
 func (c *ChatService) CreatePrivateMessage(ctx context.Context,
-	params md.CreatePrivatMsgReq) (msg md.PrivateMsg, err error) {
+	params md.CreatePrivatMsgReq) (msg md.PrivateMsg, Err *ce.Error) {
 
 	input := fmt.Sprintf("params: %#v", params)
-	if err := ct.ValidateStruct(params); err != nil {
+	err := ct.ValidateStruct(params)
+	if err != nil {
 		return msg, ce.New(ce.ErrInvalidArgument, err, input)
 	}
 
@@ -122,7 +124,8 @@ func (c *ChatService) CreatePrivateMessage(ctx context.Context,
 	if err != nil {
 		return msg, ce.Wrap(nil, err, input)
 	}
-	return msg, err
+
+	return msg, nil
 }
 
 func (c *ChatService) GetPreviousPMs(ctx context.Context,
