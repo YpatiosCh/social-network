@@ -37,6 +37,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 	uniqueImageIds := imageIds.Unique()
 	images := make(map[int64]string, len(uniqueImageIds))
 	var missingImages ct.Ids
+	var imagesToDelete []int64
 
 	ctVariant := mapping.PbToCtFileVariant(variant)
 	if err := ctVariant.Validate(); err != nil {
@@ -63,7 +64,6 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 		}
 	}
 
-	var imagesToDelete []int64
 	// Batch RPC for missing images
 	if len(missingImages) > 0 {
 		// fmt.Println("calling media for these images", missingImages)
@@ -75,12 +75,6 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 		resp, err := h.client.GetImages(ctx, req)
 		if err != nil {
 			return nil, nil, ce.ParseGrpcErr(err, input)
-		}
-
-		for _, failedImage := range resp.FailedIds {
-			if failedImage.GetStatus() == media.UploadStatus_UPLOAD_STATUS_FAILED {
-				imagesToDelete = append(imagesToDelete, failedImage.FileId)
-			}
 		}
 
 		// merge with redis map
@@ -97,27 +91,27 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 		}
 
 		//==============pinpoint not found images============
+
+		// Build set of all requested IDs
+		requested := make(map[int64]struct{}, len(uniqueImageIds))
 		for _, imageId := range uniqueImageIds {
-			id := imageId.Int64()
+			requested[imageId.Int64()] = struct{}{}
+		}
 
-			// skip if download succeeded
-			if _, exists := resp.DownloadUrls[id]; exists {
-				continue
-			}
+		// Remove images found in redis and from media service
+		for id := range images {
+			delete(requested, id)
+		}
 
-			// skip if download failed
-			foundFailed := false
-			for _, failedImage := range resp.FailedIds {
-				if failedImage.FileId == id {
-					foundFailed = true
-					break
-				}
+		// Remove images in failedIds unless status failed
+		for _, failed := range resp.FailedIds {
+			if failed.GetStatus() != media.UploadStatus_UPLOAD_STATUS_FAILED {
+				delete(requested, failed.FileId)
 			}
-			if foundFailed {
-				continue
-			}
-
-			imagesToDelete = append(imagesToDelete, id) //now imagesToDelete includes failed and not found
+		}
+		//now requested only contains failed and not found anywhere
+		for id := range requested {
+			imagesToDelete = append(imagesToDelete, id)
 		}
 	}
 

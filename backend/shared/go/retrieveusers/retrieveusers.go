@@ -2,6 +2,7 @@ package retrieveusers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	cm "social-network/shared/gen-go/common"
@@ -82,7 +83,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 	imageIds = imageIds.Unique()
 	if len(imageIds) > 0 {
 		// Use shared MediaRetriever for images (handles caching and fetching)
-		imageMap, failedImageIds, err := h.mediaRetriever.GetImages(ctx, imageIds, media.FileVariant_THUMBNAIL)
+		imageMap, imagesToDelete, err := h.mediaRetriever.GetImages(ctx, imageIds, media.FileVariant_THUMBNAIL)
 		if err != nil {
 			tele.Error(ctx, "media retriever failed for @1", "request", imageIds, "error", err.Error()) //log error instead of returning
 			//return nil, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
@@ -95,32 +96,19 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 				}
 			}
 		}
-		//==============pinpoint not found images============
-		var imagesToDelete []int64
-		//add if in failed
-		imagesToDelete = append(imagesToDelete, failedImageIds...)
 
-		for _, imageId := range imageIds {
-			id := imageId.Int64()
-
-			// skip if download succeeded
-			if _, exists := imageMap[id]; exists {
-				continue
-			} else {
-
-				imagesToDelete = append(imagesToDelete, id) //now imagesToDelete includes failed and not found
+		if len(imagesToDelete) > 0 {
+			msg := &userpb.FailedImageIds{
+				ImgIds: imagesToDelete,
 			}
+			go func(m *userpb.FailedImageIds) {
+				tele.Info(ctx, "removing avatar ids @1 from users", "failedImageIds", imagesToDelete)
+				_, err := h.client.RemoveImages(context.WithoutCancel(ctx), m)
+				if err != nil {
+					tele.Warn(ctx, "failed  to delete failed images @1 from users: @2", "failedImageIds", imagesToDelete, "error", err.Error())
+				}
+			}(msg)
 		}
-
-		msg := &userpb.FailedImageIds{
-			ImgIds: imagesToDelete,
-		}
-		go func(m *userpb.FailedImageIds) {
-			_, err := h.client.RemoveImages(ctx, m)
-			if err != nil {
-				tele.Warn(context.WithoutCancel(ctx), "failed  to delete failed images @1 from users", "failedImageIds", failedImageIds)
-			}
-		}(msg)
 	}
 
 	return users, nil
@@ -166,15 +154,30 @@ func (h *UserRetriever) GetUser(ctx context.Context, userID ct.Id) (models.User,
 		fmt.Printf("RETRIEVE USERS - failed to construct redis key for user %v: %v\n", user.UserId, err)
 	}
 
-	//========================== STEP 2 : get avatars from media ===============================================
-	// Get image urls for users
+	//========================== STEP 2 : get avatar from media ===============================================
+	// Get image url for users
 
 	if user.AvatarId > 0 { //exclude 0 imageIds
 
 		// Use shared MediaRetriever for images (handles caching and fetching)
 		imageUrl, err := h.mediaRetriever.GetImage(ctx, user.AvatarId.Int64(), media.FileVariant_THUMBNAIL)
 		if err != nil {
-			return models.User{}, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
+			var commonError *ce.Error
+			if errors.As(err, &commonError) {
+				if err.(*ce.Error).IsClass(ce.ErrNotFound) {
+					msg := &userpb.FailedImageIds{
+						ImgIds: []int64{user.AvatarId.Int64()},
+					}
+					go func(m *userpb.FailedImageIds) {
+						tele.Info(ctx, "removing avatar id @1 for user @2", "failedImageId", user.AvatarId, "userId", user.UserId)
+						_, err := h.client.RemoveImages(context.WithoutCancel(ctx), m)
+						if err != nil {
+							tele.Warn(ctx, "failed to delete failed image @1 from users: @2", "failedImageId", user.AvatarId, "error", err.Error())
+						}
+					}(msg)
+					return models.User{}, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
+				}
+			}
 		}
 
 		u.AvatarURL = imageUrl

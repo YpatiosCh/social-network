@@ -198,7 +198,7 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 	}
 	events := make([]models.Event, 0, len(rows))
 	userIDs := make(ct.Ids, 0, len(rows))
-	EventImageIds := make(ct.Ids, 0, len(rows))
+	eventImageIds := make(ct.Ids, 0, len(rows))
 
 	for _, r := range rows {
 		uid := r.EventCreatorID
@@ -225,7 +225,7 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 			UserResponse:  ur,
 		})
 		if r.Image > 0 {
-			EventImageIds = append(EventImageIds, ct.Id(r.Image))
+			eventImageIds = append(eventImageIds, ct.Id(r.Image))
 		}
 	}
 
@@ -239,11 +239,12 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 	}
 
 	var imageMap map[int64]string
-	if len(EventImageIds) > 0 {
-		imageMap, _, err = s.mediaRetriever.GetImages(ctx, EventImageIds, media.FileVariant_MEDIUM)
+	var failedImageIds []int64
+	if len(eventImageIds) > 0 {
+		imageMap, failedImageIds, err = s.mediaRetriever.GetImages(ctx, eventImageIds, media.FileVariant_MEDIUM)
 	}
 	if err != nil {
-		tele.Error(ctx, "media retriever failed for @1", "request", EventImageIds, "error", err.Error()) //log error instead of returning
+		tele.Error(ctx, "media retriever failed for @1", "request", eventImageIds, "error", err.Error()) //log error instead of returning
 		//return nil, ce.Wrap(nil, err, input).WithPublic("error retrieving images")
 	} else {
 		for i := range events {
@@ -253,6 +254,7 @@ func (s *Application) GetEventsByGroupId(ctx context.Context, req models.EntityI
 			}
 			events[i].ImageUrl = imageMap[events[i].ImageId.Int64()]
 		}
+		s.removeFailedImagesAsync(ctx, failedImageIds)
 	}
 
 	return events, nil

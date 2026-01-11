@@ -301,7 +301,7 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 	return i, err
 }
 
-const removeImages = `-- name: RemoveImage :exec
+const removeImages = `-- name: RemoveImages :exec
 UPDATE users
 SET avatar_id = 0
 WHERE avatar_id = ANY($1::bigint[]);

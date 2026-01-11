@@ -61,3 +61,14 @@ func (q *Queries) UpsertImage(ctx context.Context, arg UpsertImageParams) error 
 	_, err := q.db.Exec(ctx, upsertImage, arg.ID, arg.ParentID)
 	return err
 }
+
+const removeImages = `-- name: RemoveImages :exec
+UPDATE images
+SET deleted_at = CURRENT_TIMESTAMP
+WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL;
+`
+
+func (q *Queries) RemoveImages(ctx context.Context, arg []int64) error {
+	_, err := q.db.Exec(ctx, removeImages, arg)
+	return err
+}
