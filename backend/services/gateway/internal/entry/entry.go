@@ -114,6 +114,7 @@ func Run() {
 		PostsService,
 		ChatService,
 		MediaService,
+		NotifService,
 	)
 
 	//
