@@ -37,6 +37,7 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 	uniqueImageIds := imageIds.Unique()
 	images := make(map[int64]string, len(uniqueImageIds))
 	var missingImages ct.Ids
+	var imagesToDelete []int64
 
 	ctVariant := mapping.PbToCtFileVariant(variant)
 	if err := ctVariant.Validate(); err != nil {
@@ -63,7 +64,6 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 		}
 	}
 
-	var imagesToDelete []int64
 	// Batch RPC for missing images
 	if len(missingImages) > 0 {
 		// fmt.Println("calling media for these images", missingImages)
@@ -77,12 +77,6 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 			return nil, nil, ce.ParseGrpcErr(err, input)
 		}
 
-		for _, failedImage := range resp.FailedIds {
-			if failedImage.GetStatus() == 4 || failedImage.GetStatus() == 0 {
-				imagesToDelete = append(imagesToDelete, failedImage.FileId)
-			}
-		}
-
 		// merge with redis map
 		maps.Copy(images, resp.DownloadUrls)
 
@@ -94,6 +88,30 @@ func (h *MediaRetriever) GetImages(ctx context.Context, imageIds ct.Ids, variant
 			} else {
 				fmt.Printf("RETRIEVE MEDIA - failed to construct redis key for caching image %v: %v\n", id, err)
 			}
+		}
+
+		//==============pinpoint not found images============
+
+		// Build set of all requested IDs
+		requested := make(map[int64]struct{}, len(uniqueImageIds))
+		for _, imageId := range uniqueImageIds {
+			requested[imageId.Int64()] = struct{}{}
+		}
+
+		// Remove images found in redis and from media service
+		for id := range images {
+			delete(requested, id)
+		}
+
+		// Remove images in failedIds unless status failed
+		for _, failed := range resp.FailedIds {
+			if failed.GetStatus() != media.UploadStatus_UPLOAD_STATUS_FAILED {
+				delete(requested, failed.FileId)
+			}
+		}
+		//now requested only contains failed and not found anywhere
+		for id := range requested {
+			imagesToDelete = append(imagesToDelete, id)
 		}
 	}
 

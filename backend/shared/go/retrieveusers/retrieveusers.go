@@ -2,43 +2,19 @@ package retrieveusers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	cm "social-network/shared/gen-go/common"
 	"social-network/shared/gen-go/media"
+	userpb "social-network/shared/gen-go/users"
 	ce "social-network/shared/go/commonerrors"
 	ct "social-network/shared/go/ct"
 	"social-network/shared/go/models"
-	redis_connector "social-network/shared/go/redis"
-	"social-network/shared/go/retrievemedia"
 	tele "social-network/shared/go/telemetry"
-	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
-
-type UserInfoRetriever interface {
-	GetBasicUserInfo(ctx context.Context, req *wrapperspb.Int64Value, opts ...grpc.CallOption) (*cm.User, error)
-	GetBatchBasicUserInfo(ctx context.Context, req *cm.UserIds, opts ...grpc.CallOption) (*cm.ListUsers, error)
-}
-
-type UserRetriever struct {
-	client         UserInfoRetriever
-	cache          RedisCache
-	mediaRetriever *retrievemedia.MediaRetriever
-	ttl            time.Duration
-}
-
-// UserRetriever provides a function that abstracts the process of populating a map[ct.Id]models.User
-// from a slice of user ids. It depends on:
-//
-//  1. GetBatchBasicUserInfo function provided by an initiator that holds a connection to social-network user service.
-//  2. A cache interface that implements GetObj() and SetObj() methods.
-//  3. The retrievemedia package.
-func NewUserRetriever(client UserInfoRetriever, cache *redis_connector.RedisClient, mediaRetriever *retrievemedia.MediaRetriever, ttl time.Duration) *UserRetriever {
-	return &UserRetriever{client: client, cache: cache, mediaRetriever: mediaRetriever, ttl: ttl}
-}
 
 // GetUsers returns a map[userID]User, using cache + batch RPC.
 func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id]models.User, error) {
@@ -107,7 +83,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 	imageIds = imageIds.Unique()
 	if len(imageIds) > 0 {
 		// Use shared MediaRetriever for images (handles caching and fetching)
-		imageMap, _, err := h.mediaRetriever.GetImages(ctx, imageIds, media.FileVariant_THUMBNAIL)
+		imageMap, imagesToDelete, err := h.mediaRetriever.GetImages(ctx, imageIds, media.FileVariant_THUMBNAIL)
 		if err != nil {
 			tele.Error(ctx, "media retriever failed for @1", "request", imageIds, "error", err.Error()) //log error instead of returning
 			//return nil, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
@@ -119,6 +95,19 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 					users[id] = u
 				}
 			}
+		}
+
+		if len(imagesToDelete) > 0 {
+			msg := &userpb.FailedImageIds{
+				ImgIds: imagesToDelete,
+			}
+			go func(m *userpb.FailedImageIds) {
+				tele.Info(ctx, "removing avatar ids @1 from users", "failedImageIds", imagesToDelete)
+				_, err := h.client.RemoveImages(context.WithoutCancel(ctx), m)
+				if err != nil {
+					tele.Warn(ctx, "failed  to delete failed images @1 from users: @2", "failedImageIds", imagesToDelete, "error", err.Error())
+				}
+			}(msg)
 		}
 	}
 
@@ -165,15 +154,30 @@ func (h *UserRetriever) GetUser(ctx context.Context, userID ct.Id) (models.User,
 		fmt.Printf("RETRIEVE USERS - failed to construct redis key for user %v: %v\n", user.UserId, err)
 	}
 
-	//========================== STEP 2 : get avatars from media ===============================================
-	// Get image urls for users
+	//========================== STEP 2 : get avatar from media ===============================================
+	// Get image url for users
 
 	if user.AvatarId > 0 { //exclude 0 imageIds
 
 		// Use shared MediaRetriever for images (handles caching and fetching)
 		imageUrl, err := h.mediaRetriever.GetImage(ctx, user.AvatarId.Int64(), media.FileVariant_THUMBNAIL)
 		if err != nil {
-			return models.User{}, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
+			var commonError *ce.Error
+			if errors.As(err, &commonError) {
+				if err.(*ce.Error).IsClass(ce.ErrNotFound) {
+					msg := &userpb.FailedImageIds{
+						ImgIds: []int64{user.AvatarId.Int64()},
+					}
+					go func(m *userpb.FailedImageIds) {
+						tele.Info(ctx, "removing avatar id @1 for user @2", "failedImageId", user.AvatarId, "userId", user.UserId)
+						_, err := h.client.RemoveImages(context.WithoutCancel(ctx), m)
+						if err != nil {
+							tele.Warn(ctx, "failed to delete failed image @1 from users: @2", "failedImageId", user.AvatarId, "error", err.Error())
+						}
+					}(msg)
+					return models.User{}, ce.Wrap(nil, err, input) // keep the code from retrieve media by wrapping the error and add errMsg for context
+				}
+			}
 		}
 
 		u.AvatarURL = imageUrl

@@ -75,8 +75,9 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 	}
 
 	var imageMap map[int64]string
+	var failedImageIds []int64
 	if len(postImageIds) > 0 {
-		imageMap, _, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
+		imageMap, failedImageIds, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
 	}
 	if err != nil {
 		tele.Error(ctx, "media retriever failed for @1", "request", postImageIds, "error", err.Error()) //log error instead of returning
@@ -90,6 +91,7 @@ func (s *Application) GetPersonalizedFeed(ctx context.Context, req models.GetPer
 			}
 			posts[i].ImageUrl = imageMap[posts[i].ImageId.Int64()]
 		}
+		s.removeFailedImagesAsync(ctx, failedImageIds)
 	}
 
 	return posts, nil
@@ -149,9 +151,9 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 	}
 
 	var imageMap map[int64]string
-
+	var failedImageIds []int64
 	if len(postImageIds) > 0 {
-		imageMap, _, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
+		imageMap, failedImageIds, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
 	}
 	if err != nil {
 		tele.Error(ctx, "media retriever failed for @1", "request", postImageIds, "error", err.Error()) //log error instead of returning
@@ -165,6 +167,7 @@ func (s *Application) GetPublicFeed(ctx context.Context, req models.GenericPagin
 			}
 			posts[i].ImageUrl = imageMap[posts[i].ImageId.Int64()]
 		}
+		s.removeFailedImagesAsync(ctx, failedImageIds)
 	}
 
 	return posts, nil
@@ -231,8 +234,9 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 	}
 
 	var imageMap map[int64]string
+	var failedImageIds []int64
 	if len(postImageIds) > 0 {
-		imageMap, _, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
+		imageMap, failedImageIds, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
 	}
 	if err != nil {
 		tele.Error(ctx, "media retriever failed for @1", "request", postImageIds, "error", err.Error()) //log error instead of returning
@@ -246,6 +250,7 @@ func (s *Application) GetUserPostsPaginated(ctx context.Context, req models.GetU
 			}
 			posts[i].ImageUrl = imageMap[posts[i].ImageId.Int64()]
 		}
+		s.removeFailedImagesAsync(ctx, failedImageIds)
 	}
 
 	return posts, nil
@@ -322,8 +327,9 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 	}
 
 	var imageMap map[int64]string
+	var failedImageIds []int64
 	if len(postImageIds) > 0 {
-		imageMap, _, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
+		imageMap, failedImageIds, err = s.mediaRetriever.GetImages(ctx, postImageIds, media.FileVariant_MEDIUM)
 	}
 	if err != nil {
 		tele.Error(ctx, "media retriever failed for @1", "request", postImageIds, "error", err.Error()) //log error instead of returning
@@ -337,6 +343,7 @@ func (s *Application) GetGroupPostsPaginated(ctx context.Context, req models.Get
 			}
 			posts[i].ImageUrl = imageMap[posts[i].ImageId.Int64()]
 		}
+		s.removeFailedImagesAsync(ctx, failedImageIds)
 	}
 
 	return posts, nil

@@ -243,8 +243,9 @@ func (s *Application) GetCommentsByParentId(ctx context.Context, req models.Enti
 	}
 
 	var imageMap map[int64]string
+	var failedImageIds []int64
 	if len(commentImageIds) > 0 {
-		imageMap, _, err = s.mediaRetriever.GetImages(ctx, commentImageIds, media.FileVariant_MEDIUM)
+		imageMap, failedImageIds, err = s.mediaRetriever.GetImages(ctx, commentImageIds, media.FileVariant_MEDIUM)
 	}
 	if err != nil {
 		tele.Error(ctx, "media retriever failed for @1", "request", commentImageIds, "error", err.Error()) //log error instead of returning
@@ -258,6 +259,7 @@ func (s *Application) GetCommentsByParentId(ctx context.Context, req models.Enti
 			}
 			comments[i].ImageUrl = imageMap[comments[i].ImageId.Int64()]
 		}
+		s.removeFailedImagesAsync(ctx, failedImageIds)
 	}
 
 	return comments, nil
