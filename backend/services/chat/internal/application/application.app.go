@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"social-network/services/chat/internal/client"
 	"social-network/services/chat/internal/db/dbservice"
+	ce "social-network/shared/go/commonerrors"
 	ct "social-network/shared/go/ct"
 	"social-network/shared/go/kafgo"
-	md "social-network/shared/go/models"
 	postgresql "social-network/shared/go/postgre"
 	"social-network/shared/go/retrieveusers"
 
@@ -35,16 +35,12 @@ type ChatService struct {
 }
 
 type Clients interface {
-	// Converts a slice of ct.Ids representing users to models.User slice.
-	UserIdsToUsers(ctx context.Context,
-		ids ct.Ids) (userInfo []md.User, err error)
-
 	// Verifies that user with userId is a member of group with groupId.
 	IsGroupMember(ctx context.Context,
-		groupId ct.Id, userId ct.Id) (bool, error)
+		groupId ct.Id, userId ct.Id) (bool, *ce.Error)
 
 	// Returns true if either user is following the other.
-	AreConnected(ctx context.Context, userA, userB ct.Id) (bool, error)
+	AreConnected(ctx context.Context, userA, userB ct.Id) (bool, *ce.Error)
 }
 
 func NewChatService(

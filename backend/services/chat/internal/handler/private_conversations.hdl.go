@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 
 	pb "social-network/shared/gen-go/chat"
 	ce "social-network/shared/go/commonerrors"
@@ -15,9 +14,6 @@ import (
 
 	_ "github.com/lib/pq"
 )
-
-//TODO endpoint for fetching all (or paginated) conversations
-//TODO need a batch getorcreateprivateconv
 
 // GetOrCreatePrivateConv creates a new private conversation between two users
 // or returns an existing one if it already exists.
@@ -57,6 +53,35 @@ func (h *ChatHandler) GetOrCreatePrivateConv(
 	return resp, nil
 }
 
+func (h *ChatHandler) GetPrivateConversations(
+	ctx context.Context,
+	params *pb.GetPrivateConversationsRequest,
+) (*pb.GetPrivateConversationsResponse, error) {
+	tele.Info(ctx, "get private conversations called: @1", "params", params.String())
+
+	convs, err := h.Application.GetPrivateConversations(ctx, md.GetPrivateConvsReq{
+		UserId:            ct.Id(params.UserId),
+		BeforeDateUpdated: ct.GenDateTime(params.BeforeDate.AsTime()),
+		Limit:             ct.Limit(params.Limit),
+	})
+	if err != nil {
+		tele.Error(ctx, "get private conversations @1 \n\n@2\n\n",
+			"request", params.String(),
+			"error", err.Error(),
+		)
+	}
+
+	res := &pb.GetPrivateConversationsResponse{
+		Conversations: mp.MapConversationsToProto(convs),
+	}
+
+	tele.Info(ctx, "get private conversations succes: @1 @2",
+		"params", params.String(),
+		"response", res.String(),
+	)
+	return res, nil
+}
+
 // CreatePrivateMessage creates a new private message in a conversation.
 func (h *ChatHandler) CreatePrivateMessage(
 	ctx context.Context,
@@ -65,7 +90,7 @@ func (h *ChatHandler) CreatePrivateMessage(
 	tele.Info(ctx, "creating private message: @1", "params", params.String())
 
 	// Call application layer
-	msg, Err := h.Application.CreatePrivateMessage(ctx, md.CreatePrivatMsgReq{
+	msg, Err := h.Application.CreatePrivateMessage(ctx, md.CreatePrivateMsgReq{
 		ConversationId: ct.Id(params.ConversationId),
 		SenderId:       ct.Id(params.SenderId),
 		MessageText:    ct.MsgBody(params.MessageText),
@@ -85,32 +110,6 @@ func (h *ChatHandler) CreatePrivateMessage(
 		"response", resp.String(),
 	)
 
-	type chatMessage struct {
-		SenderId ct.Id      `json:"sender_id"`
-		Body     ct.MsgBody `json:"body"`
-	}
-
-	messageBytes, err := json.Marshal(chatMessage{
-		SenderId: ct.Id(resp.Sender.UserId),
-		Body:     ct.MsgBody(resp.MessageText),
-	})
-	if err != nil {
-		tele.Error(ctx, "failed to marshal private message for nats: @1", "error", err.Error())
-		return resp, nil
-	}
-
-	//TODO message payload need to be more intricate
-	err = h.Application.NatsConn.Publish(ct.PrivateMessageKey(params.SenderId), messageBytes)
-	if err != nil {
-		tele.Error(ctx, "failed to publish private message to nats: @1", "error", err.Error())
-	}
-
-	//TODO find the other party
-	// err = h.Application.NatsConn.Publish(ct.PrivateMessageKey(params.SenderId), []byte(params.MessageText))
-	// if err != nil {
-	// 	tele.Error(ctx, "failed to publish private message to nats: @1", "error", err.Error())
-	// }
-
 	return resp, nil
 }
 
@@ -123,7 +122,7 @@ func (h *ChatHandler) GetPreviousPrivateMessages(
 	tele.Info(ctx, "get previous private messages called @1", "request", params.String())
 
 	// Call application layer
-	res, err := h.Application.GetPreviousPMs(ctx, md.GetPrivatMsgsReq{
+	res, err := h.Application.GetPreviousPMs(ctx, md.GetPrivateMsgsReq{
 		ConversationId:    ct.Id(params.ConversationId),
 		UserId:            ct.Id(params.UserId),
 		BoundaryMessageId: ct.Id(params.BoundaryMessageId),
@@ -157,7 +156,7 @@ func (h *ChatHandler) GetNextPrivateMessages(
 	tele.Info(ctx, "get next private messages called @1", "request", params.String())
 
 	// Call application layer
-	res, err := h.Application.GetNextPMs(ctx, md.GetPrivatMsgsReq{
+	res, err := h.Application.GetNextPMs(ctx, md.GetPrivateMsgsReq{
 		ConversationId:    ct.Id(params.ConversationId),
 		UserId:            ct.Id(params.UserId),
 		BoundaryMessageId: ct.Id(params.BoundaryMessageId),

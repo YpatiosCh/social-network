@@ -213,10 +213,12 @@ func ToGRPCCode(err error) codes.Code {
 }
 
 // Coverts a grpc error to commonerrors Error type.
-// The status code is converted to commonerrors type and the status message is wraped inside it as a new error.
+// The status code is converted to commonerrors type and the status message is wraped inside it as a new error
+// as well as Error.publicMsg
+//
 // Optionaly a msg string is included for additional context.
 // Usefull for downstream error parsing.
-func ParseGrpcErr(err error, input ...string) error {
+func ParseGrpcErr(err error, input ...string) *Error {
 	if err == nil {
 		return nil
 	}

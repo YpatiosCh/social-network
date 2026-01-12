@@ -59,13 +59,13 @@ type GetOrCreatePrivateConvResp struct {
 	IsNew           bool
 }
 
-type CreatePrivatMsgReq struct {
+type CreatePrivateMsgReq struct {
 	ConversationId ct.Id      `json:"conversation_id"`
 	SenderId       ct.Id      `json:"sender_id"`
 	MessageText    ct.MsgBody `json:"message_text"`
 }
 
-type GetPrivatMsgsReq struct {
+type GetPrivateMsgsReq struct {
 	ConversationId    ct.Id    `json:"conversation_id"`
 	UserId            ct.Id    `json:"user_id"`
 	BoundaryMessageId ct.Id    `json:"boundary_message_id" validation:"nullable"`
@@ -79,9 +79,9 @@ type GetPrivateMsgsResp struct {
 }
 
 type GetPrivateConvsReq struct {
-	UserId     ct.Id          `json:"user_id"`
-	BeforeDate ct.GenDateTime `json:"before_date"`
-	Limit      ct.Limit       `json:"limit"`
+	UserId            ct.Id          `json:"user_id"`
+	BeforeDateUpdated ct.GenDateTime `json:"before_date_updated"`
+	Limit             ct.Limit       `json:"limit"`
 }
 
 type PrivateConvsPreview struct {
@@ -93,13 +93,14 @@ type PrivateConvsPreview struct {
 }
 
 type PrivateMsg struct {
-	Id             ct.Id
-	ConversationID ct.Id
-	Sender         User
-	MessageText    ct.MsgBody
-	CreatedAt      ct.GenDateTime `validation:"nullable"`
-	UpdatedAt      ct.GenDateTime `validation:"nullable"`
-	DeletedAt      ct.GenDateTime `validation:"nullable"`
+	Id             ct.Id          `json:"id"`
+	ConversationId ct.Id          `json:"conversation_id"`
+	Sender         User           `json:"sender"`
+	ReceiverId     ct.Id          `json:"receiver_id,omitempty" validation:"nullable"`
+	MessageText    ct.MsgBody     `json:"message_text"`
+	CreatedAt      ct.GenDateTime `json:"created_at" validation:"nullable"`
+	UpdatedAt      ct.GenDateTime `json:"updated_at" validation:"nullable"`
+	DeletedAt      ct.GenDateTime `json:"deleted_at" validation:"nullable"`
 }
 
 type UpdateLastReadMsgParams struct {

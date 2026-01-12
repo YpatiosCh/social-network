@@ -153,7 +153,7 @@ func (m *MediaService) GetPublicImage(
 	}
 
 	u, err := m.S3.GenerateDownloadURL(
-		ctx, fm.Bucket, fm.ObjectKey, fm.Visibility.SetExp(),
+		ctx, fm.Bucket, fm.ObjectKey, setExp(fm.Visibility),
 	)
 	if err != nil {
 		return "", ce.Wrap(ce.ErrInternal, err, input+": s3: generate url")
@@ -217,7 +217,7 @@ func (m *MediaService) GetImages(ctx context.Context,
 			continue
 		}
 		url, err := m.S3.GenerateDownloadURL(ctx,
-			fm.Bucket, fm.ObjectKey, fm.Visibility.SetExp())
+			fm.Bucket, fm.ObjectKey, setExp(fm.Visibility))
 		if err != nil {
 			return nil, nil, ce.Wrap(ce.ErrInternal, err, errMsg+": s3: generate url")
 		}
@@ -280,7 +280,7 @@ func (m *MediaService) ValidateUpload(ctx context.Context,
 		u, err := m.S3.GenerateDownloadURL(ctx,
 			fileMeta.Bucket,
 			fileMeta.ObjectKey,
-			fileMeta.Visibility.SetExp(),
+			setExp(fileMeta.Visibility),
 		)
 		if err != nil {
 			tele.Info(ctx, "failed to fetch url for @1", "FileId", fileId)
@@ -289,4 +289,15 @@ func (m *MediaService) ValidateUpload(ctx context.Context,
 		url = u.String()
 	}
 	return url, nil
+}
+
+// Sets 3 minutes expiration for private and 7 days exp for public
+func setExp(v ct.FileVisibility) time.Duration {
+	switch v {
+	case ct.Private:
+		return time.Duration(3 * time.Minute)
+	case ct.Public:
+		return time.Duration(7 * 24 * time.Hour)
+	}
+	return time.Duration(0)
 }

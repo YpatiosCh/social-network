@@ -108,10 +108,11 @@ message PrivateMessage {
   int64 id = 1;
   int64 conversation_id = 2;
   common.User sender = 3;
-  string message_text = 4;
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
-  google.protobuf.Timestamp deleted_at = 7;
+  int64 receiver_id = 4;
+  string message_text = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  google.protobuf.Timestamp deleted_at = 8;
 }
 
 message GetPrivateMessagesRequest {

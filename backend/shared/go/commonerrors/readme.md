@@ -115,7 +115,6 @@ err = Wrap(nil, err, "repository layer")
 * Keeps the existing classification
 * Adds context only
 
-#### It is not recommended to use a `commonerrors` type as a wraped error.
 
 ---
 

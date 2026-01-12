@@ -82,7 +82,7 @@ func (q *Queries) GetPrivateConvs(ctx context.Context,
 	return res, nil
 }
 
-func (q *Queries) CreateNewPrivateMessage(ctx context.Context, arg md.CreatePrivatMsgReq) (msg md.PrivateMsg, err error) {
+func (q *Queries) CreateNewPrivateMessage(ctx context.Context, arg md.CreatePrivateMsgReq) (msg md.PrivateMsg, err error) {
 	input := fmt.Sprintf("arg: %#v", arg)
 
 	row := q.db.QueryRow(ctx,
@@ -94,8 +94,9 @@ func (q *Queries) CreateNewPrivateMessage(ctx context.Context, arg md.CreatePriv
 
 	err = row.Scan(
 		&msg.Id,
-		&msg.ConversationID,
+		&msg.ConversationId,
 		&msg.Sender.UserId,
+		&msg.ReceiverId,
 		&msg.MessageText,
 		&msg.CreatedAt,
 		&msg.UpdatedAt,
@@ -111,7 +112,7 @@ func (q *Queries) CreateNewPrivateMessage(ctx context.Context, arg md.CreatePriv
 }
 
 func (q *Queries) GetPrevPrivateMsgs(ctx context.Context,
-	arg md.GetPrivatMsgsReq) (res md.GetPrivateMsgsResp, err error) {
+	arg md.GetPrivateMsgsReq) (res md.GetPrivateMsgsResp, err error) {
 	input := fmt.Sprintf("arg: %#v", arg)
 
 	if err := ct.ValidateStruct(arg); err != nil {
@@ -138,7 +139,7 @@ func (q *Queries) GetPrevPrivateMsgs(ctx context.Context,
 		var message md.PrivateMsg
 		if err := rows.Scan(
 			&message.Id,
-			&message.ConversationID,
+			&message.ConversationId,
 			&message.Sender,
 			&message.MessageText,
 			&message.CreatedAt,
@@ -159,7 +160,7 @@ func (q *Queries) GetPrevPrivateMsgs(ctx context.Context,
 }
 
 func (q *Queries) GetNextPrivateMsgs(ctx context.Context,
-	arg md.GetPrivatMsgsReq) (res md.GetPrivateMsgsResp, err error) {
+	arg md.GetPrivateMsgsReq) (res md.GetPrivateMsgsResp, err error) {
 	input := fmt.Sprintf("arg: %#v", arg)
 
 	if err := ct.ValidateStruct(arg); err != nil {
@@ -186,7 +187,7 @@ func (q *Queries) GetNextPrivateMsgs(ctx context.Context,
 		var message md.PrivateMsg
 		if err := rows.Scan(
 			&message.Id,
-			&message.ConversationID,
+			&message.ConversationId,
 			&message.Sender,
 			&message.MessageText,
 			&message.CreatedAt,

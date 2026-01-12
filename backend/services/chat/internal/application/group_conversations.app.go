@@ -10,7 +10,7 @@ import (
 
 // Returns a conversation id of a newly created or an existing conversation.
 func (c *ChatService) CreateGroupConversation(ctx context.Context,
-	params md.CreateGroupConvReq) (err error) {
+	params md.CreateGroupConvReq) (Err *ce.Error) {
 
 	input := fmt.Sprintf("group id: %d, user ids: %d", params.GroupId, params.UserIds)
 
@@ -18,7 +18,7 @@ func (c *ChatService) CreateGroupConversation(ctx context.Context,
 		return ce.Wrap(ce.ErrInvalidArgument, err, input)
 	}
 
-	err = c.Queries.CreateGroupConv(ctx, params.GroupId)
+	err := c.Queries.CreateGroupConv(ctx, params.GroupId)
 	if err != nil {
 		return ce.Wrap(ce.ErrInternal, err, input)
 	}
@@ -33,7 +33,7 @@ type CreateMessageInGroupReq struct {
 }
 
 func (c *ChatService) CreateMessageInGroup(ctx context.Context,
-	req CreateMessageInGroupReq) (res md.GroupMsg, err error) {
+	req CreateMessageInGroupReq) (res md.GroupMsg, Err *ce.Error) {
 	input := fmt.Sprintf("params: %#v", req)
 
 	if err := ct.ValidateStruct(req); err != nil {
@@ -45,7 +45,7 @@ func (c *ChatService) CreateMessageInGroup(ctx context.Context,
 	}
 
 	// Add message
-	res, err = c.Queries.CreateNewGroupMessage(ctx, md.CreateGroupMsgReq{
+	res, err := c.Queries.CreateNewGroupMessage(ctx, md.CreateGroupMsgReq{
 		GroupId:     req.GroupId,
 		SenderId:    req.SenderId,
 		MessageText: req.MessageBody,
@@ -59,7 +59,7 @@ func (c *ChatService) CreateMessageInGroup(ctx context.Context,
 }
 
 func (c *ChatService) GetPrevGroupMessages(ctx context.Context,
-	req md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, err error) {
+	req md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, Err *ce.Error) {
 
 	input := fmt.Sprintf("req: %#v", req)
 	if err := ct.ValidateStruct(req); err != nil {
@@ -70,7 +70,7 @@ func (c *ChatService) GetPrevGroupMessages(ctx context.Context,
 		return res, ce.Wrap(nil, err)
 	}
 
-	res, err = c.Queries.GetPrevGroupMessages(ctx, req)
+	res, err := c.Queries.GetPrevGroupMessages(ctx, req)
 	if err != nil {
 		return res, ce.Wrap(nil, err, input)
 	}
@@ -78,7 +78,7 @@ func (c *ChatService) GetPrevGroupMessages(ctx context.Context,
 }
 
 func (c *ChatService) GetNextGroupMessages(ctx context.Context,
-	req md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, err error) {
+	req md.GetGroupMsgsReq) (res md.GetGetGroupMsgsResp, Err *ce.Error) {
 
 	input := fmt.Sprintf("req: %#v", req)
 	if err := ct.ValidateStruct(req); err != nil {
@@ -89,7 +89,7 @@ func (c *ChatService) GetNextGroupMessages(ctx context.Context,
 		return res, ce.Wrap(nil, err)
 	}
 
-	res, err = c.Queries.GetNextGroupMessages(ctx, req)
+	res, err := c.Queries.GetNextGroupMessages(ctx, req)
 	if err != nil {
 		return res, ce.Wrap(nil, err, input)
 	}
@@ -99,7 +99,7 @@ func (c *ChatService) GetNextGroupMessages(ctx context.Context,
 
 // Returns a commonerrors Error type with public message if user is not a group member.
 // Input is the caller function contextual details.
-func (c *ChatService) isMember(ctx context.Context, groupId, memberId ct.Id, input string) error {
+func (c *ChatService) isMember(ctx context.Context, groupId, memberId ct.Id, input string) *ce.Error {
 	isMember, err := c.Clients.IsGroupMember(ctx, groupId, memberId)
 	if err != nil {
 		return ce.ParseGrpcErr(err, input)

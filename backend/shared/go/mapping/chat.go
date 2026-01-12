@@ -6,11 +6,42 @@ import (
 	md "social-network/shared/go/models"
 )
 
+func MapConversationsToProto(cs []md.PrivateConvsPreview) []*pb.PrivateConversationPreview {
+	convs := make([]*pb.PrivateConversationPreview, 0, len(cs))
+	for _, conv := range cs {
+		c := &pb.PrivateConversationPreview{
+			ConversationId: conv.ConversationId.Int64(),
+			UpdatedAt:      conv.UpdatedAt.ToProto(),
+			OtherUser:      MapUserToProto(conv.OtherUser),
+			LastMessage:    MapPMToProto(conv.LastMessage),
+			UnreadCount:    int32(conv.UnreadCount),
+		}
+		convs = append(convs, c)
+	}
+	return convs
+}
+
+func MapConversationsFromProto(cs []*pb.PrivateConversationPreview) []md.PrivateConvsPreview {
+	convs := make([]md.PrivateConvsPreview, 0, len(cs))
+	for _, conv := range cs {
+		c := md.PrivateConvsPreview{
+			ConversationId: ct.Id(conv.ConversationId),
+			UpdatedAt:      ct.GenDateTime(conv.UpdatedAt.AsTime()),
+			OtherUser:      MapUserFromProto(conv.OtherUser),
+			LastMessage:    MapPMFromProto(conv.LastMessage),
+			UnreadCount:    int(conv.UnreadCount),
+		}
+		convs = append(convs, c)
+	}
+	return convs
+}
+
 func MapPMToProto(m md.PrivateMsg) *pb.PrivateMessage {
 	return &pb.PrivateMessage{
 		Id:             m.Id.Int64(),
-		ConversationId: m.ConversationID.Int64(),
+		ConversationId: m.ConversationId.Int64(),
 		Sender:         MapUserToProto(m.Sender),
+		ReceiverId:     m.ReceiverId.Int64(),
 		MessageText:    string(m.MessageText),
 		CreatedAt:      m.CreatedAt.ToProto(),
 		UpdatedAt:      m.UpdatedAt.ToProto(),
@@ -25,8 +56,9 @@ func MapPMFromProto(p *pb.PrivateMessage) md.PrivateMsg {
 
 	return md.PrivateMsg{
 		Id:             ct.Id(p.Id),
-		ConversationID: ct.Id(p.ConversationId),
+		ConversationId: ct.Id(p.ConversationId),
 		Sender:         MapUserFromProto(p.Sender),
+		ReceiverId:     ct.Id(p.ReceiverId),
 		MessageText:    ct.MsgBody(p.MessageText),
 		CreatedAt:      ct.GenDateTime(p.CreatedAt.AsTime()),
 		UpdatedAt:      ct.GenDateTime(p.UpdatedAt.AsTime()),

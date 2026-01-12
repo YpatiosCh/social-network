@@ -14,7 +14,6 @@ type Clients struct {
 	NotificationClient notificationspb.NotificationServiceClient
 	MediaClient        media.MediaServiceClient
 	RedisClient        *rds.RedisClient
-	// MediaRetriever     *retrievemedia.MediaRetriever
 }
 
 type RetriveUsers func(ctx context.Context, userIds *cm.UserIds) (*cm.ListUsers, error)
