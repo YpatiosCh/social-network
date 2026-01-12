@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useStore } from "@/store/store";
 import { logout } from "@/actions/auth/logout";
 import { SearchUsers } from "@/actions/search/search-users";
+import { getImageUrl } from "@/actions/auth/get-image-url";
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -15,15 +16,40 @@ export default function Navbar() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const searchRef = useRef(null);
-    const clearUser = useStore((state) => state.clearUser);
-
     const user = useStore((state) => state.user);
+    const setUser = useStore((state) => state.setUser);
+
+    // Avatar state - allows refreshing when original expires
+    const [avatarSrc, setAvatarSrc] = useState(user?.avatar_url);
+
+    // Sync avatarSrc when user changes (e.g., after profile update)
+    useEffect(() => {
+        setAvatarSrc(user?.avatar_url);
+    }, [user?.avatar_url]);
 
     // Search State
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [showSearchResults, setShowSearchResults] = useState(false);
+
+    // Handle image error - fetch fresh variant URL when original expires
+    const handleImageError = async () => {
+        if (!user?.fileId) return;
+
+        const result = await getImageUrl({ fileId: user.fileId, variant: "thumb" });
+
+        if (!result?.success || !result.url) return;
+
+        // Update local state for immediate UI update
+        setAvatarSrc(result.url);
+
+        // Update store so it persists
+        setUser({
+            ...user,
+            avatar_url: result.url
+        });
+    };
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -277,8 +303,8 @@ export default function Navbar() {
                                     className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity cursor-pointer"
                                 >
                                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-(--muted)/10 border border-(--border) flex items-center justify-center overflow-hidden hover:border-(--accent) transition-colors">
-                                        {user.avatar_url ? (
-                                            <img src={user.avatar_url} alt={user.username?.[0] || "U"} className="w-full h-full object-cover" />
+                                        {avatarSrc ? (
+                                            <img src={avatarSrc} alt={user.username?.[0] || "U"} className="w-full h-full object-cover" onError={handleImageError} />
                                         ) : (
                                             <User className="w-4 h-4 text-(--muted)" />
                                         )}

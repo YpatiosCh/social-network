@@ -81,6 +81,7 @@ export default function ProfileForm({ user }) {
             }
 
             let newAvatarUrl = null;
+            let newFileId = null;
 
             // Step 2: If avatar was provided, upload and validate
             if (avatarFile && resp.FileId && resp.UploadUrl) {
@@ -102,6 +103,7 @@ export default function ProfileForm({ user }) {
                             setMessage({ success: false, text: validateResp.error || "Failed to validate upload" });
                         } else if (validateResp.download_url) {
                             newAvatarUrl = validateResp.download_url;
+                            newFileId = resp.FileId;
                         }
                     }
                 } catch (uploadError) {
@@ -109,11 +111,12 @@ export default function ProfileForm({ user }) {
                 }
             }
 
-            // Step 3: Update store with new avatar URL
-            if (currentUser) {
+            // Step 3: Update store with new avatar URL and fileId
+            if (currentUser && newAvatarUrl) {
                 setUser({
                     ...currentUser,
-                    avatar_url: newAvatarUrl
+                    avatar_url: newAvatarUrl,
+                    fileId: newFileId
                 });
             }
 
@@ -161,7 +164,7 @@ export default function ProfileForm({ user }) {
                         <button
                             type="button"
                             onClick={removeAvatar}
-                            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-10"
+                            className="absolute top-0 right-0 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-10 cursor-pointer"
                         >
                             <X size={14} />
                         </button>

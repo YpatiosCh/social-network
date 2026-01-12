@@ -72,6 +72,7 @@ export default function RegisterForm() {
             // Prepare store data
             const userStoreData = {
                 id: resp.UserId,
+                fileId: resp.FileId,
                 username: resp.Username,
                 avatar_url: ""
             };
