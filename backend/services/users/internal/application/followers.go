@@ -229,11 +229,11 @@ func (s *Application) FollowUser(ctx context.Context, req models.FollowUserReq) 
 		_ = eventBytes
 
 		// send to Kafka
-		// err = s.eventProducer.Send(ctx, ct.NotificationTopic, eventBytes)
-		// if err != nil {
-		// 	tele.Error(ctx, "failed to create follow request notification event: @1", "error", err.Error())
-		// }
-		// tele.Info(ctx, "Follow request notification event created")
+		err = s.eventProducer.Send(ctx, ct.NotificationTopic, eventBytes)
+		if err != nil {
+			tele.Error(ctx, "failed to create follow request notification event: @1", "error", err.Error())
+		}
+		tele.Info(ctx, "Follow request notification event created")
 	}
 
 	return resp, nil
