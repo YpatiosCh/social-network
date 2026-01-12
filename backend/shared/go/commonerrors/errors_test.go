@@ -249,3 +249,15 @@ func TestGRPCStatus_DefaultPublicMessage(t *testing.T) {
 	assert.Equal(t, codes.Internal, st.Code())
 	assert.Contains(t, st.Message(), "missing error message")
 }
+
+func Test_ErrorFormating(t *testing.T) {
+	err := New(ErrInternal, errors.New("panic"), "handler")
+	s := err.Error()
+	assert.Equal(t, `
+   class: internal error
+   input: handler
+  origin: level 1: commonerrors.Test_ErrorFormating at l. 254
+          level 2: testing.tRunner at l. 1934
+   Generic Error: panic
+`, s)
+}

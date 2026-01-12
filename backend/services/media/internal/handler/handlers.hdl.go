@@ -139,10 +139,10 @@ func (m *MediaHandler) GetImages(ctx context.Context,
 	}
 
 	pbFailedIds := make([]*pb.FailedId, len(failedIds))
-	for i, fid := range failedIds {
+	for i, fId := range failedIds {
 		pbFailedIds[i] = &pb.FailedId{
-			FileId: int64(fid.Id),
-			Status: mapping.CtToPbUploadStatus(fid.Status),
+			FileId: int64(fId.Id),
+			Status: mapping.CtToPbUploadStatus(fId.Status),
 		}
 	}
 	res := &pb.GetImagesResponse{
