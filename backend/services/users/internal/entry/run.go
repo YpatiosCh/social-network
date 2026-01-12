@@ -15,6 +15,7 @@ import (
 	"social-network/shared/gen-go/users"
 	configutil "social-network/shared/go/configs"
 	"social-network/shared/go/ct"
+	"social-network/shared/go/kafgo"
 	rds "social-network/shared/go/redis"
 	tele "social-network/shared/go/telemetry"
 
@@ -90,6 +91,19 @@ func Run() error {
 
 	//
 	//
+	//
+	// KAFKA PRODUCER
+	eventProducer, close, err := kafgo.NewKafkaProducer([]string{cfgs.KafkaBrokers})
+	if err != nil {
+		tele.Warn(ctx, "failed to initialize kafka producer: @1", "error", err.Error())
+		// Don't fatal here if kafka is not ready, better to have the service running without notifications
+	} else {
+		defer close()
+		tele.Info(ctx, "initialized kafka producer")
+	}
+
+	//
+	//
 	// APPLICATION
 	clients := client.NewClients(
 		chatClient,
@@ -98,7 +112,7 @@ func Run() error {
 		redisConnector,
 	)
 
-	app := application.NewApplication(ds.New(pool), pgxTxRunner, pool, clients)
+	app := application.NewApplication(ds.New(pool), pgxTxRunner, pool, clients, eventProducer)
 	service := *handler.NewUsersHanlder(app)
 
 	//
@@ -153,6 +167,8 @@ type configs struct {
 	ShutdownTimeout       int    `env:"SHUTDOWN_TIMEOUT_SECONDS"`
 	GrpcServerPort        string `env:"GRPC_SERVER_PORT"`
 
+	KafkaBrokers string `env:"KAFKA_BROKERS"`
+
 	OtelResourceAttributes    string `end:"OTEL_RESOURCE_ATTRIBUTES"`
 	TelemetryCollectorAddress string `env:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 	EnableDebugLogs           bool   `env:"ENABLE_DEBUG_LOGS"`
@@ -169,6 +185,7 @@ func getConfigs() configs {
 		MediaGRPCAddr:             "media:50051",
 		NotificationsGRPCAddr:     "notifications:50051",
 		ShutdownTimeout:           5,
+		KafkaBrokers:              "kafka:9092",
 		OtelResourceAttributes:    "service.name=users,service.namespace=social-network,deployment.environment=dev",
 		TelemetryCollectorAddress: "alloy:4317",
 		EnableDebugLogs:           true,
