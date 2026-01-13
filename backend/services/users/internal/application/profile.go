@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	ds "social-network/services/users/internal/db/dbservice"
 	ce "social-network/shared/go/commonerrors"
@@ -12,6 +13,7 @@ import (
 
 	"social-network/shared/gen-go/media"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -72,6 +74,10 @@ func (s *Application) GetUserProfile(ctx context.Context, req models.UserProfile
 
 	row, err := s.db.GetUserProfile(ctx, req.UserId.Int64())
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.UserProfileResponse{}, ce.New(ce.ErrNotFound, err, input).
+				WithPublic("profile not found")
+		}
 		return models.UserProfileResponse{}, ce.New(ce.ErrInternal, err, input).WithPublic(genericPublic)
 	}
 	dob := time.Time{}
