@@ -29,7 +29,7 @@ var hd = func() *hashids.HashID {
 }()
 
 func (e Id) MarshalJSON() ([]byte, error) {
-	hash, err := hd.EncodeInt64([]int64{int64(e)})
+	hash, err := hd.EncodeInt64([]int64{e.Int64()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal Id: %w", err)
 	}
@@ -49,6 +49,22 @@ func (e *Id) UnmarshalJSON(data []byte) error {
 
 	*e = Id(decoded[0])
 	return nil
+}
+
+func EncodeId(i Id) (string, error) {
+	hash, err := hd.EncodeInt64([]int64{i.Int64()})
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal Id: %w", err)
+	}
+	return hash, nil
+}
+
+func DecodeId(encoded string) (Id, error) {
+	decoded, err := hd.DecodeInt64WithError(encoded)
+	if err != nil || len(decoded) == 0 {
+		return 0, fmt.Errorf("failed to decode Id: %w  and decoded length: %d (should be 1)", err, len(decoded))
+	}
+	return Id(decoded[0]), err
 }
 
 func (e Id) isValid() bool {

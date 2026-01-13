@@ -12,6 +12,7 @@ import (
 	"social-network/shared/go/gorpc"
 	tele "social-network/shared/go/telemetry"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/status"
@@ -127,7 +128,7 @@ func ReturnHttpError(ctx context.Context, w http.ResponseWriter, err error) {
 // 	return filetype, nil
 // }
 
-func ParamGet[T int | string | bool](values url.Values, key string, defaultValue T, mustExit bool) (T, error) {
+func ParamGet[T int | int32 | int64 | string | bool | time.Time | ct.Id](values url.Values, key string, defaultValue T, mustExit bool) (T, error) {
 	if !values.Has(key) {
 		if mustExit {
 			return defaultValue, fmt.Errorf("required value %s missing", key)
@@ -147,10 +148,19 @@ func transform(str string, target any) (any, error) {
 	switch target.(type) {
 	case int:
 		return strconv.Atoi(str)
+	case int32:
+		return strconv.ParseInt(str, 10, 32)
+	case int64:
+		return strconv.ParseInt(str, 10, 64)
 	case string:
 		return str, nil
 	case bool:
 		return strconv.ParseBool(str)
+	case time.Time:
+		return time.Parse(time.RFC3339, str)
+	case ct.Id:
+		return ct.DecodeId(str)
+
 	default:
 		panic("you passed an incompatible type!")
 	}

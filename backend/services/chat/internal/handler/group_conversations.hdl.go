@@ -27,6 +27,7 @@ func (h *ChatHandler) CreateGroupConversation(
 		ctx,
 		md.CreateGroupConvReq{
 			GroupId: ct.Id(params.GroupId),
+			UserId:  ct.Id(params.UserId),
 		},
 	)
 	if err != nil {

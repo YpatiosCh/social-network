@@ -27,6 +27,7 @@ const (
 type CreateGroupConversationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GroupId       int64                  `protobuf:"varint,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -64,6 +65,13 @@ func (*CreateGroupConversationRequest) Descriptor() ([]byte, []int) {
 func (x *CreateGroupConversationRequest) GetGroupId() int64 {
 	if x != nil {
 		return x.GroupId
+	}
+	return 0
+}
+
+func (x *CreateGroupConversationRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
 	}
 	return 0
 }
@@ -1009,9 +1017,10 @@ var File_chat_proto protoreflect.FileDescriptor
 const file_chat_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"chat.proto\x12\x04chat\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\fcommon.proto\";\n" +
+	"chat.proto\x12\x04chat\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\fcommon.proto\"T\n" +
 	"\x1eCreateGroupConversationRequest\x12\x19\n" +
-	"\bgroup_id\x18\x01 \x01(\x03R\agroupId\"v\n" +
+	"\bgroup_id\x18\x01 \x01(\x03R\agroupId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\"v\n" +
 	"\x19CreateGroupMessageRequest\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x03R\agroupId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\x03R\bsenderId\x12!\n" +

@@ -9,8 +9,8 @@ import (
 // ================================
 
 type CreateGroupConvReq struct {
-	GroupId ct.Id  `json:"group_id"`
-	UserIds ct.Ids `json:"user_ids"`
+	GroupId ct.Id `json:"group_id"`
+	UserId  ct.Id `json:"user_id"`
 }
 
 type CreateGroupMsgReq struct {

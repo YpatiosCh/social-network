@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const genDateTimeLayout = time.RFC3339
+const RFC3339Layout = time.RFC3339
 
 // ------------------------------------------------------------
 // DateOfBirth
@@ -129,7 +129,7 @@ type EventDateTime time.Time
 
 func (edt EventDateTime) MarshalJSON() ([]byte, error) {
 	t := time.Time(edt)
-	return json.Marshal(t.UTC().Format(genDateTimeLayout))
+	return json.Marshal(t.UTC().Format(RFC3339Layout))
 }
 
 func (edt *EventDateTime) UnmarshalJSON(data []byte) error {
@@ -138,7 +138,7 @@ func (edt *EventDateTime) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	t, err := time.Parse(genDateTimeLayout, s)
+	t, err := time.Parse(RFC3339Layout, s)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (g GenDateTime) MarshalJSON() ([]byte, error) {
 	if t.IsZero() {
 		return []byte("null"), nil
 	}
-	return json.Marshal(t.UTC().Format(genDateTimeLayout))
+	return json.Marshal(t.UTC().Format(RFC3339Layout))
 }
 
 // Unmarshal from RFC3339 string
@@ -227,7 +227,7 @@ func (g *GenDateTime) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	t, err := time.Parse(genDateTimeLayout, s)
+	t, err := time.Parse(RFC3339Layout, s)
 	if err != nil {
 		return err
 	}
