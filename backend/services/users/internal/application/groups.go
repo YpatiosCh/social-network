@@ -437,7 +437,7 @@ func (s *Application) RequestJoinGroup(ctx context.Context, req models.GroupJoin
 		},
 	}
 
-	if err := s.createAndSendNotificationEvent(ctx, event); err != nil {
+	if err := s.eventProducer.CreateAndSendNotificationEvent(ctx, event); err != nil {
 		tele.Error(ctx, "failed to send request join group notification: @1", "error", err.Error())
 	}
 	tele.Info(ctx, "request join group notification event created")
@@ -511,7 +511,7 @@ func (s *Application) RespondToGroupInvite(ctx context.Context, req models.Handl
 			},
 		}
 
-		if err := s.createAndSendNotificationEvent(ctx, event); err != nil {
+		if err := s.eventProducer.CreateAndSendNotificationEvent(ctx, event); err != nil {
 			tele.Error(ctx, "failed to send group invite accepted notification: @1", "error", err.Error())
 		}
 		tele.Info(ctx, "group invite accepted notification event created")
@@ -546,7 +546,7 @@ func (s *Application) RespondToGroupInvite(ctx context.Context, req models.Handl
 			},
 		}
 
-		if err := s.createAndSendNotificationEvent(ctx, event); err != nil {
+		if err := s.eventProducer.CreateAndSendNotificationEvent(ctx, event); err != nil {
 			tele.Error(ctx, "failed to send group invite rejected notification: @1", "error", err.Error())
 		}
 		tele.Info(ctx, "group invite rejected notification event created")
@@ -599,7 +599,7 @@ func (s *Application) HandleGroupJoinRequest(ctx context.Context, req models.Han
 			},
 		}
 
-		if err := s.createAndSendNotificationEvent(ctx, event); err != nil {
+		if err := s.eventProducer.CreateAndSendNotificationEvent(ctx, event); err != nil {
 			tele.Error(ctx, "failed to send group join request accepted notification: @1", "error", err.Error())
 		}
 		tele.Info(ctx, "group join request accepted notification event created")
@@ -629,7 +629,7 @@ func (s *Application) HandleGroupJoinRequest(ctx context.Context, req models.Han
 			},
 		}
 
-		if err := s.createAndSendNotificationEvent(ctx, event); err != nil {
+		if err := s.eventProducer.CreateAndSendNotificationEvent(ctx, event); err != nil {
 			tele.Error(ctx, "failed to send group join request accepted notification: @1", "error", err.Error())
 		}
 		tele.Info(ctx, "group join request accepted notification event created")
