@@ -72,6 +72,7 @@ func (h *UserRetriever) GetUsers(ctx context.Context, userIDs ct.Ids) (map[ct.Id
 					user,
 					h.ttl,
 				)
+				tele.Debug(ctx, "user set on redis: @1 with key @2", "user", user, "key", key)
 			} else {
 				tele.Warn(ctx, "failed to construct redis key for user @1: @2", "userId", user.UserId, "error", err.Error())
 			}
@@ -131,7 +132,6 @@ func (h *UserRetriever) GetUser(ctx context.Context, userID ct.Id) (models.User,
 	tele.Debug(ctx, "retrieve user called with user id @1", "userId", userID)
 
 	// Redis lookup
-	var u models.User
 
 	key, err := ct.BasicUserInfoKey{Id: userID}.String()
 	if err != nil {
@@ -141,7 +141,7 @@ func (h *UserRetriever) GetUser(ctx context.Context, userID ct.Id) (models.User,
 
 	var user models.User
 	if err := h.cache.GetObj(ctx, key, &user); err == nil {
-		tele.Info(ctx, "found user on redis: @1", "user", u)
+		tele.Info(ctx, "found user on redis: @1 using key @2", "user", user, "key", key)
 		return user, nil
 	}
 	resp, err := h.client.GetBasicUserInfo(ctx, wrapperspb.Int64(userID.Int64()))
@@ -162,6 +162,7 @@ func (h *UserRetriever) GetUser(ctx context.Context, userID ct.Id) (models.User,
 			user,
 			h.ttl,
 		)
+		tele.Debug(ctx, "user set on redis: @1 with key @2", "user", user, "key", key)
 	} else {
 		tele.Warn(ctx, "failed to construct redis key for user @1: @1", "userId", user.UserId, "error", err.Error())
 	}
@@ -192,7 +193,7 @@ func (h *UserRetriever) GetUser(ctx context.Context, userID ct.Id) (models.User,
 			}
 		}
 
-		u.AvatarURL = imageUrl
+		user.AvatarURL = imageUrl
 	}
 
 	return user, nil
