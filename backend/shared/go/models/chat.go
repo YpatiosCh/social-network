@@ -22,14 +22,14 @@ type GetGroupMsgsReq struct {
 }
 
 type GroupMsg struct {
-	Id            ct.Id
-	ConvesationId ct.Id
-	GroupId       ct.Id
-	Sender        User
-	MessageText   ct.MsgBody
-	CreatedAt     ct.GenDateTime `validate:"nullable"`
-	UpdatedAt     ct.GenDateTime `validate:"nullable"`
-	DeletedAt     ct.GenDateTime `validate:"nullable"`
+	Id             ct.Id
+	ConversationId ct.Id
+	GroupId        ct.Id
+	Sender         User
+	MessageText    ct.MsgBody
+	CreatedAt      ct.GenDateTime `validate:"nullable"`
+	UpdatedAt      ct.GenDateTime `validate:"nullable"`
+	DeletedAt      ct.GenDateTime `validate:"nullable"`
 }
 
 type GetGroupMsgsResp struct {
@@ -47,6 +47,7 @@ type GetOrCreatePrivateConvReq struct {
 	RetrieveInterlocutor bool  `json:"retrieve_interlocutor"`
 }
 
+// DEPRECATED
 type GetOrCreatePrivateConvResp struct {
 	ConversationId  ct.Id
 	Interlocutor    User
@@ -95,7 +96,7 @@ type PrivateMsg struct {
 	MessageText    ct.MsgBody     `json:"message_text"`
 	CreatedAt      ct.GenDateTime `json:"created_at" validate:"nullable"`
 	UpdatedAt      ct.GenDateTime `json:"updated_at" validate:"nullable"`
-	DeletedAt      ct.GenDateTime `json:"deleted_at,omitzero" validate:"nullable"`
+	DeletedAt      ct.GenDateTime `json:"deleted_at" validate:"nullable"`
 }
 
 type UpdateLastReadMsgParams struct {

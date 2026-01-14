@@ -124,7 +124,7 @@ func MapGroupMessagesFromProto(msgs []*pb.GroupMessage) []md.GroupMsg {
 func MapGroupMessageToProto(m md.GroupMsg) *pb.GroupMessage {
 	return &pb.GroupMessage{
 		Id:             m.Id.Int64(),
-		ConversationId: m.ConvesationId.Int64(),
+		ConversationId: m.ConversationId.Int64(),
 		GroupId:        m.GroupId.Int64(),
 		Sender:         MapUserToProto(m.Sender),
 		MessageText:    m.MessageText.String(),
@@ -136,13 +136,13 @@ func MapGroupMessageToProto(m md.GroupMsg) *pb.GroupMessage {
 
 func MapGroupMessageFromProto(m *pb.GroupMessage) md.GroupMsg {
 	return md.GroupMsg{
-		Id:            ct.Id(m.Id),
-		ConvesationId: ct.Id(m.ConversationId),
-		GroupId:       ct.Id(m.GroupId),
-		Sender:        MapUserFromProto(m.Sender),
-		MessageText:   ct.MsgBody(m.MessageText),
-		CreatedAt:     ct.GenDateTime(m.CreatedAt.AsTime()),
-		UpdatedAt:     ct.GenDateTime(m.UpdatedAt.AsTime()),
-		DeletedAt:     ct.GenDateTime(m.DeletedAt.AsTime()),
+		Id:             ct.Id(m.Id),
+		ConversationId: ct.Id(m.ConversationId),
+		GroupId:        ct.Id(m.GroupId),
+		Sender:         MapUserFromProto(m.Sender),
+		MessageText:    ct.MsgBody(m.MessageText),
+		CreatedAt:      ct.GenDateTime(m.CreatedAt.AsTime()),
+		UpdatedAt:      ct.GenDateTime(m.UpdatedAt.AsTime()),
+		DeletedAt:      ct.GenDateTime(m.DeletedAt.AsTime()),
 	}
 }
