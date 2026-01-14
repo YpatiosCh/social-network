@@ -209,7 +209,7 @@ type GenDateTime time.Time
 // Marshal to RFC3339
 func (g GenDateTime) MarshalJSON() ([]byte, error) {
 	t := time.Time(g)
-	if t.IsZero() {
+	if t.IsZero() || t.Unix() == 0 {
 		return []byte("null"), nil
 	}
 	return json.Marshal(t.UTC().Format(RFC3339Layout))
@@ -238,7 +238,7 @@ func (g *GenDateTime) UnmarshalJSON(data []byte) error {
 
 func (g GenDateTime) Validate() error {
 	t := time.Time(g)
-	if t.IsZero() {
+	if t.IsZero() || t.Unix() == 0 {
 		return fmt.Errorf("%w: zero date", ErrValidation)
 	}
 	return nil

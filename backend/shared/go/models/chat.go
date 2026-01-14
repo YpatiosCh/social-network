@@ -95,19 +95,11 @@ type PrivateMsg struct {
 	MessageText    ct.MsgBody     `json:"message_text"`
 	CreatedAt      ct.GenDateTime `json:"created_at" validate:"nullable"`
 	UpdatedAt      ct.GenDateTime `json:"updated_at" validate:"nullable"`
-	DeletedAt      ct.GenDateTime `json:"deleted_at" validate:"nullable"`
+	DeletedAt      ct.GenDateTime `json:"deleted_at,omitzero" validate:"nullable"`
 }
 
 type UpdateLastReadMsgParams struct {
 	ConversationId    ct.Id `json:"conversation_id"`
 	UserId            ct.Id `json:"user_id"`
 	LastReadMessageId ct.Id `json:"last_read_message_id"`
-}
-
-type ConversationMember struct {
-	ConversationId    ct.Id
-	UserId            ct.Id
-	LastReadMessageId ct.Id `validate:"nullable"`
-	JoinedAt          ct.GenDateTime
-	DeletedAt         ct.GenDateTime `validate:"nullable"`
 }
