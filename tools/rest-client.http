@@ -53,7 +53,11 @@ GET {{baseUrl}}/chat/get-private-conversations?limit=10
 Content-Type: application/json
 
 ### get messages
-GET {{baseUrl}}/chat/get-pms-paginated?interlocutor-id=GWpmbk5ezJn4&limit=10
+GET {{baseUrl}}/chat/get-pms-paginated?interlocutor-id=ZOpnel5aKBzy&limit=10
+Content-Type: application/json
+
+### get messages
+GET {{baseUrl}}/chat/get-pms-paginated?interlocutor-id=ZOpnel5aKBzy&limit=10&boundary=0wMvbmOeYAlO&retrieve-users=true&get-previous=true
 Content-Type: application/json
 
 ### update last read
