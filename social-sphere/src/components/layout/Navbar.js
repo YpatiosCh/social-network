@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, Users, Send, Bell, User, LogOut, Settings, HeartPulse, Search, Loader2, MessageCircle } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Activity, Users, Send, Bell, User, LogOut, Settings, HeartPulse, Search, Loader2, MessageCircle, Wifi, WifiOff } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Tooltip from "@/components/ui/Tooltip";
 import Link from "next/link";
 import { useStore } from "@/store/store";
@@ -10,6 +10,7 @@ import { logout } from "@/actions/auth/logout";
 import { SearchUsers } from "@/actions/search/search-users";
 import { getImageUrl } from "@/actions/auth/get-image-url";
 import { getConv } from "@/actions/chat/get-conv";
+import { useLiveSocket, ConnectionState } from "@/context/LiveSocketContext";
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -18,11 +19,78 @@ export default function Navbar() {
     const [isMessagesOpen, setIsMessagesOpen] = useState(false);
     const [conversations, setConversations] = useState([]);
     const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+    const [realtimeUnreadCount, setRealtimeUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
     const messagesRef = useRef(null);
     const searchRef = useRef(null);
     const user = useStore((state) => state.user);
     const setUser = useStore((state) => state.setUser);
+
+    // Live WebSocket connection
+    const {
+        unreadNotificationCount,
+        addOnPrivateMessage,
+        removeOnPrivateMessage,
+        disconnect: disconnectSocket,
+    } = useLiveSocket();
+
+    // Handle incoming private messages - update conversations in real-time
+    const handleNewMessage = useCallback((msg) => {
+        console.log("[Navbar] New message received:", msg);
+
+        // Increment realtime unread count for messages from others
+        if (msg.sender?.id !== user?.id) {
+            setRealtimeUnreadCount((prev) => prev + 1);
+        }
+
+        // Update conversations list if we have it loaded
+        setConversations((prev) => {
+            const senderId = msg.sender?.id;
+
+            // Find existing conversation with this sender
+            const existingIndex = prev.findIndex(
+                (conv) => conv.Interlocutor?.id === senderId
+            );
+
+            if (existingIndex !== -1) {
+                // Update existing conversation
+                const updated = [...prev];
+                updated[existingIndex] = {
+                    ...updated[existingIndex],
+                    LastMessage: {
+                        message_text: msg.message_text,
+                        sender: msg.sender,
+                    },
+                    UpdatedAt: msg.created_at,
+                    UnreadCount:
+                        msg.sender?.id !== user?.id
+                            ? updated[existingIndex].UnreadCount + 1
+                            : updated[existingIndex].UnreadCount,
+                };
+                // Sort by most recent
+                return updated.sort((a, b) => new Date(b.UpdatedAt) - new Date(a.UpdatedAt));
+            } else {
+                // New conversation - add it to the list
+                const newConv = {
+                    ConversationId: msg.conversation_id,
+                    Interlocutor: msg.sender,
+                    LastMessage: {
+                        message_text: msg.message_text,
+                        sender: msg.sender,
+                    },
+                    UpdatedAt: msg.created_at,
+                    UnreadCount: msg.sender?.id !== user?.id ? 1 : 0,
+                };
+                return [newConv, ...prev];
+            }
+        });
+    }, [user?.id]);
+
+    // Register message handler
+    useEffect(() => {
+        addOnPrivateMessage(handleNewMessage);
+        return () => removeOnPrivateMessage(handleNewMessage);
+    }, [addOnPrivateMessage, removeOnPrivateMessage, handleNewMessage]);
 
     // Avatar state - allows refreshing when original expires
     const [avatarSrc, setAvatarSrc] = useState(user?.avatar_url);
@@ -87,6 +155,8 @@ export default function Navbar() {
                 const result = await getConv({ first: true, limit: 5 });
                 if (result.success && result.data) {
                     setConversations(result.data);
+                    // Reset realtime count since we now have fresh data
+                    setRealtimeUnreadCount(0);
                 }
             } catch (error) {
                 console.error("Error fetching conversations:", error);
@@ -124,11 +194,13 @@ export default function Navbar() {
         return conv.UnreadCount > 0 && conv.LastMessage?.sender?.id !== user?.id;
     };
 
-    // Get total unread count across all conversations
+    // Get total unread count across all conversations + realtime
     const getTotalUnreadCount = () => {
-        return conversations.reduce((total, conv) => {
+        const conversationUnread = conversations.reduce((total, conv) => {
             return total + (hasUnreadMessages(conv) ? conv.UnreadCount : 0);
         }, 0);
+        // Include realtime unread that might not be in conversations yet
+        return conversationUnread + realtimeUnreadCount;
     };
 
     // Debounced Search
@@ -169,6 +241,9 @@ export default function Navbar() {
 
     const handleLogout = async () => {
         try {
+            // Disconnect WebSocket before logout
+            disconnectSocket();
+
             // Logout and redirect happens on the server
             await logout();
         } catch (error) {
@@ -330,7 +405,7 @@ export default function Navbar() {
 
                         {/* Messages Dropdown */}
                         <div className="relative" ref={messagesRef}>
-                            <Tooltip content="Messages" active={!isMessagesOpen}>
+                            <Tooltip content={"Messages"} active={!isMessagesOpen}>
                                 <button
                                     onClick={handleMessagesClick}
                                     className={`relative p-2 sm:p-2.5 rounded-full transition-all cursor-pointer ${isMessagesOpen
@@ -344,6 +419,16 @@ export default function Navbar() {
                                             {getTotalUnreadCount()}
                                         </span>
                                     )}
+                                    {/* Connection status dot */}
+                                    {/* <span
+                                        className={`absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border border-background ${
+                                            isConnected
+                                                ? "bg-green-500"
+                                                : connectionState === ConnectionState.CONNECTING || connectionState === ConnectionState.RECONNECTING
+                                                ? "bg-yellow-500 animate-pulse"
+                                                : "bg-gray-400"
+                                        }`}
+                                    /> */}
                                 </button>
                             </Tooltip>
 
@@ -366,7 +451,7 @@ export default function Navbar() {
                                                         key={conv.ConversationId}
                                                         onClick={() => {
                                                             setIsMessagesOpen(false);
-                                                            router.push(`/messages/${conv.ConversationId}`);
+                                                            router.push(`/messages/${conv.Interlocutor?.id || conv.ConversationId}`);
                                                         }}
                                                         className="w-full flex items-start gap-3 px-4 py-3 hover:bg-(--muted)/5 transition-colors cursor-pointer text-left"
                                                     >
@@ -439,7 +524,13 @@ export default function Navbar() {
                                     }`}
                             >
                                 <Bell className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={isActive('/notifications') ? 2.5 : 2} />
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background" />
+                                {unreadNotificationCount > 0 ? (
+                                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 sm:min-w-[18px] sm:h-[18px] px-1 text-[9px] sm:text-[10px] font-bold text-white bg-red-500 rounded-full flex items-center justify-center border-2 border-background">
+                                        {unreadNotificationCount}
+                                    </span>
+                                ) : (
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background" />
+                                )}
                             </Link>
                         </Tooltip>
 
