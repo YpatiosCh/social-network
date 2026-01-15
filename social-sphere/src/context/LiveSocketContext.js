@@ -1,0 +1,254 @@
+"use client";
+
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import { useStore } from "@/store/store";
+
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8082";
+
+const LiveSocketContext = createContext(null);
+
+export const ConnectionState = {
+    CONNECTING: "connecting",
+    CONNECTED: "connected",
+    DISCONNECTED: "disconnected",
+    RECONNECTING: "reconnecting",
+};
+
+export function LiveSocketProvider({ children }) {
+    const user = useStore((state) => state.user);
+    const wsRef = useRef(null);
+    const reconnectTimeoutRef = useRef(null);
+    const reconnectAttemptsRef = useRef(0);
+    const subscribedGroupsRef = useRef(new Set());
+
+    const [connectionState, setConnectionState] = useState(ConnectionState.DISCONNECTED);
+    const [unreadMessages, setUnreadMessages] = useState([]);
+    const [unreadNotifications, setUnreadNotifications] = useState([]);
+
+    // Sets of callback listeners (supports multiple consumers)
+    const privateMessageListenersRef = useRef(new Set());
+    const groupMessageListenersRef = useRef(new Set());
+    const notificationListenersRef = useRef(new Set());
+
+    const connect = useCallback(() => {
+        // Don't connect if no user or already connected
+        if (!user) {
+            console.log("[LiveSocket] No user, skipping connection");
+            return;
+        }
+
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            console.log("[LiveSocket] Already connected");
+            return;
+        }
+
+        // Clean up existing connection
+        if (wsRef.current) {
+            wsRef.current.close();
+        }
+
+        setConnectionState(
+            reconnectAttemptsRef.current > 0
+                ? ConnectionState.RECONNECTING
+                : ConnectionState.CONNECTING
+        );
+
+        try {
+            const ws = new WebSocket(`${WS_URL}/live`);
+            wsRef.current = ws;
+
+            ws.onopen = () => {
+                console.log("[LiveSocket] Connected");
+                setConnectionState(ConnectionState.CONNECTED);
+                reconnectAttemptsRef.current = 0;
+
+                // Re-subscribe to any groups we were subscribed to
+                subscribedGroupsRef.current.forEach((groupId) => {
+                    ws.send(`sub:${groupId}`);
+                });
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const messages = JSON.parse(event.data);
+
+                    if (!Array.isArray(messages)) {
+                        console.warn("[LiveSocket] Expected array, got:", typeof messages);
+                        return;
+                    }
+
+                    for (const msg of messages) {
+                        if (msg.group_id) {
+                            // Group message
+                            console.log("[LiveSocket] Group message received:", msg);
+                            groupMessageListenersRef.current.forEach((listener) => listener(msg));
+                        } else if (msg.conversation_id) {
+                            // Private message
+                            console.log("[LiveSocket] Private message received:", msg);
+
+                            // Add to unread if not from current user
+                            if (msg.sender?.id !== user?.id) {
+                                setUnreadMessages((prev) => {
+                                    if (prev.some((m) => m.id === msg.id)) return prev;
+                                    return [...prev, msg];
+                                });
+                            }
+
+                            privateMessageListenersRef.current.forEach((listener) => listener(msg));
+                        } else if (msg.notification_type || msg.type) {
+                            // Notification
+                            console.log("[LiveSocket] Notification received:", msg);
+                            setUnreadNotifications((prev) => [...prev, msg]);
+                            notificationListenersRef.current.forEach((listener) => listener(msg));
+                        } else {
+                            console.log("[LiveSocket] Unknown message type:", msg);
+                        }
+                    }
+                } catch (err) {
+                    console.error("[LiveSocket] Failed to parse message:", err);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error("[LiveSocket] Error:", error);
+            };
+
+            ws.onclose = (event) => {
+                console.log("[LiveSocket] Disconnected:", event.code, event.reason);
+                setConnectionState(ConnectionState.DISCONNECTED);
+
+                // Reconnect if not a clean close and user is still logged in
+                if (event.code !== 1000 && user) {
+                    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
+                    reconnectAttemptsRef.current++;
+
+                    console.log(`[LiveSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`);
+
+                    reconnectTimeoutRef.current = setTimeout(() => {
+                        connect();
+                    }, delay);
+                }
+            };
+        } catch (err) {
+            console.error("[LiveSocket] Failed to create connection:", err);
+            setConnectionState(ConnectionState.DISCONNECTED);
+        }
+    }, [user]);
+
+    const disconnect = useCallback(() => {
+        console.log("[LiveSocket] Disconnecting...");
+
+        if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = null;
+        }
+
+        reconnectAttemptsRef.current = 0;
+        subscribedGroupsRef.current.clear();
+
+        if (wsRef.current) {
+            wsRef.current.close(1000, "User logout");
+            wsRef.current = null;
+        }
+
+        setConnectionState(ConnectionState.DISCONNECTED);
+        setUnreadMessages([]);
+        setUnreadNotifications([]);
+    }, []);
+
+    const subscribeToGroup = useCallback((groupId) => {
+        subscribedGroupsRef.current.add(groupId);
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(`sub:${groupId}`);
+            console.log("[LiveSocket] Subscribed to group:", groupId);
+        }
+    }, []);
+
+    const unsubscribeFromGroup = useCallback((groupId) => {
+        subscribedGroupsRef.current.delete(groupId);
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(`unsub:${groupId}`);
+            console.log("[LiveSocket] Unsubscribed from group:", groupId);
+        }
+    }, []);
+
+    const clearUnreadNotification = useCallback((notificationId) => {
+        setUnreadNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    }, []);
+
+    const clearAllUnreadNotifications = useCallback(() => {
+        setUnreadNotifications([]);
+    }, []);
+
+    // Add/remove callback listeners (supports multiple consumers)
+    const addOnPrivateMessage = useCallback((callback) => {
+        privateMessageListenersRef.current.add(callback);
+    }, []);
+
+    const removeOnPrivateMessage = useCallback((callback) => {
+        privateMessageListenersRef.current.delete(callback);
+    }, []);
+
+    const addOnGroupMessage = useCallback((callback) => {
+        groupMessageListenersRef.current.add(callback);
+    }, []);
+
+    const removeOnGroupMessage = useCallback((callback) => {
+        groupMessageListenersRef.current.delete(callback);
+    }, []);
+
+    const addOnNotification = useCallback((callback) => {
+        notificationListenersRef.current.add(callback);
+    }, []);
+
+    const removeOnNotification = useCallback((callback) => {
+        notificationListenersRef.current.delete(callback);
+    }, []);
+
+    // Connect when user logs in, disconnect when user logs out
+    useEffect(() => {
+        if (user) {
+            connect();
+        } else {
+            disconnect();
+        }
+
+        return () => {
+            disconnect();
+        };
+    }, [user, connect, disconnect]);
+
+    const value = {
+        connectionState,
+        isConnected: connectionState === ConnectionState.CONNECTED,
+        unreadMessages,
+        unreadNotifications,
+        unreadMessageCount: unreadMessages.length,
+        unreadNotificationCount: unreadNotifications.length,
+        subscribeToGroup,
+        unsubscribeFromGroup,
+        clearUnreadNotification,
+        clearAllUnreadNotifications,
+        addOnPrivateMessage,
+        removeOnPrivateMessage,
+        addOnGroupMessage,
+        removeOnGroupMessage,
+        addOnNotification,
+        removeOnNotification,
+        disconnect,
+    };
+
+    return (
+        <LiveSocketContext.Provider value={value}>
+            {children}
+        </LiveSocketContext.Provider>
+    );
+}
+
+export function useLiveSocket() {
+    const context = useContext(LiveSocketContext);
+    if (!context) {
+        throw new Error("useLiveSocket must be used within a LiveSocketProvider");
+    }
+    return context;
+}

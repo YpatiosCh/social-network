@@ -67,8 +67,7 @@ func (h *ChatHandler) CreatePrivateMessage(
 
 	resp := mp.MapPMToProto(msg)
 
-	tele.Info(ctx, "create private message success. @1 @2",
-		"request", params.String(),
+	tele.Info(ctx, "create private message success. @1",
 		"response", resp.String(),
 	)
 

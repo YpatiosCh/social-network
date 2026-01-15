@@ -42,7 +42,7 @@ func MapPMToProto(m md.PrivateMsg) *pb.PrivateMessage {
 		ConversationId: m.ConversationId.Int64(),
 		Sender:         MapUserToProto(m.Sender),
 		ReceiverId:     m.ReceiverId.Int64(),
-		MessageText:    string(m.MessageText),
+		MessageText:    m.MessageText.String(),
 		CreatedAt:      m.CreatedAt.ToProto(),
 		UpdatedAt:      m.UpdatedAt.ToProto(),
 		DeletedAt:      m.DeletedAt.ToProto(),

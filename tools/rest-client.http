@@ -56,13 +56,21 @@ Content-Type: application/json
   "password": "StrongPassword123!"
 }
 
-### Send message
+### Send message to Foe
+POST {{baseUrl}}/chat/create-pm
+Content-Type: application/json
+
+{
+  "interlocutor_id":"GWpmbk5ezJn4",
+  "message_body":"this is doe to foe"  
+}
+### Send message to foe
 POST {{baseUrl}}/chat/create-pm
 Content-Type: application/json
 
 {
   "interlocutor_id":"ZOpnel5aKBzy",
-  "message_body":"test check check"  
+  "message_body":"this is foe to doe"  
 }
 
 ### get conversations

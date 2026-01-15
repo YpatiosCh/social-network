@@ -1,25 +1,117 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { getConv } from "@/actions/chat/get-conv";
 import { getMessages } from "@/actions/chat/get-messages";
 import { sendMsg } from "@/actions/chat/send-msg";
 import { useStore } from "@/store/store";
-import { User, Send, MessageCircle, Loader2, ChevronLeft } from "lucide-react";
+import { User, Send, MessageCircle, Loader2, ChevronLeft, Wifi, WifiOff } from "lucide-react";
 import { motion } from "motion/react";
+import { useLiveSocket, ConnectionState } from "@/context/LiveSocketContext";
+import { markAsRead } from "@/actions/chat/mark-read";
 
-export default function MessagesContent({ initialConversations = [] }) {
+export default function MessagesContent({
+    initialConversations = [],
+    initialSelectedId = null,
+    initialMessages = [],
+}) {
+    const router = useRouter();
     const user = useStore((state) => state.user);
     const [conversations, setConversations] = useState(initialConversations);
-    const [selectedConv, setSelectedConv] = useState(null);
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState(initialMessages);
     const [isLoadingConversations, setIsLoadingConversations] = useState(false);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [messageText, setMessageText] = useState("");
-    const [showMobileChat, setShowMobileChat] = useState(false);
+    const [showMobileChat, setShowMobileChat] = useState(!!initialSelectedId);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const selectedConvRef = useRef(null);
+
+    // Find selected conversation from ID
+    const selectedConv = useMemo(() => {
+        if (!initialSelectedId) return null;
+        return conversations.find(
+            (conv) => conv.ConversationId === initialSelectedId || conv.Interlocutor?.id === initialSelectedId
+        ) || null;
+    }, [initialSelectedId, conversations]);
+
+    // Keep selectedConv ref in sync for WebSocket callback
+    useEffect(() => {
+        selectedConvRef.current = selectedConv;
+    }, [selectedConv]);
+
+    // WebSocket connection from context
+    const { connectionState, isConnected, addOnPrivateMessage, removeOnPrivateMessage } = useLiveSocket();
+
+    // Handle incoming private messages from WebSocket
+    const handlePrivateMessage = useCallback((msg) => {
+        console.log("[Chat] Received private message:", msg);
+
+        // Add message to the current conversation if it matches
+        const currentConv = selectedConvRef.current;
+        if (currentConv) {
+            const senderId = msg.sender?.id;
+            const interlocutorId = currentConv.Interlocutor?.id;
+
+            // Check if this message belongs to the current conversation
+            if (senderId === interlocutorId) {
+                setMessages((prev) => {
+                    // Prevent duplicates
+                    if (prev.some((m) => m.id === msg.id)) return prev;
+                    return [...prev, msg];
+                });
+            }
+        }
+
+        // Update conversation list with new message preview
+        setConversations((prev) => {
+            const senderId = msg.sender?.id;
+
+            // Check if conversation exists
+            const existingIndex = prev.findIndex((conv) => conv.Interlocutor?.id === senderId);
+
+            if (existingIndex !== -1) {
+                // Update existing conversation
+                const updated = prev.map((conv, idx) => {
+                    if (idx === existingIndex) {
+                        return {
+                            ...conv,
+                            LastMessage: {
+                                message_text: msg.message_text,
+                                sender: msg.sender,
+                            },
+                            UpdatedAt: msg.created_at,
+                            // Always increment unread count for incoming messages
+                            UnreadCount: (conv.UnreadCount || 0) + 1,
+                        };
+                    }
+                    return conv;
+                });
+                return updated.sort((a, b) => new Date(b.UpdatedAt) - new Date(a.UpdatedAt));
+            } else {
+                // New conversation - add it
+                const newConv = {
+                    ConversationId: msg.conversation_id,
+                    Interlocutor: msg.sender,
+                    LastMessage: {
+                        message_text: msg.message_text,
+                        sender: msg.sender,
+                    },
+                    UpdatedAt: msg.created_at,
+                    UnreadCount: 1,
+                };
+                return [newConv, ...prev];
+            }
+        });
+    }, []);
+
+    // Register message handler when on messages page
+    useEffect(() => {
+        addOnPrivateMessage(handlePrivateMessage);
+        return () => removeOnPrivateMessage(handlePrivateMessage);
+    }, [addOnPrivateMessage, removeOnPrivateMessage, handlePrivateMessage]);
 
     // Scroll to bottom of messages
     const scrollToBottom = () => {
@@ -29,6 +121,32 @@ export default function MessagesContent({ initialConversations = [] }) {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    console.log("Messages: ", messages);
+
+    const handleClickMsg = async () => {
+        if (!messages.length || !selectedConv) return;
+
+        // Only mark as read if there are unread messages
+        if (!selectedConv.UnreadCount || selectedConv.UnreadCount === 0) return;
+
+        const lastMsg = messages[messages.length - 1];
+
+        const res = await markAsRead({ convID: lastMsg.conversation_id, lastMsgID: lastMsg.id });
+        if (!res.success) {
+            return;
+        }
+
+        // Update the unread count for this conversation
+        setConversations((prev) =>
+            prev.map((conv) =>
+                conv.ConversationId === lastMsg.conversation_id ||
+                conv.Interlocutor?.id === selectedConv?.Interlocutor?.id
+                    ? { ...conv, UnreadCount: 0 }
+                    : conv
+            )
+        );
+    };
 
     // Format relative time (compact)
     const formatRelativeTime = (dateString) => {
@@ -95,14 +213,13 @@ export default function MessagesContent({ initialConversations = [] }) {
         }
     };
 
-    // Handle conversation selection
+    // Handle conversation selection - navigate to /messages/[id]
     const handleSelectConversation = (conv) => {
-        setSelectedConv(conv);
-        setShowMobileChat(true);
-        loadMessages(conv.Interlocutor?.id);
+        const id = conv.Interlocutor?.id || conv.ConversationId;
+        router.push(`/messages/${id}`);
     };
 
-    // Handle send message
+    // Handle send message - uses HTTP API (WebSocket sends via backend publish to recipient)
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!messageText.trim() || !selectedConv || isSending) return;
@@ -111,21 +228,36 @@ export default function MessagesContent({ initialConversations = [] }) {
         const msgToSend = messageText.trim();
         setMessageText("");
 
+        // Optimistically add message to UI
+        const optimisticMessage = {
+            id: `temp-${Date.now()}`,
+            message_text: msgToSend,
+            sender: { id: user?.id },
+            created_at: new Date().toISOString(),
+            _optimistic: true,
+        };
+        setMessages((prev) => [...prev, optimisticMessage]);
+
         try {
             const result = await sendMsg({
                 interlocutor: selectedConv.Interlocutor.id,
-                msg: msgToSend
+                msg: msgToSend,
             });
 
             if (result.success) {
-                // Add the new message to the list
-                const newMessage = {
-                    id: result.id || Date.now().toString(),
-                    message_text: msgToSend,
-                    sender: { id: user?.id },
-                    created_at: new Date().toISOString()
-                };
-                setMessages((prev) => [...prev, newMessage]);
+                // Replace optimistic message with real one
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === optimisticMessage.id
+                            ? {
+                                  id: result.id || optimisticMessage.id,
+                                  message_text: msgToSend,
+                                  sender: { id: user?.id },
+                                  created_at: result.created_at || optimisticMessage.created_at,
+                              }
+                            : m
+                    )
+                );
 
                 // Update conversation's last message
                 setConversations((prev) =>
@@ -133,25 +265,34 @@ export default function MessagesContent({ initialConversations = [] }) {
                         c.ConversationId === selectedConv.ConversationId
                             ? {
                                   ...c,
-                                  LastMessage: { ...c.LastMessage, message_text: msgToSend, sender: { id: user?.id } },
-                                  UpdatedAt: new Date().toISOString()
+                                  LastMessage: {
+                                      ...c.LastMessage,
+                                      message_text: msgToSend,
+                                      sender: { id: user?.id },
+                                  },
+                                  UpdatedAt: new Date().toISOString(),
                               }
                             : c
                     )
                 );
+            } else {
+                // Remove optimistic message on failure
+                setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+                setMessageText(msgToSend);
             }
         } catch (error) {
             console.error("Error sending message:", error);
-            // Restore the message if sending failed
+            // Remove optimistic message and restore text
+            setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
             setMessageText(msgToSend);
         } finally {
             setIsSending(false);
         }
     };
 
-    // Handle back button on mobile
+    // Handle back button on mobile - navigate to /messages
     const handleBackToList = () => {
-        setShowMobileChat(false);
+        router.push("/messages");
     };
 
     // Load conversations on mount if not provided
@@ -170,8 +311,38 @@ export default function MessagesContent({ initialConversations = [] }) {
                 }`}
             >
                 {/* Header */}
-                <div className="p-4 border-b border-(--border)">
+                <div className="p-4 border-b border-(--border) flex items-center justify-between">
                     <h1 className="text-xl font-bold text-foreground">Messages</h1>
+                    {/* Connection Status Indicator */}
+                    <div
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
+                            isConnected
+                                ? "bg-green-500/10 text-green-600"
+                                : connectionState === ConnectionState.CONNECTING ||
+                                  connectionState === ConnectionState.RECONNECTING
+                                ? "bg-yellow-500/10 text-yellow-600"
+                                : "bg-red-500/10 text-red-500"
+                        }`}
+                        title={
+                            isConnected
+                                ? "Connected - Real-time updates active"
+                                : connectionState === ConnectionState.RECONNECTING
+                                ? "Reconnecting..."
+                                : "Disconnected - Messages may be delayed"
+                        }
+                    >
+                        {isConnected ? (
+                            <Wifi className="w-3.5 h-3.5" />
+                        ) : connectionState === ConnectionState.CONNECTING ||
+                          connectionState === ConnectionState.RECONNECTING ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                            <WifiOff className="w-3.5 h-3.5" />
+                        )}
+                        <span className="hidden sm:inline">
+                            {isConnected ? "Live" : connectionState === ConnectionState.RECONNECTING ? "Reconnecting" : "Offline"}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Conversations List */}
@@ -349,6 +520,7 @@ export default function MessagesContent({ initialConversations = [] }) {
                                     type="text"
                                     value={messageText}
                                     onChange={(e) => setMessageText(e.target.value)}
+                                    onClick={handleClickMsg}
                                     placeholder="Type a message..."
                                     className="flex-1 px-4 py-3 border border-(--border) rounded-full text-sm bg-(--muted)/5 text-foreground placeholder-(--muted) hover:border-foreground focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all"
                                     disabled={isSending}

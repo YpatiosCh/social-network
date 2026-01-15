@@ -81,7 +81,7 @@ func (c *ChatService) CreatePrivateMessage(ctx context.Context,
 		err = ce.New(ce.ErrInternal, err, input)
 		tele.Error(ctx, "failed to publish private message to nats: @1", "error", err.Error())
 	}
-
+	msg.ReceiverId = params.InterlocutorId
 	return msg, nil
 }
 
