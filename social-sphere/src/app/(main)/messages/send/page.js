@@ -11,7 +11,7 @@ export default async function MsgPage() {
         )
     }
 
-    console.log(convs.data);
+    console.log("convs data:",convs);
 
     return (
         <div className="flex flex-col items-center justify-center">
