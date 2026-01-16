@@ -40,6 +40,7 @@ const (
 	UserService_GetGroupInfo_FullMethodName                     = "/users.UserService/GetGroupInfo"
 	UserService_GetGroupBasicInfo_FullMethodName                = "/users.UserService/GetGroupBasicInfo"
 	UserService_GetGroupMembers_FullMethodName                  = "/users.UserService/GetGroupMembers"
+	UserService_GetAllGroupMemberIds_FullMethodName             = "/users.UserService/GetAllGroupMemberIds"
 	UserService_GetPendingGroupJoinRequests_FullMethodName      = "/users.UserService/GetPendingGroupJoinRequests"
 	UserService_GetPendingGroupJoinRequestsCount_FullMethodName = "/users.UserService/GetPendingGroupJoinRequestsCount"
 	UserService_GetFollowersNotInvitedToGroup_FullMethodName    = "/users.UserService/GetFollowersNotInvitedToGroup"
@@ -127,6 +128,8 @@ type UserServiceClient interface {
 	// Returns permission denied if requester is not a group member.
 	// Calls users and media service for user info and avatar urls.
 	GetGroupMembers(ctx context.Context, in *GroupMembersRequest, opts ...grpc.CallOption) (*GroupUserArr, error)
+	// Returns all member ids of a given group
+	GetAllGroupMemberIds(ctx context.Context, in *IdReq, opts ...grpc.CallOption) (*Ids, error)
 	// Returns all pending group requests with user information for group owner.
 	// Includes pagination, results are sorted by ascending join request date
 	// Returns permission denied if requester is not the group owner.
@@ -390,6 +393,16 @@ func (c *userServiceClient) GetGroupMembers(ctx context.Context, in *GroupMember
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GroupUserArr)
 	err := c.cc.Invoke(ctx, UserService_GetGroupMembers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetAllGroupMemberIds(ctx context.Context, in *IdReq, opts ...grpc.CallOption) (*Ids, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Ids)
+	err := c.cc.Invoke(ctx, UserService_GetAllGroupMemberIds_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -670,6 +683,8 @@ type UserServiceServer interface {
 	// Returns permission denied if requester is not a group member.
 	// Calls users and media service for user info and avatar urls.
 	GetGroupMembers(context.Context, *GroupMembersRequest) (*GroupUserArr, error)
+	// Returns all member ids of a given group
+	GetAllGroupMemberIds(context.Context, *IdReq) (*Ids, error)
 	// Returns all pending group requests with user information for group owner.
 	// Includes pagination, results are sorted by ascending join request date
 	// Returns permission denied if requester is not the group owner.
@@ -812,6 +827,9 @@ func (UnimplementedUserServiceServer) GetGroupBasicInfo(context.Context, *IdReq)
 }
 func (UnimplementedUserServiceServer) GetGroupMembers(context.Context, *GroupMembersRequest) (*GroupUserArr, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGroupMembers not implemented")
+}
+func (UnimplementedUserServiceServer) GetAllGroupMemberIds(context.Context, *IdReq) (*Ids, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAllGroupMemberIds not implemented")
 }
 func (UnimplementedUserServiceServer) GetPendingGroupJoinRequests(context.Context, *GroupMembersRequest) (*common.ListUsers, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPendingGroupJoinRequests not implemented")
@@ -1217,6 +1235,24 @@ func _UserService_GetGroupMembers_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).GetGroupMembers(ctx, req.(*GroupMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetAllGroupMemberIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IdReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetAllGroupMemberIds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetAllGroupMemberIds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetAllGroupMemberIds(ctx, req.(*IdReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1677,6 +1713,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGroupMembers",
 			Handler:    _UserService_GetGroupMembers_Handler,
+		},
+		{
+			MethodName: "GetAllGroupMemberIds",
+			Handler:    _UserService_GetAllGroupMemberIds_Handler,
 		},
 		{
 			MethodName: "GetPendingGroupJoinRequests",

@@ -441,10 +441,11 @@ message GroupJoinRequestCreated {
 
 message NewEventCreated {
   repeated int64 user_id = 1;
-  int64 group_id = 2;
-  int64 event_id = 3;
-  string group_name = 4;
-  string event_title = 5;
+  int64 event_creator_id=2;
+  int64 group_id = 3;
+  int64 event_id = 4;
+  string group_name = 5;
+  string event_title = 6;
 }
 
 message MentionCreated {

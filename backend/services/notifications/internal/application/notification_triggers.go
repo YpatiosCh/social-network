@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	tele "social-network/shared/go/telemetry"
 )
 
 // CreateFollowRequestNotification creates a notification when a user sends a follow request to a private account
@@ -139,6 +140,7 @@ func (a *Application) CreateGroupJoinRequestNotification(ctx context.Context, gr
 
 // CreateNewEventNotification creates a notification when a new event is created in a group the user is part of
 func (a *Application) CreateNewEventNotification(ctx context.Context, userID, groupID, eventID int64, groupName, eventTitle string) error {
+	tele.Debug(ctx, "create new event notification called")
 	return a.CreateNewEventForMultipleUsers(ctx, []int64{userID}, groupID, eventID, groupName, eventTitle)
 }
 
