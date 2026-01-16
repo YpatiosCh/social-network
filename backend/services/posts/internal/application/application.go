@@ -59,6 +59,7 @@ type ClientsInterface interface {
 	CreatePostLike(ctx context.Context, userId, likerUserId, postId int64, likerUsername string) error
 	CreatePostComment(ctx context.Context, userId, commenterId, postId int64, commenterUsername, commentContent string) error
 	GetGroupBasicInfo(ctx context.Context, groupId int64) (models.Group, error)
+	GetAllGroupMemberIds(ctx context.Context, groupId int64) ([]int64, error)
 }
 
 // NewApplication constructs a new Application with transaction support

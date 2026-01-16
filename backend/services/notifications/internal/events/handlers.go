@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	pb "social-network/shared/gen-go/notifications"
+	tele "social-network/shared/go/telemetry"
 )
 
 // EventHandler handles different types of notification events from Kafka
@@ -125,7 +126,8 @@ func (h *EventHandler) handleGroupJoinRequestCreated(ctx context.Context, event 
 }
 
 func (h *EventHandler) handleNewEventCreated(ctx context.Context, event *pb.NewEventCreated) error {
-	return h.App.CreateGroupInviteForMultipleUsers(
+	tele.Info(ctx, "handle new event created called with params @1", "params", event)
+	return h.App.CreateNewEventForMultipleUsers(
 		ctx,
 		event.UserId,     // userID
 		event.GroupId,    // groupID

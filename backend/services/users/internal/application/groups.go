@@ -267,6 +267,8 @@ func (s *Application) GetAllGroupMemberIds(ctx context.Context, req models.Group
 		members = append(members, ct.Id(r.ID))
 	}
 
+	tele.Debug(ctx, "Group @1 member ids: @2", "groupId", req, "memberIds", members)
+
 	return members, nil
 }
 

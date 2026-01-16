@@ -87,6 +87,9 @@ service UserService {
   // Calls users and media service for user info and avatar urls.
   rpc GetGroupMembers (GroupMembersRequest) returns (GroupUserArr);
 
+  // Returns all member ids of a given group
+  rpc GetAllGroupMemberIds (IdReq) returns (Ids);
+
   //Returns all pending group requests with user information for group owner.
   //Includes pagination, results are sorted by ascending join request date
   //Returns permission denied if requester is not the group owner.
@@ -198,6 +201,11 @@ message IdReq{
 //Generic response message with int64 (can be id or count)
 message CountResp{
   int64 id = 1;
+}
+
+//Generic response message with int64 ids
+message Ids{
+  repeated int64 ids=1;
 }
 
 //Request message for failed or missing image ids

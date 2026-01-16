@@ -2876,14 +2876,15 @@ func (x *GroupJoinRequestCreated) GetRequesterUsername() string {
 }
 
 type NewEventCreated struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        []int64                `protobuf:"varint,1,rep,packed,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	GroupId       int64                  `protobuf:"varint,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	EventId       int64                  `protobuf:"varint,3,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
-	GroupName     string                 `protobuf:"bytes,4,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
-	EventTitle    string                 `protobuf:"bytes,5,opt,name=event_title,json=eventTitle,proto3" json:"event_title,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserId         []int64                `protobuf:"varint,1,rep,packed,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	EventCreatorId int64                  `protobuf:"varint,2,opt,name=event_creator_id,json=eventCreatorId,proto3" json:"event_creator_id,omitempty"`
+	GroupId        int64                  `protobuf:"varint,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	EventId        int64                  `protobuf:"varint,4,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	GroupName      string                 `protobuf:"bytes,5,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
+	EventTitle     string                 `protobuf:"bytes,6,opt,name=event_title,json=eventTitle,proto3" json:"event_title,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *NewEventCreated) Reset() {
@@ -2921,6 +2922,13 @@ func (x *NewEventCreated) GetUserId() []int64 {
 		return x.UserId
 	}
 	return nil
+}
+
+func (x *NewEventCreated) GetEventCreatorId() int64 {
+	if x != nil {
+		return x.EventCreatorId
+	}
+	return 0
 }
 
 func (x *NewEventCreated) GetGroupId() int64 {
@@ -4079,14 +4087,15 @@ const file_notifications_proto_rawDesc = "" +
 	"\bgroup_id\x18\x03 \x01(\x03R\agroupId\x12\x1d\n" +
 	"\n" +
 	"group_name\x18\x04 \x01(\tR\tgroupName\x12-\n" +
-	"\x12requester_username\x18\x05 \x01(\tR\x11requesterUsername\"\xa0\x01\n" +
+	"\x12requester_username\x18\x05 \x01(\tR\x11requesterUsername\"\xca\x01\n" +
 	"\x0fNewEventCreated\x12\x17\n" +
-	"\auser_id\x18\x01 \x03(\x03R\x06userId\x12\x19\n" +
-	"\bgroup_id\x18\x02 \x01(\x03R\agroupId\x12\x19\n" +
-	"\bevent_id\x18\x03 \x01(\x03R\aeventId\x12\x1d\n" +
+	"\auser_id\x18\x01 \x03(\x03R\x06userId\x12(\n" +
+	"\x10event_creator_id\x18\x02 \x01(\x03R\x0eeventCreatorId\x12\x19\n" +
+	"\bgroup_id\x18\x03 \x01(\x03R\agroupId\x12\x19\n" +
+	"\bevent_id\x18\x04 \x01(\x03R\aeventId\x12\x1d\n" +
 	"\n" +
-	"group_name\x18\x04 \x01(\tR\tgroupName\x12\x1f\n" +
-	"\vevent_title\x18\x05 \x01(\tR\n" +
+	"group_name\x18\x05 \x01(\tR\tgroupName\x12\x1f\n" +
+	"\vevent_title\x18\x06 \x01(\tR\n" +
 	"eventTitle\"\xf6\x01\n" +
 	"\x0eMentionCreated\x12*\n" +
 	"\x11mentioned_user_id\x18\x01 \x01(\x03R\x0fmentionedUserId\x12*\n" +

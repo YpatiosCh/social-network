@@ -85,6 +85,15 @@ func (c *Clients) GetFollowingIds(ctx context.Context, userId int64) ([]int64, e
 	return resp.Values, nil
 }
 
+func (c *Clients) GetAllGroupMemberIds(ctx context.Context, groupId int64) ([]int64, error) {
+
+	resp, err := c.UserClient.GetAllGroupMemberIds(ctx, &userpb.IdReq{Id: groupId})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Ids, nil
+}
+
 func (c *Clients) CreateNewEvent(ctx context.Context, userId, groupId, eventId int64, groupName, eventTitle string) error {
 	req := &notifpb.CreateNewEventRequest{
 		UserId:     userId,

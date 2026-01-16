@@ -330,7 +330,7 @@ func (q *Queries) GetGroupMembers(ctx context.Context, arg GetGroupMembersParams
 
 const getAllGroupMemberIds = `-- name: GetAllGroupMembers :many
 SELECT
-    u.id,
+    u.id
 FROM group_members gm
 JOIN users u
     ON gm.user_id = u.id

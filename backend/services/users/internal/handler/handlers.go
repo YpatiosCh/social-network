@@ -498,6 +498,22 @@ func (s *UsersHandler) GetGroupInfo(ctx context.Context, req *pb.GeneralGroupReq
 	}, nil
 }
 
+func (s *UsersHandler) GetAllGroupMemberIds(ctx context.Context, req *pb.IdReq) (*pb.Ids, error) {
+	tele.Info(ctx, "GetAllGroupMemberIds called with @1", "request", req.String())
+
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "GetAllGroupMemberIds: request is nil")
+	}
+
+	memberIds, err := s.Application.GetAllGroupMemberIds(ctx, models.GroupId(req.Id))
+	if err != nil {
+		tele.Error(ctx, "Error in GetAllGroupMemberIds. @1", "error", err.Error(), "request", req.String())
+		return nil, ce.EncodeProto(err)
+	}
+
+	return &pb.Ids{Ids: memberIds.Int64()}, nil
+}
+
 func (s *UsersHandler) GetGroupMembers(ctx context.Context, req *pb.GroupMembersRequest) (*pb.GroupUserArr, error) {
 	tele.Info(ctx, "GetGroupMembers called with @1", "request", req.String())
 
