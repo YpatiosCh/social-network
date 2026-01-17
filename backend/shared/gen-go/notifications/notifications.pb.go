@@ -605,14 +605,15 @@ func (x *CreateNotificationsResponse) GetCreatedNotifications() []*Notification 
 
 // Request to create a new event notification for multiple users
 type CreateNewEventForMultipleUsersRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserIds       []int64                `protobuf:"varint,1,rep,packed,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`  // recipients
-	GroupId       int64                  `protobuf:"varint,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`         // id of the group
-	EventId       int64                  `protobuf:"varint,3,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`         // id of the event
-	GroupName     string                 `protobuf:"bytes,4,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`    // name of the group
-	EventTitle    string                 `protobuf:"bytes,5,opt,name=event_title,json=eventTitle,proto3" json:"event_title,omitempty"` // title of the event
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserIds        []int64                `protobuf:"varint,1,rep,packed,name=user_ids,json=userIds,proto3" json:"user_ids,omitempty"`                 // recipients
+	EventCreatorId int64                  `protobuf:"varint,2,opt,name=event_creator_id,json=eventCreatorId,proto3" json:"event_creator_id,omitempty"` //event creator
+	GroupId        int64                  `protobuf:"varint,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                        // id of the group
+	EventId        int64                  `protobuf:"varint,4,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`                        // id of the event
+	GroupName      string                 `protobuf:"bytes,5,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`                   // name of the group
+	EventTitle     string                 `protobuf:"bytes,6,opt,name=event_title,json=eventTitle,proto3" json:"event_title,omitempty"`                // title of the event
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateNewEventForMultipleUsersRequest) Reset() {
@@ -650,6 +651,13 @@ func (x *CreateNewEventForMultipleUsersRequest) GetUserIds() []int64 {
 		return x.UserIds
 	}
 	return nil
+}
+
+func (x *CreateNewEventForMultipleUsersRequest) GetEventCreatorId() int64 {
+	if x != nil {
+		return x.EventCreatorId
+	}
+	return 0
 }
 
 func (x *CreateNewEventForMultipleUsersRequest) GetGroupId() int64 {
@@ -1483,14 +1491,15 @@ func (x *CreateGroupJoinRequestRequest) GetRequesterUsername() string {
 
 // Request to create a new event notification
 type CreateNewEventRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`            // recipient
-	GroupId       int64                  `protobuf:"varint,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`         // id of the group
-	EventId       int64                  `protobuf:"varint,3,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`         // id of the event
-	GroupName     string                 `protobuf:"bytes,4,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`    // name of the group
-	EventTitle    string                 `protobuf:"bytes,5,opt,name=event_title,json=eventTitle,proto3" json:"event_title,omitempty"` // title of the event
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserId         int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                           // recipient
+	EventCreatorId int64                  `protobuf:"varint,2,opt,name=event_creator_id,json=eventCreatorId,proto3" json:"event_creator_id,omitempty"` //event creator
+	GroupId        int64                  `protobuf:"varint,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                        // id of the group
+	EventId        int64                  `protobuf:"varint,4,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`                        // id of the event
+	GroupName      string                 `protobuf:"bytes,5,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`                   // name of the group
+	EventTitle     string                 `protobuf:"bytes,6,opt,name=event_title,json=eventTitle,proto3" json:"event_title,omitempty"`                // title of the event
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateNewEventRequest) Reset() {
@@ -1526,6 +1535,13 @@ func (*CreateNewEventRequest) Descriptor() ([]byte, []int) {
 func (x *CreateNewEventRequest) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
+	}
+	return 0
+}
+
+func (x *CreateNewEventRequest) GetEventCreatorId() int64 {
+	if x != nil {
+		return x.EventCreatorId
 	}
 	return 0
 }
@@ -2528,13 +2544,14 @@ func (x *PostCommentCreated) GetAggregate() bool {
 }
 
 type PostLiked struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PostId        int64                  `protobuf:"varint,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	LikerUserId   int64                  `protobuf:"varint,2,opt,name=liker_user_id,json=likerUserId,proto3" json:"liker_user_id,omitempty"`
-	LikerUsername string                 `protobuf:"bytes,3,opt,name=liker_username,json=likerUsername,proto3" json:"liker_username,omitempty"`
-	Aggregate     bool                   `protobuf:"varint,4,opt,name=aggregate,proto3" json:"aggregate,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	EntityCreatorId int64                  `protobuf:"varint,1,opt,name=entity_creator_id,json=entityCreatorId,proto3" json:"entity_creator_id,omitempty"`
+	PostId          int64                  `protobuf:"varint,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	LikerUserId     int64                  `protobuf:"varint,3,opt,name=liker_user_id,json=likerUserId,proto3" json:"liker_user_id,omitempty"`
+	LikerUsername   string                 `protobuf:"bytes,4,opt,name=liker_username,json=likerUsername,proto3" json:"liker_username,omitempty"`
+	Aggregate       bool                   `protobuf:"varint,5,opt,name=aggregate,proto3" json:"aggregate,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PostLiked) Reset() {
@@ -2565,6 +2582,13 @@ func (x *PostLiked) ProtoReflect() protoreflect.Message {
 // Deprecated: Use PostLiked.ProtoReflect.Descriptor instead.
 func (*PostLiked) Descriptor() ([]byte, []int) {
 	return file_notifications_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *PostLiked) GetEntityCreatorId() int64 {
+	if x != nil {
+		return x.EntityCreatorId
+	}
+	return 0
 }
 
 func (x *PostLiked) GetPostId() int64 {
@@ -3900,14 +3924,15 @@ const file_notifications_proto_rawDesc = "" +
 	"\x1aCreateNotificationsRequest\x12N\n" +
 	"\rnotifications\x18\x01 \x03(\v2(.notifications.CreateNotificationRequestR\rnotifications\"o\n" +
 	"\x1bCreateNotificationsResponse\x12P\n" +
-	"\x15created_notifications\x18\x01 \x03(\v2\x1b.notifications.NotificationR\x14createdNotifications\"\xb8\x01\n" +
+	"\x15created_notifications\x18\x01 \x03(\v2\x1b.notifications.NotificationR\x14createdNotifications\"\xe2\x01\n" +
 	"%CreateNewEventForMultipleUsersRequest\x12\x19\n" +
-	"\buser_ids\x18\x01 \x03(\x03R\auserIds\x12\x19\n" +
-	"\bgroup_id\x18\x02 \x01(\x03R\agroupId\x12\x19\n" +
-	"\bevent_id\x18\x03 \x01(\x03R\aeventId\x12\x1d\n" +
+	"\buser_ids\x18\x01 \x03(\x03R\auserIds\x12(\n" +
+	"\x10event_creator_id\x18\x02 \x01(\x03R\x0eeventCreatorId\x12\x19\n" +
+	"\bgroup_id\x18\x03 \x01(\x03R\agroupId\x12\x19\n" +
+	"\bevent_id\x18\x04 \x01(\x03R\aeventId\x12\x1d\n" +
 	"\n" +
-	"group_name\x18\x04 \x01(\tR\tgroupName\x12\x1f\n" +
-	"\vevent_title\x18\x05 \x01(\tR\n" +
+	"group_name\x18\x05 \x01(\tR\tgroupName\x12\x1f\n" +
+	"\vevent_title\x18\x06 \x01(\tR\n" +
 	"eventTitle\"z\n" +
 	"&CreateNewEventForMultipleUsersResponse\x12P\n" +
 	"\x15created_notifications\x18\x01 \x03(\v2\x1b.notifications.NotificationR\x14createdNotifications\"\xbc\x01\n" +
@@ -3972,14 +3997,15 @@ const file_notifications_proto_rawDesc = "" +
 	"\bgroup_id\x18\x03 \x01(\x03R\agroupId\x12\x1d\n" +
 	"\n" +
 	"group_name\x18\x04 \x01(\tR\tgroupName\x12-\n" +
-	"\x12requester_username\x18\x05 \x01(\tR\x11requesterUsername\"\xa6\x01\n" +
+	"\x12requester_username\x18\x05 \x01(\tR\x11requesterUsername\"\xd0\x01\n" +
 	"\x15CreateNewEventRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x19\n" +
-	"\bgroup_id\x18\x02 \x01(\x03R\agroupId\x12\x19\n" +
-	"\bevent_id\x18\x03 \x01(\x03R\aeventId\x12\x1d\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12(\n" +
+	"\x10event_creator_id\x18\x02 \x01(\x03R\x0eeventCreatorId\x12\x19\n" +
+	"\bgroup_id\x18\x03 \x01(\x03R\agroupId\x12\x19\n" +
+	"\bevent_id\x18\x04 \x01(\x03R\aeventId\x12\x1d\n" +
 	"\n" +
-	"group_name\x18\x04 \x01(\tR\tgroupName\x12\x1f\n" +
-	"\vevent_title\x18\x05 \x01(\tR\n" +
+	"group_name\x18\x05 \x01(\tR\tgroupName\x12\x1f\n" +
+	"\vevent_title\x18\x06 \x01(\tR\n" +
 	"eventTitle\"\xb2\x01\n" +
 	"\x15CreatePostLikeRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\"\n" +
@@ -4059,12 +4085,13 @@ const file_notifications_proto_rawDesc = "" +
 	"\x11commenter_user_id\x18\x04 \x01(\x03R\x0fcommenterUserId\x12-\n" +
 	"\x12commenter_username\x18\x05 \x01(\tR\x11commenterUsername\x12\x12\n" +
 	"\x04body\x18\x06 \x01(\tR\x04body\x12\x1c\n" +
-	"\taggregate\x18\a \x01(\bR\taggregate\"\x8d\x01\n" +
-	"\tPostLiked\x12\x17\n" +
-	"\apost_id\x18\x01 \x01(\x03R\x06postId\x12\"\n" +
-	"\rliker_user_id\x18\x02 \x01(\x03R\vlikerUserId\x12%\n" +
-	"\x0eliker_username\x18\x03 \x01(\tR\rlikerUsername\x12\x1c\n" +
-	"\taggregate\x18\x04 \x01(\bR\taggregate\"\x97\x01\n" +
+	"\taggregate\x18\a \x01(\bR\taggregate\"\xb9\x01\n" +
+	"\tPostLiked\x12*\n" +
+	"\x11entity_creator_id\x18\x01 \x01(\x03R\x0fentityCreatorId\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\x03R\x06postId\x12\"\n" +
+	"\rliker_user_id\x18\x03 \x01(\x03R\vlikerUserId\x12%\n" +
+	"\x0eliker_username\x18\x04 \x01(\tR\rlikerUsername\x12\x1c\n" +
+	"\taggregate\x18\x05 \x01(\bR\taggregate\"\x97\x01\n" +
 	"\x14FollowRequestCreated\x12$\n" +
 	"\x0etarget_user_id\x18\x01 \x01(\x03R\ftargetUserId\x12*\n" +
 	"\x11requester_user_id\x18\x02 \x01(\x03R\x0frequesterUserId\x12-\n" +

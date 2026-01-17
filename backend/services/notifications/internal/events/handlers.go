@@ -76,11 +76,11 @@ func (h *EventHandler) handlePostCommentCreated(ctx context.Context, event *pb.P
 func (h *EventHandler) handlePostLiked(ctx context.Context, event *pb.PostLiked) error {
 	return h.App.CreatePostLikeNotification(
 		ctx,
-		event.PostId,        // userId (post owner)
-		event.LikerUserId,   // likerId
-		event.PostId,        // postId
-		event.LikerUsername, // likerUsername
-		event.Aggregate,     // aggregate - use value from event
+		event.EntityCreatorId, // userId (post owner)
+		event.LikerUserId,     // likerId
+		event.PostId,          // postId
+		event.LikerUsername,   // likerUsername
+		event.Aggregate,       // aggregate - use value from event
 	)
 }
 
@@ -129,11 +129,12 @@ func (h *EventHandler) handleNewEventCreated(ctx context.Context, event *pb.NewE
 	tele.Info(ctx, "handle new event created called with params @1", "params", event)
 	return h.App.CreateNewEventForMultipleUsers(
 		ctx,
-		event.UserId,     // userID
-		event.GroupId,    // groupID
-		event.EventId,    // eventID
-		event.GroupName,  // groupName
-		event.EventTitle, // eventTitle
+		event.UserId,         // userID
+		event.EventCreatorId, //eventCreatorID
+		event.GroupId,        // groupID
+		event.EventId,        // eventID
+		event.GroupName,      // groupName
+		event.EventTitle,     // eventTitle
 	)
 }
 
