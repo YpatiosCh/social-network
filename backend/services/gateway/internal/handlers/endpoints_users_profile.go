@@ -26,7 +26,7 @@ func (h *Handlers) getUserProfile() http.HandlerFunc {
 		}
 		requesterId := int64(claims.UserId)
 
-		userId, err := utils.PathValueGet(r, "userId", ct.Id(0), true)
+		userId, err := utils.PathValueGet(r, "user_id", ct.Id(0), true)
 		if err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "bad url params: "+err.Error())
 			return

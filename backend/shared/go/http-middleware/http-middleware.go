@@ -21,29 +21,35 @@ type ratelimiter interface {
 type middleware struct {
 	ratelimiter ratelimiter
 	serviceName string
+	mux         *http.ServeMux
 }
 
-func NewMiddleware(ratelimiter ratelimiter, serviceName string) *middleware {
+func NewMiddleware(ratelimiter ratelimiter, serviceName string, mux *http.ServeMux) *middleware {
 	return &middleware{
 		ratelimiter: ratelimiter,
 		serviceName: serviceName,
+		mux:         mux,
 	}
 }
 
 // MiddleSystem holds the middleware chain
 type MiddleSystem struct {
+	ratelimiter ratelimiter
+	serviceName string
+	endpoint    string
+	mux         *http.ServeMux
+
 	middlewareChain []func(http.ResponseWriter, *http.Request) (bool, *http.Request)
-	ratelimiter     ratelimiter
-	serviceName     string
-	endpoint        string
+	methods         []string
 }
 
 // Chain initializes a new middleware chain
-func (m *middleware) Chain(endpoint string) *MiddleSystem {
+func (m *middleware) SetEndpoint(endpoint string) *MiddleSystem {
 	return &MiddleSystem{
 		ratelimiter: m.ratelimiter,
 		serviceName: m.serviceName,
 		endpoint:    endpoint,
+		mux:         m.mux,
 	}
 }
 
@@ -54,6 +60,7 @@ func (m *MiddleSystem) add(f func(http.ResponseWriter, *http.Request) (bool, *ht
 
 // AllowedMethod sets allowed HTTP methods and handles CORS preflight requests
 func (m *MiddleSystem) AllowedMethod(methods ...string) *MiddleSystem {
+	m.methods = methods
 	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
 		ctx := r.Context()
 		tele.Debug(ctx, fmt.Sprint("endpoint called:", r.URL.Path, " with method: ", r.Method))
@@ -202,22 +209,26 @@ func getRemoteIpKey(r *http.Request) (string, error) {
 	return remoteIp, nil
 }
 
-// Finalize constructs the final http.HandlerFunc with all middleware applied
-func (m *MiddleSystem) Finalize(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if rec := recover(); rec != nil {
-				tele.Error(r.Context(), "panic occured in @1", r.URL)
+// Finalize constructs the final http.HandlerFunc with all middleware applied and adds them to the mux
+func (m *MiddleSystem) Finalize(next http.HandlerFunc) {
+	for _, method := range m.methods {
+		m.mux.HandleFunc(method+" "+m.endpoint, func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rec := recover(); rec != nil {
+					tele.Error(r.Context(), "panic occured in @1", r.URL)
+				}
+			}()
+
+			for _, mw := range m.middlewareChain {
+				proceed, newReq := mw(w, r)
+				r = newReq
+				if !proceed {
+					return
+				}
 			}
-		}()
-		for _, mw := range m.middlewareChain {
-			proceed, newReq := mw(w, r)
-			r = newReq
-			if !proceed {
-				return
-			}
-		}
-		tele.Info(r.Context(), "middleware finished, calling @1", "endpoint", r.URL)
-		next.ServeHTTP(w, r)
-	})
+
+			tele.Info(r.Context(), "middleware finished, calling @1", "endpoint", r.URL)
+			next.ServeHTTP(w, r)
+		})
+	}
 }

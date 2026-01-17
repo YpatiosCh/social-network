@@ -41,29 +41,27 @@ func NewHandlers(serviceName string, CacheService CacheService, nats *nats.Conn,
 func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 	mux := http.NewServeMux()
 	ratelimiter := ratelimit.NewRateLimiter(serviceName+":", h.CacheService)
-	middlewareObj := middleware.NewMiddleware(ratelimiter, serviceName)
-	Chain := middlewareObj.Chain
+	middlewareObj := middleware.NewMiddleware(ratelimiter, serviceName, mux)
+	SetEndpoint := middlewareObj.SetEndpoint
 
 	IP := middleware.IPLimit
 	USERID := middleware.UserLimit
 
-	mux.HandleFunc("/test",
-		Chain("/test").
-			RateLimit(IP, 10, 10).
-			AllowedMethod("GET").
-			RateLimit(IP, 20, 5).
-			EnrichContext().
-			RateLimit(USERID, 10, 10).
-			Finalize(h.testHandler()))
+	SetEndpoint("/test").
+		RateLimit(IP, 10, 10).
+		AllowedMethod("GET").
+		RateLimit(IP, 20, 5).
+		EnrichContext().
+		RateLimit(USERID, 10, 10).
+		Finalize(h.testHandler())
 
-	mux.HandleFunc("/live",
-		Chain("/live").
-			RateLimit(IP, 10, 10).
-			AllowedMethod("GET").
-			Auth().
-			EnrichContext().
-			RateLimit(USERID, 10, 10).
-			Finalize(h.Connect()))
+	SetEndpoint("/live").
+		RateLimit(IP, 10, 10).
+		AllowedMethod("GET").
+		Auth().
+		EnrichContext().
+		RateLimit(USERID, 10, 10).
+		Finalize(h.Connect())
 
 	return mux
 }

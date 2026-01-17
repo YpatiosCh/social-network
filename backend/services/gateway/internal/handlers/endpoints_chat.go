@@ -282,10 +282,10 @@ func (h *Handlers) GetGroupMessagesPag() http.HandlerFunc {
 
 		v := r.URL.Query()
 		userId := claims.UserId
-		groupId, err1 := utils.ParamGet(v, "group-id", ct.Id(0), true)
+		groupId, err1 := utils.ParamGet(v, "group_id", ct.Id(0), true)
 		boundary, err2 := utils.ParamGet(v, "boundary", ct.Id(0), false)
 		limit, err3 := utils.ParamGet(v, "limit", 100, true)
-		getPrevious, err4 := utils.ParamGet(v, "get-previous", true, false)
+		getPrevious, err4 := utils.ParamGet(v, "get_previous", true, false)
 
 		if err := errors.Join(err1, err2, err3, err4); err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "bad url params: "+err.Error())

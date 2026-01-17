@@ -157,7 +157,7 @@ func (h *Handlers) getUserPostsPaginated() http.HandlerFunc {
 		}
 
 		v := r.URL.Query()
-		creatorId, err1 := utils.PathValueGet(r, "userId", ct.Id(0), true)
+		creatorId, err1 := utils.PathValueGet(r, "user_id", ct.Id(0), true)
 		limit, err2 := utils.ParamGet(v, "limit", int32(1), false)
 		offset, err3 := utils.ParamGet(v, "offset", int32(0), false)
 		if err := errors.Join(err1, err2, err3); err != nil {
