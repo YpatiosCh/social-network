@@ -292,5 +292,10 @@ func (g GenDateTime) ToProto() *timestamppb.Timestamp {
 	if g.Time().IsZero() {
 		return nil
 	}
+
 	return timestamppb.New(time.Time(g))
+}
+
+func (g GenDateTime) String() string {
+	return fmt.Sprintf("%v", time.Time(g))
 }

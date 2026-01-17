@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	chattesting "social-network/services/testing/internal/chat_testing"
 	"social-network/services/testing/internal/configs"
 	gateway_test "social-network/services/testing/internal/gateway_testing"
 	users_test "social-network/services/testing/internal/users_testing"
@@ -33,6 +34,13 @@ func Run() {
 		wg.Go(func() {
 			gateway_test.StartTest(ctx, cfgs)
 
+		})
+
+		wg.Go(func() {
+			chattesting.StartTest(ctx, configs.Configs{
+				UsersGRPCAddr: "localhost:50051",
+				ChatGRPCAddr:  "localhost:50053",
+			})
 		})
 		time.Sleep(time.Millisecond * 2000)
 	}

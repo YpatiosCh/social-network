@@ -38,9 +38,9 @@ func getInput(args ...any) string {
 	for _, arg := range args {
 		switch v := arg.(type) {
 		case namedValue:
-			b.WriteString(fmt.Sprintf("%s = %s\n", v.name, formatValue(v.value)))
+			b.WriteString(fmt.Sprintf("%s = %s\n", v.name, FormatValue(v.value)))
 		default:
-			b.WriteString(formatValue(arg))
+			b.WriteString(FormatValue(arg))
 			b.WriteString("\n")
 		}
 	}
@@ -48,7 +48,7 @@ func getInput(args ...any) string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func formatValue(v any) string {
+func FormatValue(v any) string {
 	return formatValueIndented(v, 0, make(map[uintptr]bool))
 }
 
@@ -91,6 +91,20 @@ func formatValueIndented(v any, depth int, seen map[uintptr]bool) (out string) {
 
 	indent := strings.Repeat("  ", depth)
 	nextIndent := strings.Repeat("  ", depth+1)
+	stringerType := reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
+
+	// Value implements Stringer
+	if typ.Implements(stringerType) {
+		return val.Interface().(fmt.Stringer).String()
+	}
+
+	// Pointer implements Stringer
+	if val.CanAddr() {
+		ptrVal := val.Addr()
+		if ptrVal.Type().Implements(stringerType) {
+			return ptrVal.Interface().(fmt.Stringer).String()
+		}
+	}
 
 	switch val.Kind() {
 

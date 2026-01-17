@@ -33,6 +33,7 @@ social-sphere/.yarn/versions
 
 # testing
 social-sphere/coverage
+backend/services/testing/internal/chat_testing/users.json
 
 # next.js
 social-sphere/.next/
