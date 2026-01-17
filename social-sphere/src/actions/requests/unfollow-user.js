@@ -4,15 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function unfollowUser(userId) {
     try {
-        const response = await serverApiRequest("/user/unfollow", {
+        const url = `/users/${userId}/unfollow`;
+        const response = await serverApiRequest(url, {
             method: "POST",
-            body: JSON.stringify({
-                target_user_id: userId,
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+            forwardCookies: true
         });
         return { success: true, data: response };
     } catch (error) {

@@ -4,11 +4,11 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function inviteToGroup({ groupId, invitedIds }) {
     try {
-        const response = await serverApiRequest("/group/invite/user", {
+        const url = `/groups/${groupId}/invite`;
+        const response = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify({
-                group_id: groupId,
-                invited_id: invitedIds,
+                invited_id: invitedIds
             }),
             headers: {
                 "Content-Type": "application/json"

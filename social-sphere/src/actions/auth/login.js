@@ -7,7 +7,7 @@ export async function login(credentials) {
         const apiResp = await serverApiRequest("/login", {
             method: "POST",
             body: JSON.stringify(credentials),
-            forwardCookies: true, // IMPORTANT: Forward Set-Cookie from backend to client
+            forwardCookies: true,
             headers: {
                 "Content-Type": "application/json"
             }

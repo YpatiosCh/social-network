@@ -4,14 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getMostPopular(groupId) {
     try {
-        const response = await serverApiRequest(`/groups/popular`, {
-            method: "POST",
-            body: JSON.stringify({
-                entity_id: groupId,
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `groups/${groupId}/popular-post`
+        const response = await serverApiRequest(url, {
+            method: "GET"
         });
 
         return { success: true, data: response };

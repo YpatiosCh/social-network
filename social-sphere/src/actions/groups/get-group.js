@@ -4,14 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getGroup(groupId) {
     try {
-        const response = await serverApiRequest(`/group/`, {
-            method: "POST",
-            body: JSON.stringify({
-                group_id: groupId,
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/groups/${groupId}`;
+        const response = await serverApiRequest(url, {
+            method: "GET"
         });
 
         return { success: true, data: response };

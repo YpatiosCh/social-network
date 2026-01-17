@@ -4,13 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getComments({ postId, limit = 10, offset = 0 }) {
     try {
-        const comments = await serverApiRequest("/comments/", {
-            method: "POST",
-            body: JSON.stringify({
-                entity_id: postId,
-                limit,
-                offset
-            }),
+        const url = `/comments?entity_id=${postId}&limit=${limit}&offset=${offset}`;
+        const comments = await serverApiRequest(url, {
+            method: "GET",
             forwardCookies: true
         });
 

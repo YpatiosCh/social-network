@@ -81,7 +81,6 @@ export default function CreateEventModal({ isOpen, onClose, onSuccess, groupId }
             const eventData = {
                 event_title: title.trim(),
                 event_body: body.trim(),
-                group_id: groupId,
                 event_date: new Date(eventDate).toISOString(),
             };
 
@@ -92,7 +91,7 @@ export default function CreateEventModal({ isOpen, onClose, onSuccess, groupId }
                 eventData.image_type = imageFile.type;
             }
 
-            const response = await createEvent(eventData);
+            const response = await createEvent({groupID: groupId, data:eventData});
 
             if (!response.success) {
                 setError(response.error || "Failed to create event");

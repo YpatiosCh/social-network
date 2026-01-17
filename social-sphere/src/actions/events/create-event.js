@@ -2,11 +2,12 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function createEvent(eventData) {
+export async function createEvent({groupID, data}) {
     try {
-        const apiResp = await serverApiRequest("/events/create", {
+        const url = `/groups/${groupID}/events`
+        const apiResp = await serverApiRequest(url, {
             method: "POST",
-            body: JSON.stringify(eventData),
+            body: JSON.stringify(data),
             headers: {
                 "Content-Type": "application/json"
             }

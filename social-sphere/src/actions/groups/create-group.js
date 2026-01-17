@@ -22,7 +22,7 @@ export async function createGroup({
             requestBody.group_image_type = group_image_type;
         }
 
-        const response = await serverApiRequest(`/groups/create`, {
+        const response = await serverApiRequest(`/groups`, {
             method: "POST",
             body: JSON.stringify(requestBody),
             forwardCookies: true,

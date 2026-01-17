@@ -4,15 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getPendingRequestsCount({ groupId }) {
     try {
-        const response = await serverApiRequest("/group/pending-count", {
-            method: "POST",
-            body: JSON.stringify({
-                group_id: groupId
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/groups/${groupId}/pending-count`
+        const response = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
 
         return { success: true, data: response };

@@ -4,16 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getAllGroups({ limit, offset }) {
     try {
-        const response = await serverApiRequest(`/groups/paginated`, {
-            method: "POST",
-            body: JSON.stringify({
-                limit: limit,
-                offset: offset,
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/groups?limit=${limit}&offset=${offset}`;
+        const response = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
 
         // Return success wrapper

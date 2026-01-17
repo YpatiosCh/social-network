@@ -4,10 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function handleFollowRequest({ requesterId, accept }) {
     try {
-        const response = await serverApiRequest("/follow/response", {
+        const url = `/users/${requesterId}/follow-response`
+        const response = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify({
-                requester_id: requesterId,
                 accept: accept,
             }),
             headers: {

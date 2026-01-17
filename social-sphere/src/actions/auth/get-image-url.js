@@ -1,21 +1,13 @@
-//    "/get-image"    "thumb"
-
 "use server";
 
 import { serverApiRequest } from "@/lib/server-api";
 
 export async function getImageUrl({fileId, variant}) {
     try {
-        const res = await serverApiRequest("/get-image", {
-            method: "POST",
-            body: JSON.stringify({
-                image_id: fileId,
-                variant: variant
-            }),
+        const url = `/files/images/${fileId}/${variant}`;
+        const res = await serverApiRequest(url, {
+            method: "GET",
             forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
         });
 
         return {success: true, url: res.download_url};

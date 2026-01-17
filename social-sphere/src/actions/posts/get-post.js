@@ -4,15 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getPost(postId) {
     try {
-        const post = await serverApiRequest("/post/", {
-            method: "POST",
-            body: JSON.stringify({
-                entity_id: postId
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/posts/${postId}`;
+        const post = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
 
         return {success: true, error: null, post: post};

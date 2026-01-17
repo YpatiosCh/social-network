@@ -4,9 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function deleteEvent(eventId) {
     try {
-        const apiResp = await serverApiRequest("/events/delete", {
-            method: "POST",
-            body: JSON.stringify({ entity_id: eventId }),
+        const url = `/events/${eventId}`;
+        const apiResp = await serverApiRequest(url, {
+            method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
             }

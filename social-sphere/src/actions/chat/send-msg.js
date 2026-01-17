@@ -4,10 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function sendMsg({interlocutor , msg}) {
     try {
-        const apiResp = await serverApiRequest("/chat/create-pm", {
+        const url = `/chat/private/${interlocutor}`;
+        const apiResp = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify({
-                interlocutor_id: interlocutor,
                 message_body: msg
             }),
             headers: {

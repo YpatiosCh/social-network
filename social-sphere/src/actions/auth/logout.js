@@ -7,7 +7,7 @@ export async function logout() {
     try {
         await serverApiRequest("/logout", {
             method: "POST",
-            forwardCookies: true // Forward the cookie clearing headers
+            forwardCookies: true
         });
     } catch (error) {
         console.error("Logout Action Error:", error);

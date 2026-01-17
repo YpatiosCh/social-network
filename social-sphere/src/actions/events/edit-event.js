@@ -2,11 +2,12 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function editEvent(eventData) {
+export async function editEvent({id , data}) {
     try {
-        const apiResp = await serverApiRequest("/events/edit", {
+        const url = `/events/${id}`;
+        const apiResp = await serverApiRequest(url, {
             method: "POST",
-            body: JSON.stringify(eventData),
+            body: JSON.stringify(data),
             headers: {
                 "Content-Type": "application/json"
             }

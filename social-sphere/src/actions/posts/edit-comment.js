@@ -2,9 +2,10 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function editComment(commentData) {
+export async function editComment({commentData}) {
     try {
-        const apiResp = await serverApiRequest("/comments/edit", {
+        const url = `/comments/${commentData.comment_id}}`;
+        const apiResp = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify(commentData),
             headers: {

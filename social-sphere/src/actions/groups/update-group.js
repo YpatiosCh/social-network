@@ -2,9 +2,11 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function updateGroup(data) {
+// na fugei id apo data kai na mpei sto URL
+export async function updateGroup({groupId ,data}) {
     try {
-        const response = await serverApiRequest("/groups/update", {
+        const url = `/groups/${groupId}`;
+        const response = await serverApiRequest(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

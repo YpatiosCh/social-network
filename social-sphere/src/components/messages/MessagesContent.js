@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getConv } from "@/actions/chat/get-conv";
 import { getMessages } from "@/actions/chat/get-messages";
 import { sendMsg } from "@/actions/chat/send-msg";
+import { getConvByID } from "@/actions/chat/get-conv-by-id";
 import { useStore } from "@/store/store";
 import { User, Send, MessageCircle, Loader2, ChevronLeft, Wifi, WifiOff } from "lucide-react";
 import { motion } from "motion/react";
@@ -46,13 +47,14 @@ export default function MessagesContent({
     const { connectionState, isConnected, addOnPrivateMessage, removeOnPrivateMessage } = useLiveSocket();
 
     // Handle incoming private messages from WebSocket
-    const handlePrivateMessage = useCallback((msg) => {
+    const handlePrivateMessage = useCallback(async (msg) => {
         console.log("[Chat] Received private message:", msg);
+
+        const senderId = msg.sender?.id;
 
         // Add message to the current conversation if it matches
         const currentConv = selectedConvRef.current;
         if (currentConv) {
-            const senderId = msg.sender?.id;
             const interlocutorId = currentConv.Interlocutor?.id;
 
             // Check if this message belongs to the current conversation
@@ -65,10 +67,11 @@ export default function MessagesContent({
             }
         }
 
+        // Track if we need to fetch new conversation data
+        let isNewConversation = false;
+
         // Update conversation list with new message preview
         setConversations((prev) => {
-            const senderId = msg.sender?.id;
-
             // Check if conversation exists
             const existingIndex = prev.findIndex((conv) => conv.Interlocutor?.id === senderId);
 
@@ -91,20 +94,39 @@ export default function MessagesContent({
                 });
                 return updated.sort((a, b) => new Date(b.UpdatedAt) - new Date(a.UpdatedAt));
             } else {
-                // New conversation - add it
-                const newConv = {
-                    ConversationId: msg.conversation_id,
-                    Interlocutor: msg.sender,
-                    LastMessage: {
-                        message_text: msg.message_text,
-                        sender: msg.sender,
-                    },
-                    UpdatedAt: msg.created_at,
-                    UnreadCount: 1,
-                };
-                return [newConv, ...prev];
+                // New conversation - mark for fetching full data
+                isNewConversation = true;
+                return prev;
             }
         });
+
+        // If new conversation, fetch full data from server
+        if (isNewConversation) {
+            console.log("Fetching new conversation with:", { senderId, convId: msg.conversation_id });
+
+            const result = await getConvByID({
+                interlocutorId: senderId,
+                convId: msg.conversation_id,
+            });
+
+            if (result.success && result.data) {
+                setConversations((prev) => {
+                    // Check if already added (race condition prevention)
+                    const alreadyExists = prev.some((conv) => conv.Interlocutor?.id === senderId);
+                    console.log("Already exists in conversations:", alreadyExists);
+                    if (alreadyExists) {
+                        return prev;
+                    }
+                    // Add the new conversation with full data and set UnreadCount
+                    const newConv = {
+                        ...result.data,
+                        UnreadCount: 1,
+                    };
+                    console.log("Adding new conversation:", newConv);
+                    return [newConv, ...prev];
+                });
+            }
+        }
     }, []);
 
     // Register message handler when on messages page
@@ -122,7 +144,6 @@ export default function MessagesContent({
         scrollToBottom();
     }, [messages]);
 
-    console.log("Messages: ", messages);
 
     const handleClickMsg = async () => {
         if (!messages.length || !selectedConv) return;
@@ -215,7 +236,7 @@ export default function MessagesContent({
 
     // Handle conversation selection - navigate to /messages/[id]
     const handleSelectConversation = (conv) => {
-        const id = conv.Interlocutor?.id || conv.ConversationId;
+        const id = conv.Interlocutor?.id;
         router.push(`/messages/${id}`);
     };
 

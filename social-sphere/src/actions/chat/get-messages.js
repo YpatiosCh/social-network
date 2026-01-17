@@ -16,8 +16,6 @@ export async function getMessages({ interlocutorId, boundary = null, limit = 50,
             url += `&get-previous=${getPrevious}`;
         }
 
-        console.log("sending to: ", url)
-
         const response = await serverApiRequest(url, {
             method: "GET",
             forwardCookies: true,
