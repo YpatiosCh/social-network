@@ -2,11 +2,12 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function respondToEvent(data) {
+export async function respondToEvent({id, going}) {
     try {
-        const apiResp = await serverApiRequest("/events/respond", {
+        const url = `/events/${id}/response`;
+        const apiResp = await serverApiRequest(url, {
             method: "POST",
-            body: JSON.stringify(data),
+            body: JSON.stringify(going),
             headers: {
                 "Content-Type": "application/json"
             }

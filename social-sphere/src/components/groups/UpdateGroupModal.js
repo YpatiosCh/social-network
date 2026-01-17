@@ -92,7 +92,7 @@ export default function UpdateGroupModal({ isOpen, onClose, onSuccess, group }) 
                 groupData.group_image_id = group.group_image_id;
             }
 
-            const response = await updateGroup(groupData);
+            const response = await updateGroup({groupId: group.group_id, data: groupData});
 
             if (!response.success) {
                 setError(response.error || "Failed to update group");

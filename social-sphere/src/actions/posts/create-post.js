@@ -4,7 +4,8 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function createPost(postData) {
     try {
-        const apiResp = await serverApiRequest("/posts/create", {
+        const url = `/posts`
+        const apiResp = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify(postData),
             headers: {

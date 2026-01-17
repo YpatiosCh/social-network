@@ -4,17 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getGroupMembers({ group_id, limit, offset }) {
     try {
-        const response = await serverApiRequest("/group/members", {
-            method: "POST",
-            body: JSON.stringify({
-                group_id: group_id,
-                limit: limit,
-                offset: offset
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/groups/${group_id}/members?limit=${limit}&offset=${offset}`;
+        const response = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
 
         return { success: true, data: response };

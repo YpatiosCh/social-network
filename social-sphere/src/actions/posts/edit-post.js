@@ -4,7 +4,8 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function editPost(postData) {
     try {
-        const apiResp = await serverApiRequest("/posts/edit", {
+        const url = `/posts/${postData.post_id}`;
+        const apiResp = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify(postData),
             headers: {

@@ -16,7 +16,8 @@ export async function createComment({ postId, commentBody, imageName, imageSize,
             body.image_type = imageType;
         }
 
-        const response = await serverApiRequest("/comments/create", {
+        const url = `/comments`
+        const response = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify(body),
             forwardCookies: true

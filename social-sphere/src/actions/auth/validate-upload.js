@@ -4,10 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function validateUpload(fileId) {
     try {
-        const res = await serverApiRequest("/validate-file-upload", {
+        const url = `/files/${fileId}/validate`;
+        const res = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify({
-                file_id: fileId,
                 return_url: true
             }),
             headers: {

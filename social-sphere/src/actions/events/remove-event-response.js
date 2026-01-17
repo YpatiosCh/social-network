@@ -2,11 +2,11 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function removeEventResponse(data) {
+export async function removeEventResponse({id}) {
     try {
-        const apiResp = await serverApiRequest("/events/remove-response", {
-            method: "POST",
-            body: JSON.stringify(data),
+        const url = `/events/${id}/response`;
+        const apiResp = await serverApiRequest(url, {
+            method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
             }

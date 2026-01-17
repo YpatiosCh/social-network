@@ -2,21 +2,21 @@
 
 import { serverApiRequest } from "@/lib/server-api";
 
-export async function respondToGroupInvite({ groupId, accept }) {
+export async function getConvByID({interlocutorId , convId}) {
     try {
-        const url = `/groups/${groupId}/invite-response`;
+        const url = `/chat/get-private-conversation-by-id?interlocutor-id=${interlocutorId}&conversation-id=${convId}`;
         const response = await serverApiRequest(url, {
-            method: "POST",
-            body: JSON.stringify({
-                accept: accept,
-            }),
+            method: "GET",
+            forwardCookies: true,
             headers: {
                 "Content-Type": "application/json"
             }
         });
+
+        // Return success wrapper
         return { success: true, data: response };
     } catch (error) {
-        console.error("Error responding to group invite:", error);
+        console.error("Error fetching groups:", error);
         return { success: false, error: error.message };
     }
 }

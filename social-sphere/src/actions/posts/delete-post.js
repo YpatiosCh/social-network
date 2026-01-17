@@ -4,9 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function deletePost(postId) {
     try {
-        const apiResp = await serverApiRequest("/posts/delete/", {
-            method: "POST",
-            body: JSON.stringify({ entity_id: postId }),
+        const url = `/posts/${postId}`;
+        const apiResp = await serverApiRequest(url, {
+            method: "DELETE",
             headers: {
                 "Content-Type": "application/json"
             }

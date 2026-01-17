@@ -4,10 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function removeFromGroup({ groupId, memberId }) {
     try {
-        const response = await serverApiRequest("/group/remove", {
+        const url = `groups/${groupId}/remove-member`;
+        const response = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify({
-                group_id: groupId,
                 member_id: memberId,
             }),
             forwardCookies: true,

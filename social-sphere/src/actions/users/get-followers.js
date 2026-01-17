@@ -8,17 +8,9 @@ export async function getFollowers({ userId, limit = 100, offset = 0 } = {}) {
             console.error("User ID is required to fetch followers");
             return [];
         }
-
-        const followers = await serverApiRequest("/users/followers/paginated", {
-            method: "POST",
-            body: JSON.stringify({
-                user_id: userId,
-                limit: limit,
-                offset: offset
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/users/${userId}/followers?limit=${limit}&offset=${offset}`;
+        const followers = await serverApiRequest(url, {
+            method: "GET"
         });
 
         return followers;

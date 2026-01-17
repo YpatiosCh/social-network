@@ -4,17 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function searchGroups({ query, limit = 10, offset = 0 }) {
     try {
-        const response = await serverApiRequest("/search/group", {
-            method: "POST",
-            body: JSON.stringify({
-                query: query,
-                limit: limit,
-                offset: offset,
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/groups/search?query=${query}&limit=${limit}&offset=${offset}`;
+        const response = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
 
         return { success: true, groups: response.groups || [] };

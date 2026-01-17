@@ -4,16 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getPublicPosts({ limit = 10, offset = 0 } = {}) {
     try {
-        const posts = await serverApiRequest("/public-feed", {
-            method: "POST",
-            body: JSON.stringify({
-                limit: limit,
-                offset: offset
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/posts/public?limit${limit}&offset=${offset}`;
+        const posts = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
 
         return posts;

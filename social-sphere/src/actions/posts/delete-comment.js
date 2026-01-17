@@ -4,12 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function deleteComment(commentId) {
     try {
-        const apiResp = await serverApiRequest("/comments/delete", {
-            method: "POST",
-            body: JSON.stringify({ entity_id: commentId }),
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/comments/${commentId}`;
+        const apiResp = await serverApiRequest(url, {
+            method: "DELETE"
         });
 
         return { success: true, ...apiResp };

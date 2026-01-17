@@ -4,16 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function SearchUsers({ query, limit }) {
     try {
-        const response = await serverApiRequest("/users/search", {
-            method: "POST",
-            body: JSON.stringify({
-                query: query,
-                limit: limit,
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/users/search?query=${query}&limit=${limit}`;
+        const response = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
         return response;
     } catch (error) {

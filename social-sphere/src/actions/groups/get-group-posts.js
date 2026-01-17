@@ -4,17 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getGroupPosts({ groupId, limit, offset }) {
     try {
-        const response = await serverApiRequest("/group/posts", {
-            method: "POST",
-            body: JSON.stringify({
-                group_id: groupId,
-                limit: limit,
-                offset: offset,
-            }),
-            forwardCookies: true,
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/groups/${groupId}/posts?limit=${limit}&offset=${off}`;
+        const response = await serverApiRequest(url, {
+            method: "GET",
+            forwardCookies: true
         });
 
         // Return success wrapper (use 'data' for consistency)

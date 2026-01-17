@@ -97,7 +97,6 @@ export default function EditEventModal({ isOpen, onClose, onSuccess, event }) {
 
         try {
             const eventData = {
-                event_id: event.event_id,
                 event_title: title.trim(),
                 event_body: body.trim(),
                 event_date: new Date(eventDate).toISOString(),
@@ -112,7 +111,7 @@ export default function EditEventModal({ isOpen, onClose, onSuccess, event }) {
                 eventData.delete_image = true;
             }
 
-            const response = await editEvent(eventData);
+            const response = await editEvent({id: event.event_id, data: eventData});
 
             if (!response.success) {
                 setError(response.error || "Failed to update event");

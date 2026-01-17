@@ -6,9 +6,9 @@ export async function getConv({first=false, beforeDate=null, limit}) {
     try {
         let url = null;
         if (first === true) {
-            url = `/chat/get-private-conversations?limit=${limit}`;
+            url = `/my/chat/private?limit=${limit}`;
         } else {
-            url = `/chat/get-private-conversations?before-date=${beforeDate}&limit=${limit}`;
+            url = `/my/chat/private?before-date=${beforeDate}&limit=${limit}`;
         }
 
         const response = await serverApiRequest(url, {

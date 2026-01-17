@@ -4,10 +4,10 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function handleJoinRequest({ groupId, requesterId, accepted }) {
     try {
-        const response = await serverApiRequest("/group/handle-request", {
+        const url = `/groups/${groupId}/join-response`;
+        const response = await serverApiRequest(url, {
             method: "POST",
             body: JSON.stringify({
-                group_id: groupId,
                 requester_id: requesterId,
                 accepted: accepted
             }),

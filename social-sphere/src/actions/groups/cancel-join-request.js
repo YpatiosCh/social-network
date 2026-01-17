@@ -4,11 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function cancelJoinRequest({ groupId }) {
     try {
-        const response = await serverApiRequest("/group/cancel-request", {
+        const url = `/groups/${groupId}/cancel-join-request`;
+        const response = await serverApiRequest(url, {
             method: "POST",
-            body: JSON.stringify({
-                group_id: groupId,
-            }),
             headers: {
                 "Content-Type": "application/json"
             }

@@ -4,11 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function requestJoinGroup({ groupId }) {
     try {
-        const response = await serverApiRequest("/group/join", {
+        const url = `/groups/${groupId}/join-request`;
+        const response = await serverApiRequest(url, {
             method: "POST",
-            body: JSON.stringify({
-                group_id: groupId,
-            }),
             forwardCookies: true,
             headers: {
                 "Content-Type": "application/json"

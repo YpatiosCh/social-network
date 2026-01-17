@@ -4,16 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getGroupEvents({ groupId, limit = 10, offset = 0 }) {
     try {
-        const apiResp = await serverApiRequest("/events/", {
-            method: "POST",
-            body: JSON.stringify({
-                entity_id: groupId,
-                limit: limit,
-                offset: offset
-            }),
-            headers: {
-                "Content-Type": "application/json"
-            }
+        const url = `/groups/${groupId}/events?limit=${limit}&offset=${offset}`;
+        const apiResp = await serverApiRequest(url, {
+            method: "GET"
         });
 
         return { success: true, data: apiResp };
