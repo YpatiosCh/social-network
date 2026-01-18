@@ -4,7 +4,7 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function toggleReaction(postId) {
     try {
-        const apiResp = await serverApiRequest("/reactions/", {
+        const apiResp = await serverApiRequest("/reactions", {
             method: "POST",
             body: JSON.stringify({ entity_id: postId }),
             headers: {

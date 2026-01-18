@@ -432,7 +432,7 @@ export default function PostCard({ post, onDelete }) {
             // Revert on error
             setLikedByUser(previousLiked);
             setReactionsCount(previousCount);
-            console.error("Failed to toggle reaction:", err);
+            console.error("Failed to toggle reactions:", err);
         } finally {
             setIsReactionPending(false);
         }
