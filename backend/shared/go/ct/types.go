@@ -33,7 +33,7 @@ const (
 	eventBodyCharsMin       = 3
 	eventBodyCharsMax       = 2000
 	msgBodyCharsMin         = 1
-	msgBodyCharsMax         = 100
+	msgBodyCharsMax         = 1000
 	dobMinAgeInYears        = 13
 	dobMaxAgeInYears        = 120
 	eventDateMaxMonthsAhead = 6
