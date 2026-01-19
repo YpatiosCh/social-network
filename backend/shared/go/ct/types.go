@@ -32,6 +32,8 @@ const (
 	commentBodyCharsMax     = 400
 	eventBodyCharsMin       = 3
 	eventBodyCharsMax       = 400
+	msgBodyCharsMin         = 1
+	msgBodyCharsMax         = 100
 	dobMinAgeInYears        = 13
 	dobMaxAgeInYears        = 120
 	eventDateMaxMonthsAhead = 6
