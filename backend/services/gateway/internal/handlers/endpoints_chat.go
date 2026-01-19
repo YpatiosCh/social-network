@@ -88,8 +88,8 @@ func (h *Handlers) GetPrivateConversationById() http.HandlerFunc {
 		v := r.URL.Query()
 		userId := claims.UserId
 
-		interlocutorId, err1 := utils.PathValueGet(r, "interlocutor_id", ct.Id(0), true)
-		convId, err2 := utils.ParamGet(v, "conversation_id", ct.Id(0), true)
+		convId, err1 := utils.PathValueGet(r, "conversation_id", ct.Id(0), true)
+		interlocutorId, err2 := utils.ParamGet(v, "interlocutor_id", ct.Id(0), true)
 
 		if err := errors.Join(err1, err2); err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "bad url params: "+err.Error())
