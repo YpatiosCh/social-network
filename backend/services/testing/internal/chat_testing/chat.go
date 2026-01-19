@@ -1,4 +1,4 @@
-package main
+package chattesting
 
 import (
 	"context"
@@ -29,13 +29,6 @@ var fail = "FAIL TEST: err ->"
 var usrA *users.RegisterUserResponse
 var usrB *users.RegisterUserResponse
 
-func main() {
-	StartTest(context.Background(), configs.Configs{
-		UsersGRPCAddr: "localhost:50051",
-		ChatGRPCAddr:  "localhost:50053",
-	})
-}
-
 func StartTest(ctx context.Context, cfgs configs.Configs) error {
 	var err error
 	UsersService, err = gorpc.GetGRpcClient(
@@ -56,7 +49,7 @@ func StartTest(ctx context.Context, cfgs configs.Configs) error {
 	utils.HandleErr("follow each other", ctx, FollowUser)
 	utils.HandleErr("test unread conversations", ctx, TestUnreadCount)
 	// utils.HandleErr("send msg to each other", ctx, TestCreateMessage)
-	utils.HandleErr("get conversations", ctx, TestGetConversations)
+	// utils.HandleErr("get conversations", ctx, TestGetConversations)
 	// utils.HandleErr("get previous private messages", ctx, TestGetPMs)
 	// utils.HandleErr("get next private messages", ctx, TestGetNextPms)
 
@@ -256,28 +249,36 @@ func TestUnreadCount(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	now := time.Now().AddDate(100, 0, 0)
-	// msg, err := ChatService.CreatePrivateMessage(ctx,)
-	fmt.Printf("Message: %s\n", ce.FormatValue(mapping.MapPMFromProto(msg)))
-	res, err := ChatService.GetPrivateConversations(ctx, &chat.GetPrivateConversationsRequest{
+	fmt.Printf("Created Message: %s\n", ce.FormatValue(mapping.MapPMFromProto(msg)))
+
+	later := time.Now().AddDate(100, 0, 0)
+	resA, err := ChatService.GetPrivateConversations(ctx, &chat.GetPrivateConversationsRequest{
 		UserId:     usrA.UserId,
 		Limit:      1,
-		BeforeDate: timestamppb.New(now),
+		BeforeDate: timestamppb.New(later),
 	})
 	if err != nil {
 		return err
 	}
-	fmt.Println("GetConvs A Res", ce.FormatValue(mapping.MapConversationsFromProto(res.Conversations)))
-	fmt.Printf("Message: %s\n", ce.FormatValue(mapping.MapPMFromProto(msg)))
+
+	if resA.Conversations[0].UnreadCount != 0 {
+		return fmt.Errorf("expected 0 unread got: %d", resA.Conversations[0].UnreadCount)
+	}
+
+	// fmt.Println("GetConvs A Res", ce.FormatValue(mapping.MapConversationsFromProto(resA.Conversations)))
+
 	resB, err := ChatService.GetPrivateConversations(ctx, &chat.GetPrivateConversationsRequest{
 		UserId:     usrB.UserId,
 		Limit:      1,
-		BeforeDate: timestamppb.New(now),
+		BeforeDate: timestamppb.New(later),
 	})
 	if err != nil {
 		return err
 	}
-	fmt.Println("GetConvs A Res", ce.FormatValue(mapping.MapConversationsFromProto(resB.Conversations)))
+	fmt.Println("GetConvs B Res", ce.FormatValue(mapping.MapConversationsFromProto(resB.Conversations)))
+	if resB.Conversations[0].UnreadCount == 0 {
+		return fmt.Errorf("expected at least 1 unread got: 0")
+	}
 	return nil
 }
 

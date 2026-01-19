@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 
 	// chattesting "social-network/services/testing/internal/chat_testing"
+	chattesting "social-network/services/testing/internal/chat_testing"
 	"social-network/services/testing/internal/configs"
 	gateway_test "social-network/services/testing/internal/gateway_testing"
 	kafkatester "social-network/services/testing/internal/kafka"
@@ -51,13 +52,10 @@ func Run() {
 			kafkatester.TestKafka()
 		})
 
-		// wg.Go(func() {
-		// 	defer catchPanic(ctx, "chattesting")
-		// 	chattesting.StartTest(ctx, configs.Configs{
-		// 		UsersGRPCAddr: "users:50051",
-		// 		ChatGRPCAddr:  "chat:50051",
-		// 	})
-		// })
+		wg.Go(func() {
+			defer catchPanic(ctx, "chattesting")
+			chattesting.StartTest(ctx, cfgs)
+		})
 
 		time.Sleep(time.Millisecond * 2000)
 	}
