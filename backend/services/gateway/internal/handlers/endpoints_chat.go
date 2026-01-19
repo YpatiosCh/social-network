@@ -162,6 +162,42 @@ func (h *Handlers) GetPrivateConversations() http.HandlerFunc {
 	}
 }
 
+func (h *Handlers) GetConvsWithUnreadsCount() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		tele.Info(ctx, "get private messages paginated called")
+		claims, ok := utils.GetValue[jwt.Claims](r, ct.ClaimsKey)
+		if !ok {
+			tele.Error(ctx, "problem fetching claims")
+			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, "can't find claims")
+			return
+		}
+		grpcResponse, err := h.ChatService.GetConvsWithUnreadsCount(ctx, &chat.GetConvsWithUnreadsCountRequest{UserId: claims.UserId})
+		httpCode, _ := gorpc.Classify(err)
+		if err != nil {
+			err = ce.DecodeProto(err)
+			utils.ErrorJSON(ctx, w, httpCode, err.Error())
+			return
+		}
+
+		type GetConversationsCountWithUnreadMsgs struct {
+			Count int64 `json:"count"`
+		}
+
+		err = utils.WriteJSON(
+			ctx,
+			w,
+			httpCode,
+			&GetConversationsCountWithUnreadMsgs{
+				Count: grpcResponse.Count,
+			},
+		)
+		if err != nil {
+			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, err.Error())
+		}
+	}
+}
+
 func (h *Handlers) GetPrivateMessagesPag() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

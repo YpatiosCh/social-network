@@ -2,6 +2,7 @@ package dbservice
 
 import (
 	"context"
+	ct "social-network/shared/go/ct"
 	md "social-network/shared/go/models"
 )
 
@@ -82,6 +83,7 @@ type Querier interface {
 	GetPrivateConvs(ctx context.Context,
 		arg md.GetPrivateConvsReq) (res []md.PrivateConvsPreview, err error)
 
+	GetConvsWithUnreadsCount(ctx context.Context, userId ct.Id) (count int, err error)
 	// Updates the given user's last read message in given private conversation to given message id.
 	UpdateLastReadPrivateMsg(ctx context.Context, arg md.UpdateLastReadMsgParams) error
 

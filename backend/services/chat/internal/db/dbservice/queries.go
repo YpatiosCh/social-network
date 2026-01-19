@@ -97,7 +97,25 @@ const (
 		im.updated_at,
 		im.deleted_at
 	FROM inserted_message im;
-`
+	`
+
+	getConvsWithUnreadsCount = `
+	SELECT COUNT(*) AS unread_conversations_count
+	FROM private_conversations pc
+	JOIN LATERAL (
+		SELECT pm.id
+		FROM private_messages pm
+		WHERE pm.conversation_id = pc.id
+		ORDER BY pm.id DESC
+		LIMIT 1
+	) latest_message ON true
+	WHERE pc.deleted_at IS NULL
+	AND (
+		(pc.user_a = $1 AND (pc.last_read_message_id_a IS NULL OR latest_message.id > pc.last_read_message_id_a))
+		OR
+		(pc.user_b = $1 AND (pc.last_read_message_id_b IS NULL OR latest_message.id > pc.last_read_message_id_b))
+	);
+	`
 
 	getPrivateConvById = `
 	WITH user_conversation AS (

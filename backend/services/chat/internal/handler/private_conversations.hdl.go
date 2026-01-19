@@ -75,6 +75,22 @@ func (h *ChatHandler) GetPrivateConversations(
 	return res, nil
 }
 
+func (h *ChatHandler) GetConvsWithUnreadsCount(
+	ctx context.Context,
+	params *pb.GetConvsWithUnreadsCountRequest,
+) (*pb.GetConvsWithUnreadsCountResponse, error) {
+	tele.Info(ctx, "get conversations with unread count called @1", "userId", params.UserId)
+	count, err := h.Application.GetConvsWithUnreadsCount(ctx, ct.Id(params.UserId))
+	if err != nil {
+		tele.Error(ctx, "get conversations with unread count @1 \n\n@2\n\n",
+			"request", params.String(),
+			"error", err.Error(),
+		)
+		return nil, ce.EncodeProto(err)
+	}
+	return &pb.GetConvsWithUnreadsCountResponse{Count: int64(count)}, nil
+}
+
 // Creates a new private message and returns the created message details.
 func (h *ChatHandler) CreatePrivateMessage(
 	ctx context.Context,

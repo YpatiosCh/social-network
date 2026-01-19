@@ -86,6 +86,16 @@ message GetPrivateConversationsResponse {
   repeated PrivateConversationPreview conversations = 1;
 }
 
+// Request to get conversation count that user has unread messages
+message GetConvsWithUnreadsCountRequest {
+  int64 user_id = 1;
+}
+
+// Count of conversations with unread messages
+message GetConvsWithUnreadsCountResponse {
+  int64 count = 1;
+}
+
 // =====================
 // Private Messages
 // =====================
@@ -178,6 +188,13 @@ service ChatService {
     GetPrivateConversationsRequest
   ) returns (
     GetPrivateConversationsResponse
+  );
+
+  // Returns the count of conversations that the user has unread messages.
+  rpc GetConvsWithUnreadsCount(
+    GetConvsWithUnreadsCountRequest
+  ) returns (
+    GetConvsWithUnreadsCountResponse
   );
 
   // Creates a new private message and returns the created message details.

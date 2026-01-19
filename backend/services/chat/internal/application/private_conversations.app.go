@@ -84,6 +84,13 @@ func (c *ChatService) GetPrivateConversations(ctx context.Context,
 	return conversations, nil
 }
 
+func (c *ChatService) GetConvsWithUnreadsCount(ctx context.Context, userId ct.Id) (count int, err error) {
+	if err := userId.Validate(); err != nil {
+		return 0, ce.Wrap(ce.ErrInvalidArgument, err)
+	}
+	return c.Queries.GetConvsWithUnreadsCount(ctx, userId)
+}
+
 // Creates a private message and returns an id
 func (c *ChatService) CreatePrivateMessage(ctx context.Context,
 	arg md.CreatePrivateMsgReq) (msg md.PrivateMsg, Err *ce.Error) {

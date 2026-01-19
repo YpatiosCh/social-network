@@ -102,9 +102,23 @@ func (q *Queries) GetPrivateConvs(ctx context.Context,
 	return res, nil
 }
 
+func (q *Queries) GetConvsWithUnreadsCount(ctx context.Context, userId ct.Id) (count int, err error) {
+	input := fmt.Sprintf("userId: %v", userId)
+	row := q.db.QueryRow(ctx,
+		getConvsWithUnreadsCount,
+		userId,
+	)
+	err = row.Scan(&count)
+	if err != nil {
+		return count, ce.New(ce.ErrInternal, err, input).WithPublic("internal error")
+	}
+	return count, nil
+}
+
 // Creates or fetches existing conversation between Sender and Interlocutor and creates a message with reference to conversation id.
 func (q *Queries) CreateNewPrivateMessage(ctx context.Context, arg md.CreatePrivateMsgReq) (msg md.PrivateMsg, err error) {
 	input := fmt.Sprintf("arg: %#v", arg)
+
 	userA := min(arg.SenderId.Int64(), arg.InterlocutorId.Int64())
 	userB := max(arg.SenderId.Int64(), arg.InterlocutorId.Int64())
 	row := q.db.QueryRow(ctx,

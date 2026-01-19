@@ -47,7 +47,8 @@ func StartTest(ctx context.Context, cfgs configs.Configs) error {
 
 	utils.HandleErr("register users", ctx, registerOrGetUsers)
 	utils.HandleErr("follow each other", ctx, FollowUser)
-	utils.HandleErr("test unread conversations", ctx, TestUnreadCount)
+	utils.HandleErr("test get convs count with unread msgs", ctx, TestGetConversationsCountWithUnreadMsgs)
+	// utils.HandleErr("test unread conversations", ctx, TestUnreadCount)
 	// utils.HandleErr("send msg to each other", ctx, TestCreateMessage)
 	// utils.HandleErr("get conversations", ctx, TestGetConversations)
 	// utils.HandleErr("get previous private messages", ctx, TestGetPMs)
@@ -279,6 +280,24 @@ func TestUnreadCount(ctx context.Context) error {
 	if resB.Conversations[0].UnreadCount == 0 {
 		return fmt.Errorf("expected at least 1 unread got: 0")
 	}
+	return nil
+}
+
+func TestGetConversationsCountWithUnreadMsgs(ctx context.Context) error {
+	msg, err := ChatService.CreatePrivateMessage(ctx, &chat.CreatePrivateMessageRequest{
+		SenderId:       usrA.UserId,
+		InterlocutorId: usrB.UserId,
+		MessageText:    "test test test",
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Created Message: %s\n", ce.FormatValue(mapping.MapPMFromProto(msg)))
+	count, err := ChatService.GetConvsWithUnreadsCount(ctx, &chat.GetConvsWithUnreadsCountRequest{UserId: usrB.UserId})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Convs with Unread Count: %d\n", count.Count)
 	return nil
 }
 

@@ -658,7 +658,7 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 		RateLimit(USERID, 20, 5).
 		Finalize(h.CreatePrivateMsg())
 
-		//--DONE
+	//--DONE
 
 	SetEndpoint("/my/chat/{interlocutor_id}").
 		AllowedMethod("GET").
@@ -668,7 +668,15 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 		RateLimit(USERID, 20, 5).
 		Finalize(h.GetPrivateMessagesPag())
 
-		//conv id url, params --DONE
+	//conv id url, params --DONE
+
+	SetEndpoint("/my/chat/get-unread-conversation-count").
+		AllowedMethod("GET").
+		RateLimit(IP, 20, 5).
+		Auth().
+		EnrichContext().
+		RateLimit(USERID, 20, 5).
+		Finalize(h.GetConvsWithUnreadsCount())
 
 	SetEndpoint("/my/chat/{conversation_id}/preview").
 		AllowedMethod("GET").
