@@ -4,7 +4,9 @@ import { serverApiRequest } from "@/lib/server-api";
 
 export async function getConvByID({interlocutorId , convId}) {
     try {
-        const url = `/chat/get-private-conversation-by-id?interlocutor-id=${interlocutorId}&conversation-id=${convId}`;
+        const url = `/my/chat/${convId}/preview?interlocutor_id=${interlocutorId}`;
+
+        console.log("sending to: ", url);
         const response = await serverApiRequest(url, {
             method: "GET",
             forwardCookies: true,
@@ -13,6 +15,7 @@ export async function getConvByID({interlocutorId , convId}) {
             }
         });
 
+        console.log("response: ", response);
         // Return success wrapper
         return { success: true, data: response };
     } catch (error) {

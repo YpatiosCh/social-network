@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Globe, UserPlus, UserCheck, UserMinus, Clock, Lock, Check, X } from "lucide-react";
+import { Calendar, Globe, UserPlus, UserCheck, UserMinus, Clock, Lock, Check, X, Send } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Container from "@/components/layout/Container";
 import { followUser } from "@/actions/requests/follow-user";
@@ -9,6 +9,7 @@ import { unfollowUser } from "@/actions/requests/unfollow-user";
 import { handleFollowRequest } from "@/actions/requests/handle-request";
 import { updatePrivacyAction } from "@/actions/profile/settings";
 import Tooltip from "../ui/Tooltip";
+import { useRouter } from "next/navigation";
 
 export function ProfileHeader({ user, onUnfollow=null }) {
     const [isFollowing, setIsFollowing] = useState(user.viewer_is_following);
@@ -20,6 +21,15 @@ export function ProfileHeader({ user, onUnfollow=null }) {
 
     const [userAskedToFollow, setUserAskedToFollow] = useState(user.follow_request_from_profile_owner);
     const [requestLoading, setRequestLoading] = useState(false);
+    const router = useRouter();
+
+    console.log("USER: ", user);
+
+    const canSend = isFollowing;
+
+    const handleSendMessage = () => {
+        router.push(`/messages/${user.user_id}`);
+    }
 
     const handleAcceptRequest = async () => {
         if (requestLoading) return;
@@ -164,7 +174,7 @@ export function ProfileHeader({ user, onUnfollow=null }) {
 
 
                                 {/* Action Buttons */}
-                                <div className="flex flex-col items-end gap-2 shrink-0">
+                                <div className="flex flex-col items-center gap-2 shrink-0">
                                     <div className="flex items-center gap-2">
                                     {user.own_profile ? (
                                         <>
@@ -236,7 +246,7 @@ export function ProfileHeader({ user, onUnfollow=null }) {
                                     </div>
                                     {/* Pending Follow Request from Profile Owner */}
                                     {userAskedToFollow && !user.own_profile && (
-                                        <div className="flex flex-col items-end gap-1">
+                                        <div className="flex flex-col items-center gap-1">
                                             <span className="text-[13px] text-(--muted)">Pending request from {user.first_name}</span>
                                             <div className="flex items-center gap-2">
                                                 <Tooltip content="Decline">
@@ -267,6 +277,20 @@ export function ProfileHeader({ user, onUnfollow=null }) {
                                                 </Tooltip>
                                             </div>
                                         </div>
+                                    )}
+                                    {canSend && (
+                                        <div className="flex  items-center gap-1">
+                                            
+                                            <Tooltip content="Message">
+                                                    <button
+                                                        onClick={handleSendMessage}
+                                                        className="bg-(--muted)/10 text-foreground border border-(--border) rounded-xl p-2 cursor-pointer"
+                                                    >
+                                                        <Send className="w-4 h-4" />
+                                                    </button>
+                                                </Tooltip>
+                                                </div>
+                                       
                                     )}
                                 </div>
 
