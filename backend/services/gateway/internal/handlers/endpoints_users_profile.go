@@ -106,7 +106,7 @@ func (s *Handlers) searchUsers() http.HandlerFunc {
 		ctx := r.Context()
 
 		v := r.URL.Query()
-		query, err1 := utils.PathValueGet(r, "query", "", true)
+		query, err1 := utils.ParamGet(v, "query", "", true)
 		limit, err2 := utils.ParamGet(v, "limit", int32(1), false)
 		if err := errors.Join(err1, err2); err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusBadRequest, "bad url params: "+err.Error())

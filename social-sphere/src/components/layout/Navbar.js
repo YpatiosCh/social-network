@@ -10,7 +10,7 @@ import { logout } from "@/actions/auth/logout";
 import { SearchUsers } from "@/actions/search/search-users";
 import { getImageUrl } from "@/actions/auth/get-image-url";
 import { getConv } from "@/actions/chat/get-conv";
-import { useLiveSocket, ConnectionState } from "@/context/LiveSocketContext";
+import { useLiveSocket } from "@/context/LiveSocketContext";
 
 export default function Navbar() {
     const pathname = usePathname();

@@ -11,24 +11,56 @@ import { User, Send, MessageCircle, Loader2, ChevronLeft, Wifi, WifiOff } from "
 import { motion } from "motion/react";
 import { useLiveSocket, ConnectionState } from "@/context/LiveSocketContext";
 import { markAsRead } from "@/actions/chat/mark-read";
+import { useMsgReceiver } from "@/store/store";
 
 export default function MessagesContent({
     initialConversations = [],
     initialSelectedId = null,
     initialMessages = [],
+    firstMessage = false,
 }) {
     const router = useRouter();
     const user = useStore((state) => state.user);
-    const [conversations, setConversations] = useState(initialConversations);
     const [messages, setMessages] = useState(initialMessages);
     const [isLoadingConversations, setIsLoadingConversations] = useState(false);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [messageText, setMessageText] = useState("");
-    const [showMobileChat, setShowMobileChat] = useState(!!initialSelectedId);
+    const [showMobileChat] = useState(!!initialSelectedId);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const selectedConvRef = useRef(null);
+    const receiver = useMsgReceiver((state) => state.msgReceiver);
+    const clearMsgReceiver = useMsgReceiver((state) => state.clearMsgReceiver);
+    const [conversations, setConversations] = useState(() => {
+        if (firstMessage && receiver) {
+            const newConv = {
+                Interlocutor: {
+                    id: receiver.id,
+                    username: receiver.username,
+                    avatar_url: receiver.avatar_url
+                }
+            };
+            return [newConv]; // Don't spread initialConversations - it's empty anyway!
+        }
+        return initialConversations;
+    });
+
+    // Only sync initialConversations if NOT in firstMessage mode
+    useEffect(() => {
+        if (!firstMessage && initialConversations.length > 0) {
+            setConversations(initialConversations);
+        }
+    }, [initialConversations, firstMessage]);
+
+    //Clear receiver after adding conversation
+    useEffect(() => {
+        if (firstMessage && receiver) {
+            clearMsgReceiver();
+        }
+    }, [firstMessage, receiver, clearMsgReceiver]);
+
+    console.log("CONVS: ", conversations);
 
     // Find selected conversation from ID
     const selectedConv = useMemo(() => {
@@ -54,7 +86,7 @@ export default function MessagesContent({
 
         // Add message to the current conversation if it matches
         const currentConv = selectedConvRef.current;
-        console.log("CUrrent: ",currentConv)
+        console.log("CUrrent: ", currentConv)
         if (currentConv) {
             const interlocutorId = currentConv.Interlocutor?.id;
 
@@ -166,7 +198,7 @@ export default function MessagesContent({
         setConversations((prev) =>
             prev.map((conv) =>
                 conv.ConversationId === lastMsg.conversation_id ||
-                conv.Interlocutor?.id === selectedConv?.Interlocutor?.id
+                    conv.Interlocutor?.id === selectedConv?.Interlocutor?.id
                     ? { ...conv, UnreadCount: 0 }
                     : conv
             )
@@ -275,11 +307,11 @@ export default function MessagesContent({
                     prev.map((m) =>
                         m.id === optimisticMessage.id
                             ? {
-                                  id: result.id || optimisticMessage.id,
-                                  message_text: msgToSend,
-                                  sender: { id: user?.id },
-                                  created_at: result.created_at || optimisticMessage.created_at,
-                              }
+                                id: result.id || optimisticMessage.id,
+                                message_text: msgToSend,
+                                sender: { id: user?.id },
+                                created_at: result.created_at || optimisticMessage.created_at,
+                            }
                             : m
                     )
                 );
@@ -289,14 +321,14 @@ export default function MessagesContent({
                     prev.map((c) =>
                         c.ConversationId === selectedConv.ConversationId
                             ? {
-                                  ...c,
-                                  LastMessage: {
-                                      ...c.LastMessage,
-                                      message_text: msgToSend,
-                                      sender: { id: user?.id },
-                                  },
-                                  UpdatedAt: new Date().toISOString(),
-                              }
+                                ...c,
+                                LastMessage: {
+                                    ...c.LastMessage,
+                                    message_text: msgToSend,
+                                    sender: { id: user?.id },
+                                },
+                                UpdatedAt: new Date().toISOString(),
+                            }
                             : c
                     )
                 );
@@ -320,9 +352,9 @@ export default function MessagesContent({
         router.push("/messages");
     };
 
-    // Load conversations on mount if not provided
+    // Load conversations on mount if not provided (skip for firstMessage mode)
     useEffect(() => {
-        if (initialConversations.length === 0) {
+        if (initialConversations.length === 0 && !firstMessage) {
             loadConversations();
         }
     }, []);
@@ -331,35 +363,33 @@ export default function MessagesContent({
         <div className="h-[calc(100vh-5rem)] flex bg-background">
             {/* Left Sidebar - Conversations List */}
             <div
-                className={`w-full md:w-80 lg:w-96 border-r border-(--border) flex flex-col ${
-                    showMobileChat ? "hidden md:flex" : "flex"
-                }`}
+                className={`w-full md:w-80 lg:w-96 border-r border-(--border) flex flex-col ${showMobileChat ? "hidden md:flex" : "flex"
+                    }`}
             >
                 {/* Header */}
                 <div className="p-4 border-b border-(--border) flex items-center justify-between">
                     <h1 className="text-xl font-bold text-foreground">Messages</h1>
                     {/* Connection Status Indicator */}
                     <div
-                        className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
-                            isConnected
-                                ? "bg-green-500/10 text-green-600"
-                                : connectionState === ConnectionState.CONNECTING ||
-                                  connectionState === ConnectionState.RECONNECTING
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${isConnected
+                            ? "bg-green-500/10 text-green-600"
+                            : connectionState === ConnectionState.CONNECTING ||
+                                connectionState === ConnectionState.RECONNECTING
                                 ? "bg-yellow-500/10 text-yellow-600"
                                 : "bg-red-500/10 text-red-500"
-                        }`}
+                            }`}
                         title={
                             isConnected
                                 ? "Connected - Real-time updates active"
                                 : connectionState === ConnectionState.RECONNECTING
-                                ? "Reconnecting..."
-                                : "Disconnected - Messages may be delayed"
+                                    ? "Reconnecting..."
+                                    : "Disconnected - Messages may be delayed"
                         }
                     >
                         {isConnected ? (
                             <Wifi className="w-3.5 h-3.5" />
                         ) : connectionState === ConnectionState.CONNECTING ||
-                          connectionState === ConnectionState.RECONNECTING ? (
+                            connectionState === ConnectionState.RECONNECTING ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                             <WifiOff className="w-3.5 h-3.5" />
@@ -382,11 +412,10 @@ export default function MessagesContent({
                                 <button
                                     key={conv.Interlocutor.id}
                                     onClick={() => handleSelectConversation(conv)}
-                                    className={`w-full flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer text-left border-b border-(--border)/50 ${
-                                        selectedConv?.ConversationId === conv.ConversationId
-                                            ? "bg-(--accent)/10"
-                                            : "hover:bg-(--muted)/5"
-                                    }`}
+                                    className={`w-full flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer text-left border-b border-(--border)/50 ${selectedConv?.ConversationId === conv.ConversationId
+                                        ? "bg-(--accent)/10"
+                                        : "hover:bg-(--muted)/5"
+                                        }`}
                                 >
                                     {/* Avatar */}
                                     <div className="relative shrink-0">
@@ -412,22 +441,23 @@ export default function MessagesContent({
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2">
                                             <p
-                                                className={`text-sm truncate ${
-                                                    hasUnreadMessages(conv)
-                                                        ? "font-semibold text-foreground"
-                                                        : "font-medium text-foreground"
-                                                }`}
+                                                className={`text-sm truncate ${hasUnreadMessages(conv)
+                                                    ? "font-semibold text-foreground"
+                                                    : "font-medium text-foreground"
+                                                    }`}
                                             >
                                                 {conv.Interlocutor?.username || "Unknown User"}
                                             </p>
-                                            <span className="text-xs text-(--muted) shrink-0">
-                                                {formatRelativeTime(conv.UpdatedAt)}
-                                            </span>
+                                            {conv?.UpdatedAt ? (
+                                                <span className="text-xs text-(--muted) shrink-0">
+                                                    {formatRelativeTime(conv.UpdatedAt)}
+                                                </span>
+                                            ) : <></>}
+
                                         </div>
                                         <p
-                                            className={`text-sm mt-0.5 truncate ${
-                                                hasUnreadMessages(conv) ? "text-foreground" : "text-(--muted)"
-                                            }`}
+                                            className={`text-sm mt-0.5 truncate ${hasUnreadMessages(conv) ? "text-foreground" : "text-(--muted)"
+                                                }`}
                                         >
                                             {conv.LastMessage?.sender?.id === user?.id ? "You: " : ""}
                                             {truncateMessage(conv.LastMessage?.message_text)}
@@ -504,19 +534,17 @@ export default function MessagesContent({
                                                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                                             >
                                                 <div
-                                                    className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${
-                                                        isMe
-                                                            ? "bg-(--accent) text-white rounded-br-md"
-                                                            : "bg-(--muted)/10 text-foreground rounded-bl-md"
-                                                    }`}
+                                                    className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${isMe
+                                                        ? "bg-(--accent) text-white rounded-br-md"
+                                                        : "bg-(--muted)/10 text-foreground rounded-bl-md"
+                                                        }`}
                                                 >
                                                     <p className="text-sm whitespace-pre-wrap wrap-break-word">
                                                         {msg.message_text}
                                                     </p>
                                                     <p
-                                                        className={`text-[10px] mt-1 ${
-                                                            isMe ? "text-white/70" : "text-(--muted)"
-                                                        }`}
+                                                        className={`text-[10px] mt-1 ${isMe ? "text-white/70" : "text-(--muted)"
+                                                            }`}
                                                     >
                                                         {formatMessageTime(msg.created_at)}
                                                     </p>

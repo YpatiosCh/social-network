@@ -10,6 +10,7 @@ import { handleFollowRequest } from "@/actions/requests/handle-request";
 import { updatePrivacyAction } from "@/actions/profile/settings";
 import Tooltip from "../ui/Tooltip";
 import { useRouter } from "next/navigation";
+import { useMsgReceiver } from "@/store/store";
 
 export function ProfileHeader({ user, onUnfollow=null }) {
     const [isFollowing, setIsFollowing] = useState(user.viewer_is_following);
@@ -21,13 +22,21 @@ export function ProfileHeader({ user, onUnfollow=null }) {
 
     const [userAskedToFollow, setUserAskedToFollow] = useState(user.follow_request_from_profile_owner);
     const [requestLoading, setRequestLoading] = useState(false);
+
     const router = useRouter();
+    const setMsgReceiver = useMsgReceiver((state) => state.setMsgReceiver);
 
     console.log("USER: ", user);
 
     const canSend = isFollowing;
 
     const handleSendMessage = () => {
+        const receiverData = {
+            id: user.user_id,
+            username: user.username,
+            avatar_url: user.avatar_url
+        };
+        setMsgReceiver(receiverData);
         router.push(`/messages/${user.user_id}`);
     }
 
