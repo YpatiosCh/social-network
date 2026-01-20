@@ -44,15 +44,32 @@ func StartTest(ctx context.Context, cfgs configs.Configs) error {
 		cfgs.ChatGRPCAddr,
 		ct.CommonKeys(),
 	)
-
+	// Set Up Users.
+	// Start with a clean users db or make sure the users.json exists and has valid user A and B ids
+	// 	[
+	//   {
+	//     "user_id": 1,
+	//     "username": "testUserA"
+	//   },
+	//   {
+	//     "user_id": 2,
+	//     "username": "testUserB"
+	//   }
+	// ]
 	utils.HandleErr("register users", ctx, registerOrGetUsers)
 	utils.HandleErr("follow each other", ctx, FollowUser)
+
+	// Group Convsersations
+	utils.HandleErr("test create group conv", ctx, TestGroupConversation)
+	utils.HandleErr("test get group conv", ctx, TestGetGroupConv)
+
+	// Private Conversations
 	utils.HandleErr("test get convs count with unread msgs", ctx, TestGetConversationsCountWithUnreadMsgs)
-	// utils.HandleErr("test unread conversations", ctx, TestUnreadCount)
-	// utils.HandleErr("send msg to each other", ctx, TestCreateMessage)
-	// utils.HandleErr("get conversations", ctx, TestGetConversations)
-	// utils.HandleErr("get previous private messages", ctx, TestGetPMs)
-	// utils.HandleErr("get next private messages", ctx, TestGetNextPms)
+	utils.HandleErr("test unread conversations", ctx, TestUnreadCount)
+	utils.HandleErr("send msg to each other", ctx, TestCreateMessage)
+	utils.HandleErr("get conversations", ctx, TestGetConversations)
+	utils.HandleErr("get previous private messages", ctx, TestGetPMs)
+	utils.HandleErr("get next private messages", ctx, TestGetNextPms)
 
 	return nil
 }
@@ -301,6 +318,47 @@ func TestGetConversationsCountWithUnreadMsgs(ctx context.Context) error {
 	return nil
 }
 
+func TestGroupConversation(ctx context.Context) error {
+	// Create the group
+	groupId, err := UsersService.CreateGroup(ctx,
+		&users.CreateGroupRequest{
+			OwnerId:          usrA.UserId,
+			GroupTitle:       "My Group",
+			GroupDescription: "testing testing testing",
+		})
+	if err != nil {
+		return err
+	}
+
+	msg, err := ChatService.CreateGroupMessage(ctx,
+		&chat.CreateGroupMessageRequest{
+			GroupId:     groupId.Value,
+			SenderId:    usrA.UserId,
+			MessageText: "test test test",
+		})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("created group msg: %v", ce.FormatValue(mapping.MapGroupMessageFromProto(msg)))
+
+	return nil
+}
+
+func TestGetGroupConv(ctx context.Context) error {
+	msgs, err := ChatService.GetPreviousGroupMessages(ctx,
+		&chat.GetGroupMessagesRequest{
+			GroupId:           1,
+			MemberId:          usrA.UserId,
+			BoundaryMessageId: 0,
+			Limit:             10,
+		})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("fetched group msg: %v", ce.FormatValue(mapping.MapGroupMessagesFromProto(msgs.Messages)))
+	return nil
+}
+
 func AppendStructToUsersJSON[T any](item T) error {
 	const filename = "users.json"
 
@@ -313,7 +371,14 @@ func AppendStructToUsersJSON[T any](item T) error {
 		if err := json.Unmarshal(data, &items); err != nil {
 			return err
 		}
-	} else if err != nil && !os.IsNotExist(err) {
+	} else if err != nil && os.IsNotExist(err) {
+		// File does not exist → create it with empty JSON array
+		empty := []byte("[]")
+		if err := os.WriteFile(filename, empty, 0644); err != nil {
+			return err
+		}
+		items = []T{} // initialize slice
+	} else {
 		// Unexpected read error
 		return err
 	}

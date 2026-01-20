@@ -89,17 +89,16 @@ func (x *CreateGroupMessageRequest) GetMessageText() string {
 // Represents a group message in a conversation.
 // Includes message ID, conversation ID, group ID, sender details, message text, and timestamps.
 type GroupMessage struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Id             int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	ConversationId int64                  `protobuf:"varint,2,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
-	GroupId        int64                  `protobuf:"varint,3,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	Sender         *common.User           `protobuf:"bytes,4,opt,name=sender,proto3" json:"sender,omitempty"`
-	MessageText    string                 `protobuf:"bytes,5,opt,name=message_text,json=messageText,proto3" json:"message_text,omitempty"`
-	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	DeletedAt      *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	GroupId       int64                  `protobuf:"varint,2,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	Sender        *common.User           `protobuf:"bytes,3,opt,name=sender,proto3" json:"sender,omitempty"`
+	MessageText   string                 `protobuf:"bytes,4,opt,name=message_text,json=messageText,proto3" json:"message_text,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GroupMessage) Reset() {
@@ -135,13 +134,6 @@ func (*GroupMessage) Descriptor() ([]byte, []int) {
 func (x *GroupMessage) GetId() int64 {
 	if x != nil {
 		return x.Id
-	}
-	return 0
-}
-
-func (x *GroupMessage) GetConversationId() int64 {
-	if x != nil {
-		return x.ConversationId
 	}
 	return 0
 }
@@ -1017,19 +1009,18 @@ const file_chat_proto_rawDesc = "" +
 	"\x19CreateGroupMessageRequest\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x03R\agroupId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\x03R\bsenderId\x12!\n" +
-	"\fmessage_text\x18\x03 \x01(\tR\vmessageText\"\xdc\x02\n" +
+	"\fmessage_text\x18\x03 \x01(\tR\vmessageText\"\xb3\x02\n" +
 	"\fGroupMessage\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12'\n" +
-	"\x0fconversation_id\x18\x02 \x01(\x03R\x0econversationId\x12\x19\n" +
-	"\bgroup_id\x18\x03 \x01(\x03R\agroupId\x12$\n" +
-	"\x06sender\x18\x04 \x01(\v2\f.common.UserR\x06sender\x12!\n" +
-	"\fmessage_text\x18\x05 \x01(\tR\vmessageText\x129\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\bgroup_id\x18\x02 \x01(\x03R\agroupId\x12$\n" +
+	"\x06sender\x18\x03 \x01(\v2\f.common.UserR\x06sender\x12!\n" +
+	"\fmessage_text\x18\x04 \x01(\tR\vmessageText\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x129\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x129\n" +
 	"\n" +
-	"deleted_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"\x97\x01\n" +
+	"deleted_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"\x97\x01\n" +
 	"\x17GetGroupMessagesRequest\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x03R\agroupId\x12\x1b\n" +
 	"\tmember_id\x18\x02 \x01(\x03R\bmemberId\x12.\n" +

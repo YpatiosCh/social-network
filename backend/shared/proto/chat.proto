@@ -24,13 +24,12 @@ message CreateGroupMessageRequest {
 // Includes message ID, conversation ID, group ID, sender details, message text, and timestamps.
 message GroupMessage {
   int64 id = 1;
-  int64 conversation_id = 2;
-  int64 group_id = 3;
-  common.User sender = 4;
-  string message_text = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp updated_at = 7;
-  google.protobuf.Timestamp deleted_at = 8;
+  int64 group_id = 2;
+  common.User sender = 3;
+  string message_text = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  google.protobuf.Timestamp deleted_at = 7;
 }
 
 // Request message for retrieving group messages.

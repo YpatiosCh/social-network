@@ -22,14 +22,13 @@ type GetGroupMsgsReq struct {
 }
 
 type GroupMsg struct {
-	Id             ct.Id
-	ConversationId ct.Id
-	GroupId        ct.Id
-	Sender         User
-	MessageText    ct.MsgBody
-	CreatedAt      ct.GenDateTime `validate:"nullable"`
-	UpdatedAt      ct.GenDateTime `validate:"nullable"`
-	DeletedAt      ct.GenDateTime `validate:"nullable"`
+	Id          ct.Id
+	GroupId     ct.Id
+	Sender      User
+	MessageText ct.MsgBody
+	CreatedAt   ct.GenDateTime `validate:"nullable"`
+	UpdatedAt   ct.GenDateTime `validate:"nullable"`
+	DeletedAt   ct.GenDateTime `validate:"nullable"`
 }
 
 type GetGroupMsgsResp struct {
@@ -40,20 +39,6 @@ type GetGroupMsgsResp struct {
 // ================================
 // PMs
 // ================================
-
-type GetOrCreatePrivateConvReq struct {
-	UserId               ct.Id `json:"user"`
-	InterlocutorId       ct.Id `json:"interlocutor"`
-	RetrieveInterlocutor bool  `json:"retrieve_interlocutor"`
-}
-
-// DEPRECATED
-type GetOrCreatePrivateConvResp struct {
-	ConversationId  ct.Id
-	Interlocutor    User
-	LastReadMessage ct.Id `validate:"nullable"`
-	IsNew           bool
-}
 
 type CreatePrivateMsgReq struct {
 	SenderId       ct.Id      `json:"sender_id"`
