@@ -13,6 +13,7 @@ import (
 	"social-network/services/testing/internal/configs"
 	"social-network/services/testing/internal/utils"
 	"social-network/shared/gen-go/chat"
+	"social-network/shared/gen-go/common"
 	"social-network/shared/gen-go/users"
 	ce "social-network/shared/go/commonerrors"
 	"social-network/shared/go/ct"
@@ -330,11 +331,42 @@ func TestGroupConversation(ctx context.Context) error {
 		return err
 	}
 
+	_, err = UsersService.InviteToGroup(ctx, &users.InviteToGroupRequest{
+		InviterId:  usrA.UserId,
+		InvitedIds: &common.UserIds{Values: []int64{usrB.UserId}},
+		GroupId:    groupId.Value,
+	})
+	if err != nil {
+		fmt.Println("invite failed")
+		return err
+	}
+
+	_, err = UsersService.RespondToGroupInvite(ctx, &users.HandleGroupInviteRequest{
+		GroupId:   groupId.Value,
+		InvitedId: usrB.UserId,
+		Accepted:  true,
+	})
+	if err != nil {
+		fmt.Println("Acceptance failed")
+		return err
+	}
+
 	msg, err := ChatService.CreateGroupMessage(ctx,
 		&chat.CreateGroupMessageRequest{
 			GroupId:     groupId.Value,
 			SenderId:    usrA.UserId,
-			MessageText: "test test test",
+			MessageText: "A: test test test",
+		})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("created group msg: %v", ce.FormatValue(mapping.MapGroupMessageFromProto(msg)))
+
+	msg, err = ChatService.CreateGroupMessage(ctx,
+		&chat.CreateGroupMessageRequest{
+			GroupId:     groupId.Value,
+			SenderId:    usrB.UserId,
+			MessageText: "B: test test test",
 		})
 	if err != nil {
 		return err
@@ -349,6 +381,17 @@ func TestGetGroupConv(ctx context.Context) error {
 		&chat.GetGroupMessagesRequest{
 			GroupId:           1,
 			MemberId:          usrA.UserId,
+			BoundaryMessageId: 0,
+			Limit:             10,
+		})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("fetched group msg: %v", ce.FormatValue(mapping.MapGroupMessagesFromProto(msgs.Messages)))
+	msgs, err = ChatService.GetPreviousGroupMessages(ctx,
+		&chat.GetGroupMessagesRequest{
+			GroupId:           1,
+			MemberId:          usrB.UserId,
 			BoundaryMessageId: 0,
 			Limit:             10,
 		})
