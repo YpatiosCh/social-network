@@ -337,10 +337,10 @@ func main(t *testing.T) {
 ```
 Resulting Output:
 ```
-        -> commonerrors.Test_Stack at l. 279 class: internal error
-        -> commonerrors.Test_Stack at l. 278 class: not found
-        -> commonerrors.Test_Stack at l. 277 class: not found
-        -> commonerrors.Test_Stack at l. 276 class: not found error: sql: no rows
+        -> commonerrors.Test_Stack at l. 9 class: internal error
+        -> commonerrors.Test_Stack at l. 8 class: not found
+        -> commonerrors.Test_Stack at l. 7 class: not found
+        -> commonerrors.Test_Stack at l. 6 class: not found error: sql: no rows
 ```
 
 
