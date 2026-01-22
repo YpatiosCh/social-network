@@ -16,22 +16,48 @@ import (
 // Returns c error if c is not nil and is a defined error
 // in commonerrors else returns ErrUnknown
 func parseCode(c error) error {
+	if c == nil {
+		c = ErrUnknown
+	}
 	_, ok := classToGRPC[c]
-	if c == nil || !ok {
+	if !ok {
 		c = ErrUnknown
 	}
 	return c
 }
 
+// namedValue represents a value explicitly labeled with a name.
+// It is used to associate structured input with a meaningful identifier
+// when building error context.
 type namedValue struct {
 	name  string
 	value any
 }
 
+// Named creates a namedValue wrapper.
+//
+// When passed to getInput (and ultimately error constructors),
+// the name is rendered alongside the formatted value as:
+//
+//	<name> = <formatted value>
+//
+// This allows callers to explicitly label important inputs
+// rather than relying on positional formatting.
 func Named(name string, value any) namedValue {
 	return namedValue{name: name, value: value}
 }
 
+// getInput formats a variadic list of inputs into a single string.
+//
+// Behavior:
+//   - Each argument is rendered on its own line.
+//   - If the argument is a namedValue, it is rendered as:
+//     "<name> = <formatted value>"
+//   - Otherwise, the argument is rendered using FormatValue directly.
+//   - The final trailing newline is trimmed.
+//
+// This function is typically used to capture contextual input
+// when creating or wrapping errors.
 func getInput(args ...any) string {
 	var b strings.Builder
 
@@ -48,11 +74,60 @@ func getInput(args ...any) string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
+// FormatValue converts an arbitrary Go value into a readable, deterministic
+// string representation suitable for error context, debugging, or logging.
+//
+// It is designed to be:
+//   - Safe: panics during reflection are recovered and rendered as "<unprintable>"
+//   - Recursive: nested structs, slices, arrays, and maps are expanded
+//   - Cycle-aware: pointer cycles are detected and rendered as "<cycle>"
+//   - Stringer-aware: values implementing fmt.Stringer are rendered using String()
+//
+// FormatValue is the public entry point. It initializes the recursion depth
+// and the cycle-detection map, then delegates to formatValueIndented.
 func FormatValue(v any) string {
 	return formatValueIndented(v, 0, make(map[uintptr]bool))
 }
 
-// TODO: Needs more testing with nested values
+// formatValueIndented recursively formats a value with indentation.
+//
+// Parameters:
+//   - v:     the value being formatted
+//   - depth: current recursion depth, used to compute indentation
+//   - seen:  a map of pointer addresses used for cycle detection
+//
+// Behavior overview:
+//
+//  1. Nil handling
+//     - A nil interface or nil pointer renders as "nil".
+//
+//  2. Interface unwrapping
+//     - Interfaces are repeatedly unwrapped until a concrete value is reached.
+//     - This ensures formatting is based on the underlying value, not the interface.
+//
+//  3. Pointer handling
+//     - Nil pointers render as "nil".
+//     - Non-nil pointers are tracked by address to detect cycles.
+//     - Cycles render as "<cycle>" to avoid infinite recursion.
+//     - The pointer is dereferenced and formatting continues on the element.
+//
+//  4. Stringer support
+//     - If the value implements fmt.Stringer, String() is used.
+//     - If the value itself does not implement Stringer but its address does,
+//     the pointer receiver String() method is used.
+//
+//  5. Composite types
+//     - Structs: rendered as a block with field names and indented values.
+//     * Unexported fields are shown as "<unexported>".
+//     - Maps: rendered as key-value pairs, one per line.
+//     - Slices/arrays: rendered as an indexed list, one element per line.
+//
+//  6. Fallback
+//     - All other kinds fall back to fmt.Sprintf("%v").
+//
+// Panic safety:
+//   - Any panic encountered during reflection is recovered and rendered
+//     as "<unprintable>" to avoid crashing error construction.
 func formatValueIndented(v any, depth int, seen map[uintptr]bool) (out string) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -89,8 +164,8 @@ func formatValueIndented(v any, depth int, seen map[uintptr]bool) (out string) {
 		return formatValueIndented(val.Elem().Interface(), depth, seen)
 	}
 
-	indent := strings.Repeat("  ", depth)
-	nextIndent := strings.Repeat("  ", depth+1)
+	indent := strings.Repeat("   ", depth)
+	nextIndent := strings.Repeat("   ", depth+1)
 	stringerType := reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
 	// Value implements Stringer
@@ -115,7 +190,7 @@ func formatValueIndented(v any, depth int, seen map[uintptr]bool) (out string) {
 			name = "struct"
 		}
 
-		b.WriteString(indent + name + " {\n")
+		b.WriteString(name + " {\n")
 
 		for i := 0; i < val.NumField(); i++ {
 			fieldType := typ.Field(i)
@@ -156,19 +231,20 @@ func formatValueIndented(v any, depth int, seen map[uintptr]bool) (out string) {
 
 	case reflect.Slice, reflect.Array:
 		var b strings.Builder
-		b.WriteString("[\n")
+		b.WriteString("[ ")
 
 		for i := 0; i < val.Len(); i++ {
-			b.WriteString(nextIndent)
 			b.WriteString(formatValueIndented(
 				val.Index(i).Interface(),
 				depth+1,
 				seen,
 			))
-			b.WriteString("\n")
+			if i < val.Len()-1 {
+				b.WriteString(", ")
+			}
 		}
 
-		b.WriteString(indent + "]")
+		b.WriteString(indent + " ]")
 		return b.String()
 
 	default:

@@ -20,27 +20,27 @@ func TestError_Error(t *testing.T) {
 		{
 			name:     "nil kind defaults to ErrUnknownClass",
 			err:      &Error{class: nil, input: "test"},
-			expected: ": test",
+			expected: "\n   input: test",
 		},
 		{
 			name:     "kind, msg, and wrapped error",
 			err:      &Error{class: ErrNotFound, input: "user not found", err: errors.New("db error")},
-			expected: "not found: user not found: db error",
+			expected: "\n   class: not found\n   input: user not found\n   Generic Error: db error\n",
 		},
 		{
 			name:     "kind and msg only",
 			err:      &Error{class: ErrInternal, input: "internal error"},
-			expected: "internal error: internal error",
+			expected: "\n   class: internal error\n   input: internal error",
 		},
 		{
 			name:     "kind and wrapped error only",
 			err:      &Error{class: ErrInvalidArgument, err: errors.New("invalid input")},
-			expected: "invalid argument: invalid input",
+			expected: "\n   class: invalid argument\n   Generic Error: invalid input\n",
 		},
 		{
 			name:     "kind only",
 			err:      &Error{class: ErrPermissionDenied},
-			expected: "permission denied",
+			expected: "\n   class: permission denied",
 		},
 	}
 
@@ -155,8 +155,8 @@ func TestIntegration(t *testing.T) {
 
 	// Test errors.Is works
 	assert.True(t, errors.Is(customErr, underlying))
+	assert.True(t, errors.Is(customErr, ErrInternal))
 	assert.False(t, errors.Is(customErr, ErrNotFound))
-	assert.False(t, errors.Is(customErr, ErrInternal))
 
 	// Test errors.As works
 	var target *Error
@@ -223,7 +223,7 @@ func TestGetSource_MultiWrap(t *testing.T) {
 	assert.Equal(t, "disk full", Source(err))
 }
 
-func TestGRPCStatus_DoesNotMutateError(t *testing.T) {
+func TestEncodeProto_DoesNotMutateError(t *testing.T) {
 	root := errors.New("token expired")
 	err := Wrap(ErrUnauthenticated, root, "auth").
 		WithPublic("authentication required")
@@ -237,7 +237,7 @@ func TestGRPCStatus_DoesNotMutateError(t *testing.T) {
 }
 
 // Ensure most outer code prevails over nested codes
-func TestGRPCStatus_MultipleWrapedCodes(t *testing.T) {
+func TestEncodeProto_MultipleWrapedCodes(t *testing.T) {
 	root := New(ErrUnknown, errors.New("token expired"))
 	err := Wrap(ErrUnauthenticated, root, "auth")
 
@@ -250,7 +250,7 @@ func TestGRPCStatus_MultipleWrapedCodes(t *testing.T) {
 	assert.Equal(t, codes.Unauthenticated, st.Code())
 }
 
-func TestGRPCStatus_DefaultPublicMessage(t *testing.T) {
+func TestEncodeProto_DefaultPublicMessage(t *testing.T) {
 	err := Wrap(ErrInternal, errors.New("panic"), "handler")
 
 	st, ok := status.FromError(EncodeProto(err))
@@ -266,25 +266,32 @@ func Test_ErrorFormating(t *testing.T) {
 	assert.Equal(t, `
    class: internal error
    input: handler
-  origin: level 1 -> commonerrors.Test_ErrorFormating at l. 254
+  origin: level 1 -> commonerrors.Test_ErrorFormating at l. 264
           level 2 -> testing.tRunner at l. 1934
    Generic Error: panic
 `, s)
 }
 
 func Test_Stack(t *testing.T) {
-	root := New(nil, err1(root()))
+	root := New(ErrNotFound, errors.New("sql: no rows"))
 	e1 := Wrap(nil, root)
 	e2 := Wrap(nil, e1)
-	e3 := Wrap(nil, e2)
+	e3 := Wrap(ErrInternal, e2)
 	stack := e3.Stack()
 	assert.Equal(t, `
-        -> commonerrors.Test_Stack at l. 279: unknown error
-        -> commonerrors.Test_Stack at l. 278: unknown error
-        -> commonerrors.Test_Stack at l. 277: unknown error
-        -> commonerrors.Test_Stack at l. 276: unknown error
-        -> commonerrors.err1 at l. 192: not found
-        sql: no rows`, stack)
+        -> commonerrors.Test_Stack at l. 279 class: internal error
+        -> commonerrors.Test_Stack at l. 278 class: not found
+        -> commonerrors.Test_Stack at l. 277 class: not found
+        -> commonerrors.Test_Stack at l. 276 class: not found error: sql: no rows`, stack)
+}
+
+func Test_Source(t *testing.T) {
+	root := New(ErrNotFound, errors.New("sql: no rows"))
+	e1 := Wrap(nil, root)
+	e2 := Wrap(nil, e1)
+	e3 := Wrap(ErrInternal, e2)
+	stack := Source(e3)
+	assert.Equal(t, `sql: no rows`, stack)
 }
 
 func TestGetInputFormatting(t *testing.T) {
@@ -320,8 +327,8 @@ func TestGetInputFormatting(t *testing.T) {
 			},
 			expected: strings.TrimSpace(`
 Sample {
-  A: 10
-  B: x
+   A: 10
+   B: x
 }`),
 		},
 		{
@@ -331,8 +338,8 @@ Sample {
 			},
 			expected: strings.TrimSpace(`
 payload = Sample {
-  A: 1
-  B: y
+   A: 1
+   B: y
 }`),
 		},
 		{
@@ -342,7 +349,7 @@ payload = Sample {
 			},
 			expected: strings.TrimSpace(`
 map {
-  a: 1
+   a: 1
 }`),
 		},
 		{
@@ -351,7 +358,7 @@ map {
 				[]string{"x", "y"},
 			},
 			expected: strings.TrimSpace(`
-[ x, y, ]`),
+[ x, y ]`),
 		},
 		{
 			name: "mixed inputs",
@@ -363,8 +370,8 @@ map {
 			expected: strings.TrimSpace(`
 id = 7
 Sample {
-  A: 2
-  B: z
+   A: 2
+   B: z
 }
 [ 1, 2 ]`),
 		},
@@ -404,11 +411,11 @@ func TestWrapCapturesFormattedInput(t *testing.T) {
 	expected := strings.TrimSpace(`
 userID = u123
 Req {
-  UserID: u123
-  Count: 3
+   UserID: u123
+   Count: 3
 }
 map {
-  x: 9
+   x: 9
 }`)
 
 	if e.input != expected {
@@ -429,24 +436,26 @@ func TestNestedStruct(t *testing.T) {
 		C nestedStruct
 	}
 
-	n := getInput(
-		Named(
-			"My Custom name",
-			parent{A: "s", B: 42, C: nestedStruct{a: "b", B: 12, C: map[int]int{1: 3}}},
-		),
-	)
+	n := FormatValue(
+		parent{
+			A: "s",
+			B: 42,
+			C: nestedStruct{
+				a: "b",
+				B: 12,
+				C: map[int]int{1: 3},
+			},
+		})
 	assert.Equal(t,
-		`My Custom name = 
-parent {
-  A: s
-  B: 42
-  C: 
-  nestedStruct {
-    a: <unexported>
-    B: 12
-    C: map {
-      1: 3
-    }
-  }
+		`parent {
+   A: s
+   B: 42
+   C: nestedStruct {
+      a: <unexported>
+      B: 12
+      C: map {
+         1: 3
+      }
+   }
 }`, n)
 }

@@ -23,6 +23,7 @@ type Error struct {
 //   - Error.code: Classification: ErrNotFound, ErrInternal, etc. Enusured to never be nil
 //   - Error.input: The input given to the func returning or wraping: args, structs
 //   - Error.err: The wraped error down the chain for higher to lower level
+//   - Error.stack: The error stack
 func (e *Error) Error() string {
 	if e == nil {
 		return ""
@@ -78,14 +79,13 @@ func (e *Error) Stack() string {
 	start := strings.Index(e.stack, "-> ")
 	end := strings.Index(e.stack, "\n          ")
 	builder.WriteString(e.stack[start:end])
-	builder.WriteString(": ")
+	builder.WriteString(" class: ")
 	builder.WriteString(e.class.Error())
 	if errors.As(e.err, &err) {
 		builder.WriteString(e.err.(*Error).Stack())
 	} else {
-		builder.WriteString("\n        ")
+		builder.WriteString(" error: ")
 		builder.WriteString(e.err.Error())
-
 	}
 	return builder.String()
 }
@@ -125,7 +125,7 @@ func (e *Error) IsClass(target error) bool {
 	return e.class == target
 }
 
-func IsClass(err error, target *Error) bool {
+func IsClass(err error, target error) bool {
 	var ce *Error
 	if errors.As(target, &ce) {
 		return err.(*Error).class == target
@@ -139,6 +139,20 @@ func (e *Error) Unwrap() error {
 }
 
 // Creates a new Error with class and optional input.
+//
+// Usage:
+//   - kind: the classification of the error (e.g., ErrFailed, ErrNotFound). If nil, ErrUnknownClass is used.
+//   - err: the underlying error to wrap; if nil, Wrap returns nil.
+//   - msg: optional context message describing where or why the error occurred.
+//
+// Behavior:
+//   - If `err` is already an Error and `kind` is nil, it preserves the original Kind and optionally adds a new message.
+//   - Otherwise, it creates an new Error with the specified Kind, Err, and message.
+//   - The resulting Error supports errors.Is (matches Kind) and errors.As (type assertion) and preserves the wrapped cause.
+//   - If kind is nil and the err is not media error or lacks kind then kind is set to ErrUnknownClass.
+//   - Logs the stack origin with depth 2 from Error creation
+//
+// TODO: Maybe simply call wrap ??
 func New(class error, err error, input ...any) *Error {
 	if err == nil {
 		return nil
@@ -153,7 +167,7 @@ func New(class error, err error, input ...any) *Error {
 	return e
 }
 
-// Wrap creates a MediaError that classifies and optionally wraps an existing error.
+// Wrap creates an Error that classifies and optionally wraps an existing error.
 //
 // Usage:
 //   - kind: the classification of the error (e.g., ErrFailed, ErrNotFound). If nil, ErrUnknownClass is used.
@@ -161,10 +175,11 @@ func New(class error, err error, input ...any) *Error {
 //   - msg: optional context message describing where or why the error occurred.
 //
 // Behavior:
-//   - If `err` is already a MediaError and `kind` is nil, it preserves the original Kind and optionally adds a new message.
-//   - Otherwise, it creates a new MediaError with the specified Kind, Err, and message.
-//   - The resulting MediaError supports errors.Is (matches Kind) and errors.As (type assertion) and preserves the wrapped cause.
+//   - If `err` is already an Error and `kind` is nil, it preserves the original Kind and optionally adds a new message.
+//   - Otherwise, it creates an new Error with the specified Kind, Err, and message.
+//   - The resulting Error supports errors.Is (matches Kind) and errors.As (type assertion) and preserves the wrapped cause.
 //   - If kind is nil and the err is not media error or lacks kind then kind is set to ErrUnknownClass.
+//   - Logs the stack origin with depth 2 from Error creation
 //
 // It is recommended to only use nil kind if the underlying error is of type Error and its kind is not nil.
 func Wrap(class error, err error, input ...any) *Error {

@@ -86,7 +86,7 @@ This prints the **entire causal chain**. This behavior is **intentional** and me
 err := New(ErrInternal, sqlErr, "query users")
 ```
 
-* Captures a stack trace (depth 3)
+* Captures a stack trace (depth 2)
 * Sets the error class
 * Records input/context
 
@@ -98,7 +98,7 @@ err := New(ErrInternal, sqlErr, "query users")
 err = Wrap(ErrNotFound, err, "GetUser")
 ```
 
-* Preserves the original stack trace
+* Captures a stack trace (depth 2)
 * Updates or inherits the error class
 * Adds contextual input
 
@@ -148,6 +148,127 @@ Returns the public-facing message set on the error.
 **Returns:**
 The `publicMsg` string.
 
+## Input & Context Formatting
+
+Error input and contextual values are formatted using a reflection-based formatter designed for **clarity, safety, and determinism**.
+
+### How inputs are captured
+
+All error constructors (`New`, `Wrap`, etc.) accept arbitrary values as contextual input. These values are rendered using `FormatValue` and stored as structured text.
+
+Each input is rendered on its own line.
+
+---
+
+### Named inputs
+
+To explicitly label an input, use `Named`:
+
+```go
+err := New(
+	ErrInvalid,
+	Named("userID", id),
+	Named("payload", req),
+)
+```
+
+This produces output similar to:
+
+```
+userID = 42
+payload = Request {
+  Name: "Alice"
+  Roles: [
+    "admin"
+    "editor"
+  ]
+}
+```
+
+Unnamed inputs are rendered as-is, one per line.
+
+---
+
+### Formatting rules
+
+The formatter follows these rules:
+
+* **Nil values**
+
+  * Render as `nil`
+
+* **fmt.Stringer**
+
+  * If a value (or its pointer) implements `fmt.Stringer`, `String()` is used
+
+* **Structs**
+
+  * Rendered as an indented block with field names
+  * Unexported fields are shown as `<unexported>`
+
+* **Slices & arrays**
+
+  * Rendered as indented lists
+
+* **Maps**
+
+  * Rendered as key-value pairs, one per line
+
+* **Pointers**
+
+  * Automatically dereferenced
+  * Cycles are detected and rendered as `<cycle>`
+
+* **Panics**
+
+  * Any panic during formatting is recovered and rendered as `<unprintable>`
+
+---
+
+### Example
+
+```go
+type nestedStruct struct {
+	a string
+	B int
+	C map[int]int
+}
+
+type parent struct {
+	A string
+	B int
+	C nestedStruct
+}
+
+FormatValue(
+	parent{
+		A: "s",
+		B: 42,
+		C: nestedStruct{
+			a: "b",
+			B: 12,
+			C: map[int]int{1: 3},
+		},
+	},
+)
+```
+
+Resulting input context:
+
+```
+parent {
+   A: s
+   B: 42
+   C: nestedStruct {
+      a: <unexported>
+      B: 12
+      C: map {
+         1: 3
+      }
+   }
+}
+```
+
 ## Error Inspection
 
 ### Classification (`errors.Is`)
@@ -157,7 +278,7 @@ if errors.Is(err, ErrNotFound) {
 	// handle not found
 }
 ```
-The `Is()` custom method first checks the outer most error `commonerrors.class` then checks the wraped error. The intention is each error to effectivelly contain only one clasification.
+The `Is()` custom method first checks the outer most error `commonerrors.class` then checks the wraped error. If no match it calls unwrap that looks inside the err field of each wrapped `Error`. The intention is each error to effectivelly contain only one clasification.
 
 
 ### Accessing the custom error (`errors.As`)
@@ -174,7 +295,7 @@ if errors.As(err, &e) {
 Retrieve the **original underlying error message**:
 
 ```go
-cause := GetSource(err)
+cause := Source(err)
 ```
 
 This walks the unwrap chain until the final error.
@@ -195,6 +316,36 @@ IsClass(err error, target *Error) bool
 
 **Returns:**
 `true` if the error matches the target class; otherwise `false`.
+
+
+### Stack
+Returns the full stack and error class for each level. 
+
+Input:
+```go
+package main
+
+import commonerrors
+
+func main(t *testing.T) {
+	root := New(ErrNotFound, errors.New("sql: no rows"))
+	e1 := Wrap(nil, root)
+	e2 := Wrap(nil, e1)
+	e3 := Wrap(ErrInternal, e2)
+	stack := e3.Stack()
+}
+```
+Resulting Output:
+```
+        -> commonerrors.Test_Stack at l. 279 class: internal error
+        -> commonerrors.Test_Stack at l. 278 class: not found
+        -> commonerrors.Test_Stack at l. 277 class: not found
+        -> commonerrors.Test_Stack at l. 276 class: not found error: sql: no rows
+```
+
+
+
+
 
 
 ## gRPC Integration
