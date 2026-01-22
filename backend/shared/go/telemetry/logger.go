@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"social-network/shared/go/commonerrors"
 	"strconv"
 	"strings"
 	"time"
@@ -181,7 +182,7 @@ func formatArgs(builder *strings.Builder, alreadyPrinted []bool, args ...any) {
 		}
 
 		if v.Kind() == reflect.Struct {
-			fmt.Fprintf(builder, "%#v ", arg)
+			fmt.Fprint(builder, commonerrors.FormatValue(v))
 		} else {
 			fmt.Fprint(builder, arg)
 		}
@@ -197,18 +198,19 @@ func formatArgs(builder *strings.Builder, alreadyPrinted []bool, args ...any) {
 }
 
 func formatArg(arg any) string {
-	v := reflect.ValueOf(arg)
+	// v := reflect.ValueOf(arg)
 
-	// Handle pointers
-	if v.Kind() == reflect.Pointer && !v.IsNil() {
-		v = v.Elem()
-	}
+	// // Handle pointers
+	// if v.Kind() == reflect.Pointer && !v.IsNil() {
+	// 	v = v.Elem()
+	// }
 
-	if v.Kind() == reflect.Struct {
-		return fmt.Sprintf("%#v", arg)
-	}
+	// if v.Kind() == reflect.Struct {
+	// 	return fmt.Sprintf("%#v", arg)
+	// }
 
-	return fmt.Sprint(arg)
+	// return fmt.Sprint(arg)
+	return commonerrors.FormatValue(arg)
 }
 
 func (l *logging) context2Attributes(ctx context.Context) []slog.Attr {

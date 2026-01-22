@@ -69,7 +69,7 @@ func (h *ChatHandler) GetPrivateConversations(
 		Conversations: mp.MapConversationsToProto(convs),
 	}
 
-	tele.Info(ctx, "get private conversations succes: @1 @2",
+	tele.Info(ctx, "get private conversations success: @1",
 		"response", res.String(),
 	)
 	return res, nil

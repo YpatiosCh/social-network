@@ -53,7 +53,7 @@ func (c *ChatService) GetPrivateConversations(ctx context.Context,
 ) ([]md.PrivateConvsPreview, *ce.Error) {
 
 	input := fmt.Sprintf("arg: %#v", arg)
-
+	tele.Info(ctx, "get private conversations called: @1", "arg", arg)
 	err := ct.ValidateStruct(arg)
 	if err != nil {
 		return nil, ce.Wrap(ce.ErrInvalidArgument, err, input)
