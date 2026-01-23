@@ -147,7 +147,7 @@ func getConfigs() configs { // sensible defaults
 		UsersGRPCAddr: "users:50051",
 		PostsGRPCAddr: "posts:50051",
 		ChatGRPCAddr:  "chat:50051",
-		KafkaBrokers:  []string{"kafka:9092"}, // Default Kafka broker
+		KafkaBrokers:  []string{"kafka:9092"},                                                  // Default Kafka broker
 		NatsCluster:   "nats://ruser:T0pS3cr3t@nats-1:4222,nats://ruser:T0pS3cr3t@nats-2:4222", // Default NATS cluster
 	}
 
@@ -173,6 +173,7 @@ func startKafkaConsumer(ctx context.Context, app *application.Application) error
 	kafkaConsumer, err := kafgo.NewKafkaConsumer(
 		cfgs.KafkaBrokers,
 		"notifications", // Consumer group name for notifications
+		ct.NotificationTopic,
 	)
 	if err != nil {
 		tele.Error(ctx, "failed to create kafka consumer: @1", "error", err.Error())
@@ -182,18 +183,11 @@ func startKafkaConsumer(ctx context.Context, app *application.Application) error
 	// Configure buffer sizes
 	kafkaConsumer = kafkaConsumer.WithCommitBuffer(100)
 
-	// Register the notification topic
-	notificationChannel, err := kafkaConsumer.RegisterTopic(ct.KafkaTopic(ct.NotificationTopic))
-	if err != nil {
-		tele.Error(ctx, "failed to register notification topic: @1", "error", err.Error())
-		return fmt.Errorf("failed to register notification topic: %w", err)
-	}
-
 	// Initialize event handler
 	eventHandler := events.NewEventHandler(app)
 
 	// Start the Kafka consumer
-	closeConsumer, err := kafkaConsumer.StartConsuming(ctx)
+	notificationChannel, closeConsumer, err := kafkaConsumer.StartConsuming(ctx)
 	if err != nil {
 		tele.Error(ctx, "failed to start kafka consumer: @1", "error", err.Error())
 		return fmt.Errorf("failed to start kafka consumer: %w", err)

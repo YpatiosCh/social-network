@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	tele "social-network/shared/go/telemetry"
-	"sync/atomic"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 )
@@ -24,11 +23,10 @@ import (
 //
 // # ^--- MAKE SURE TO HANDLE THE ERROR, IMPORTANT!
 type Record struct {
-	monotinicId    uint64
-	rec            *kgo.Record
-	commitChannel  chan<- (*Record)
-	confirmChannel chan (struct{})
-	context        context.Context
+	monotinicId   uint64
+	rec           *kgo.Record
+	commitChannel chan<- (*Record)
+	context       context.Context
 }
 
 var ErrBadArgs = errors.New("bro, you passed bad arguments")
@@ -41,11 +39,10 @@ func newRecord(ctx context.Context, record *kgo.Record, commitChannel chan<- (*R
 		return nil, err
 	}
 	return &Record{
-		rec:            record,
-		commitChannel:  commitChannel,
-		confirmChannel: make(chan struct{}),
-		context:        ctx,
-		monotinicId:    monotonicId,
+		rec:           record,
+		commitChannel: commitChannel,
+		context:       ctx,
+		monotinicId:   monotonicId,
 	}, nil
 }
 
@@ -60,16 +57,13 @@ func (r *Record) Data(ctx context.Context) []byte {
 
 var ErrEmptyRecord = errors.New("empty record")
 
-// debug purposes
-var a atomic.Int64
-
 var ErrContextExpired = errors.New("context expired")
 
 // Commit marks the record as processed in the Kafka client.
-// MAKE SURE THIS IS AT THE END OF A TRANSACTION, DONT BE COMMITING THINGS YOU LATER UNDO!!
+// MAKE SURE THIS IS AFTER PROCESSING THE DATA, DONT BE COMMITING THINGS YOU DIDNT PROCESS!!
 func (r *Record) Commit(ctx context.Context) error {
 	if r.rec == nil {
-		tele.Error(ctx, "record commit record")
+		tele.Error(ctx, "committing nil record")
 		return ErrEmptyRecord
 	}
 	select {
@@ -79,13 +73,6 @@ func (r *Record) Commit(ctx context.Context) error {
 		tele.Warn(ctx, "record context done")
 		return ErrContextExpired
 	}
-
-	a.Add(1)
-	// tele.Info(ctx, "pre  confirmation of @1, others waiting: @2", "offset", r.rec.Offset, "count", a.Load())
-	//wait for the commit routine to confirm this record
-	<-r.confirmChannel
-	// tele.Info(ctx, "post confirmation of @1, others waiting: @2", "offset", r.rec.Offset, "count", a.Load())
-	a.Add(-1)
 
 	return nil
 }

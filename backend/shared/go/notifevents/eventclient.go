@@ -2,11 +2,12 @@ package notifevents
 
 import (
 	"context"
+	"social-network/shared/go/ct"
 	"social-network/shared/go/kafgo"
 )
 
 type EventProducer interface {
-	Send(ctx context.Context, topic string, payload ...[]byte) error
+	Send(ctx context.Context, topic ct.KafkaTopic, payload ...[]byte) error
 }
 
 type EventCreator struct {

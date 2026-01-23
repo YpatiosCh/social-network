@@ -3,6 +3,7 @@ package kafgo
 import (
 	"context"
 	"fmt"
+	"social-network/shared/go/ct"
 	tele "social-network/shared/go/telemetry"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -48,10 +49,10 @@ func NewKafkaProducer(seeds []string) (producer *KafkaProducer, close func(), er
 // TODO batch sends instead of doing one by one
 
 // Send sends payload(s) to the specified topic
-func (kfc *KafkaProducer) Send(ctx context.Context, topic string, payload ...[]byte) error {
+func (kfc *KafkaProducer) Send(ctx context.Context, topic ct.KafkaTopic, payload ...[]byte) error {
 	records := make([]*kgo.Record, len(payload))
 	for i, p := range payload {
-		records[i] = &kgo.Record{Topic: topic, Value: p}
+		records[i] = &kgo.Record{Topic: string(topic), Value: p}
 	}
 	results := kfc.client.ProduceSync(ctx, records...)
 	if results.FirstErr() != nil {

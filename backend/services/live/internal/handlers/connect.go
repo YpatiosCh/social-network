@@ -102,15 +102,16 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 	tele.Info(ctx, "websocket listener started for connection @1", "connection", connectionId)
 	key := ct.PrivateMessageKey(clientId)
 	sub, err := h.Nats.Subscribe(key, handler)
-	tele.Info(ctx, "subscribed to conversation @1 using key @2", "conversation", clientId, "key", key)
 	if err != nil {
 		tele.Error(ctx, "websocket subscription @1", "error", err.Error())
 		return
 	}
+	tele.Info(ctx, "subscribed to conversation @1 using key @2", "conversation", clientId, "key", key)
 	subcriptions[key] = sub
 	var lastSub string
 
 	defer func() { //unsub from all
+		tele.Info(ctx, "function closing, defer unsubscribing")
 		for _, sub := range subcriptions {
 			err := sub.Unsubscribe()
 			if err != nil {
@@ -149,18 +150,21 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 
 		switch msgType {
 		case "sub":
+			tele.Info(ctx, "found message of type sub")
 			if lastSub != "" {
 				sub, ok := subcriptions[payload]
 				if ok {
+					tele.Info(ctx, "@1 found, deleting it", "oldSubscription", payload)
 					err := sub.Unsubscribe()
 					if err != nil {
 						tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
 					}
+					tele.Info(ctx, "deleting previous subscription")
 					delete(subcriptions, payload)
 				}
 			}
 			//TODO verify that they are allowed to subscribe there
-			tele.Info(ctx, "subscribing to conversation @1", "conversation", payload)
+			tele.Info(ctx, "attempting to subscribe to conversation @1", "conversation", payload)
 
 			sub, err := h.Nats.Subscribe(ct.GroupMessageKey(payload), handler)
 			if err != nil {
@@ -168,11 +172,14 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 				continue
 			}
 			lastSub = payload
+			tele.Info(ctx, "adding @1", "subscription", payload)
 			subcriptions[payload] = sub
 
 		case "unsub":
+			tele.Info(ctx, "found message of type unsub")
 			sub, ok := subcriptions[payload]
 			if !ok {
+				tele.Warn(ctx, "failed to find subscription to unsubscribe from, ignoring request")
 				continue
 			}
 			lastSub = ""
@@ -182,8 +189,10 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 				tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
 				continue
 			}
+			tele.Info(ctx, "deleting @1", "subscription", payload)
 			delete(subcriptions, payload)
 		case "ch":
+			tele.Info(ctx, "deleting @1", "chat message received", "payload", payload)
 			type createPM struct {
 				InterlocutorId ct.Id      `json:"interlocutor_id"`
 				MessageText    ct.MsgBody `json:"message_text"`
@@ -208,10 +217,15 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 				}
 				continue
 			}
+
 			err = websocketConn.WriteJSON(mapping.MapPMFromProto(res))
 			if err != nil {
 				tele.Error(ctx, "failed to write back to caller @1 @2", "payload", payload, "error", err.Error())
+			} else {
+				tele.Info(ctx, "deleting @1", "wrote payload back to caller")
 			}
+		default:
+			tele.Error(ctx, "unknown message type received! @1, @2", "msgType", msgType, "payload", payload)
 		}
 	}
 }
