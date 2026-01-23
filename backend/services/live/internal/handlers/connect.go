@@ -147,52 +147,59 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 
 		msgType := parts[0]
 		payload := parts[1]
+		//TODO validate payload!
+		//TODO rate limiting!
+		//context cancellation
 
 		switch msgType {
 		case "sub":
-			tele.Info(ctx, "found message of type sub")
+			//TODO authorization check!!
+
+			tele.Info(ctx, msgType+", found message of type sub")
 			if lastSub != "" {
-				sub, ok := subcriptions[payload]
+				sub, ok := subcriptions[lastSub]
 				if ok {
-					tele.Info(ctx, "@1 found, deleting it", "oldSubscription", payload)
+					tele.Info(ctx, msgType+", @1 found, deleting it", "oldSubscription", payload)
 					err := sub.Unsubscribe()
 					if err != nil {
-						tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
+						tele.Error(ctx, msgType+", websocket unsubscribe @1", "error", err.Error())
 					}
-					tele.Info(ctx, "deleting previous subscription")
+					tele.Info(ctx, msgType+", deleting previous subscription")
 					delete(subcriptions, payload)
+				} else {
+					tele.Error(ctx, msgType+", failed to find last subscription, so there's nothing to delete....")
 				}
 			}
 			//TODO verify that they are allowed to subscribe there
-			tele.Info(ctx, "attempting to subscribe to conversation @1", "conversation", payload)
+			tele.Info(ctx, msgType+", attempting to subscribe to conversation @1", "conversation", payload)
 
 			sub, err := h.Nats.Subscribe(ct.GroupMessageKey(payload), handler)
 			if err != nil {
-				tele.Error(ctx, "websocket subscription @1", "error", err.Error())
+				tele.Error(ctx, msgType+", websocket subscription @1", "error", err.Error())
 				continue
 			}
 			lastSub = payload
-			tele.Info(ctx, "adding @1", "subscription", payload)
+			tele.Info(ctx, msgType+", adding @1", "subscription", payload)
 			subcriptions[payload] = sub
 
 		case "unsub":
-			tele.Info(ctx, "found message of type unsub")
+			tele.Info(ctx, msgType+", found message of type unsub")
 			sub, ok := subcriptions[payload]
 			if !ok {
-				tele.Warn(ctx, "failed to find subscription to unsubscribe from, ignoring request")
+				tele.Warn(ctx, msgType+", failed to find subscription to unsubscribe from, ignoring request")
 				continue
 			}
 			lastSub = ""
-			tele.Info(ctx, "unsubscribing from conversation @1", "conversation", payload)
+			tele.Info(ctx, msgType+", unsubscribing from conversation @1", "conversation", payload)
 			err := sub.Unsubscribe()
 			if err != nil {
-				tele.Error(ctx, "websocket unsubscribe @1", "error", err.Error())
+				tele.Error(ctx, msgType+", websocket unsubscribe @1", "error", err.Error())
 				continue
 			}
-			tele.Info(ctx, "deleting @1", "subscription", payload)
+			tele.Info(ctx, msgType+", deleting @1", "subscription", payload)
 			delete(subcriptions, payload)
-		case "ch":
-			tele.Info(ctx, "deleting @1", "chat message received", "payload", payload)
+		case "private_chat":
+			tele.Info(ctx, msgType+", message received @1", "payload", payload)
 			type createPM struct {
 				InterlocutorId ct.Id      `json:"interlocutor_id"`
 				MessageText    ct.MsgBody `json:"message_text"`
@@ -201,7 +208,7 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 			message := &createPM{}
 			err = json.Unmarshal([]byte(payload), message)
 			if err != nil {
-				tele.Error(ctx, "failed to unmarshal chat message @1", "error", err.Error())
+				tele.Error(ctx, msgType+", failed to unmarshal chat message @1", "error", err.Error())
 				continue
 			}
 			res, err := h.ChatService.CreatePrivateMessage(ctx, &chat.CreatePrivateMessageRequest{
@@ -210,22 +217,55 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 				MessageText:    message.MessageText.String(),
 			})
 			if err != nil {
-				tele.Error(ctx, "failed to create private message @1", "error", err.Error())
+				tele.Error(ctx, msgType+", failed to create private message @1", "error", err.Error())
 				err = websocketConn.WriteJSON(ce.DecodeProto(err, payload).Error())
 				if err != nil {
-					tele.Error(ctx, "sent error back to caller @1", "payload", payload)
+					tele.Error(ctx, msgType+", sent error back to caller @1", "payload", payload)
 				}
 				continue
 			}
 
 			err = websocketConn.WriteJSON(mapping.MapPMFromProto(res))
 			if err != nil {
-				tele.Error(ctx, "failed to write back to caller @1 @2", "payload", payload, "error", err.Error())
+				tele.Error(ctx, msgType+", failed to write back to caller @1 @2", "payload", payload, "error", err.Error())
 			} else {
-				tele.Info(ctx, "deleting @1", "wrote payload back to caller")
+				tele.Info(ctx, msgType+", deleting @1", "wrote payload back to caller")
+			}
+		case "group_chat":
+			tele.Info(ctx, msgType+", message received @1", "payload", payload)
+			type createGroupMessage struct {
+				GroupId     ct.Id      `json:"group_id"`
+				MessageText ct.MsgBody `json:"message_text"`
+			}
+
+			message := &createGroupMessage{}
+			err = json.Unmarshal([]byte(payload), message)
+			if err != nil {
+				tele.Error(ctx, msgType+", failed to unmarshal chat message @1", "error", err.Error())
+				continue
+			}
+			res, err := h.ChatService.CreateGroupMessage(ctx, &chat.CreateGroupMessageRequest{
+				SenderId:    clientId,
+				GroupId:     message.GroupId.Int64(),
+				MessageText: message.MessageText.String(),
+			})
+			if err != nil {
+				tele.Error(ctx, msgType+", failed to create group message @1", "error", err.Error())
+				err = websocketConn.WriteJSON(ce.DecodeProto(err, payload).Error())
+				if err != nil {
+					tele.Error(ctx, msgType+", sent error back to caller @1", "payload", payload)
+				}
+				continue
+			}
+
+			err = websocketConn.WriteJSON(mapping.MapGroupMessageFromProto(res))
+			if err != nil {
+				tele.Error(ctx, msgType+", failed to write back to caller @1 @2", "payload", payload, "error", err.Error())
+			} else {
+				tele.Info(ctx, msgType+", deleting @1", "wrote payload back to caller")
 			}
 		default:
-			tele.Error(ctx, "unknown message type received! @1, @2", "msgType", msgType, "payload", payload)
+			tele.Error(ctx, msgType+", unknown message type received! @1, @2", "msgType", msgType, "payload", payload)
 		}
 	}
 }
