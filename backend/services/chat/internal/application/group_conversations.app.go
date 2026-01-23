@@ -76,10 +76,13 @@ func (c *ChatService) GetPrevGroupMessages(ctx context.Context,
 		return res, ce.Wrap(nil, err, input)
 	}
 
-	err = c.retrieveMessageSenders(ctx, res.Messages, input)
-	if err != nil {
-		tele.Error(ctx, "failed to retrieve users for messages", "input", input, "error", err)
+	if req.RetrieveUsers {
+		err = c.retrieveMessageSenders(ctx, res.Messages, input)
+		if err != nil {
+			tele.Error(ctx, "failed to retrieve users for messages", "input", input, "error", err)
+		}
 	}
+
 	return res, nil
 }
 
@@ -100,9 +103,11 @@ func (c *ChatService) GetNextGroupMessages(ctx context.Context,
 		return res, ce.Wrap(nil, err, input)
 	}
 
-	err = c.retrieveMessageSenders(ctx, res.Messages, input)
-	if err != nil {
-		tele.Error(ctx, "failed to retrieve users for messages", "input", input, "error", err)
+	if req.RetrieveUsers {
+		err = c.retrieveMessageSenders(ctx, res.Messages, input)
+		if err != nil {
+			tele.Error(ctx, "failed to retrieve users for messages", "input", input, "error", err)
+		}
 	}
 
 	return res, nil

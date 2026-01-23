@@ -68,6 +68,7 @@ func (h *ChatHandler) GetPreviousGroupMessages(
 			UserId:            ct.Id(params.MemberId),
 			BoundaryMessageId: ct.Id(params.BoundaryMessageId),
 			Limit:             ct.Limit(params.Limit),
+			RetrieveUsers:     params.RetrieveUsers,
 		},
 	)
 	if err != nil {
@@ -101,6 +102,7 @@ func (h *ChatHandler) GetNextGroupMessages(
 			UserId:            ct.Id(params.MemberId),
 			BoundaryMessageId: ct.Id(params.BoundaryMessageId),
 			Limit:             ct.Limit(params.Limit),
+			RetrieveUsers:     params.RetrieveUsers,
 		},
 	)
 	if err != nil {

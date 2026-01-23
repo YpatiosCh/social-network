@@ -19,6 +19,7 @@ type GetGroupMsgsReq struct {
 	UserId            ct.Id    `json:"member_id"`
 	BoundaryMessageId ct.Id    `json:"boundary_message_id" validate:"nullable"`
 	Limit             ct.Limit `json:"limit"`
+	RetrieveUsers     bool     `json:"retrieve_users"`
 }
 
 type GroupMsg struct {

@@ -39,6 +39,7 @@ message GetGroupMessagesRequest {
   int64 member_id = 2;
   int64 boundary_message_id = 3;
   int32 limit = 4;
+  bool retrieve_users = 5;
 }
 
 // Response message for group messages retrieval.

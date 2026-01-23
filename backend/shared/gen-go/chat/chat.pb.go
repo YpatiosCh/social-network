@@ -188,6 +188,7 @@ type GetGroupMessagesRequest struct {
 	MemberId          int64                  `protobuf:"varint,2,opt,name=member_id,json=memberId,proto3" json:"member_id,omitempty"`
 	BoundaryMessageId int64                  `protobuf:"varint,3,opt,name=boundary_message_id,json=boundaryMessageId,proto3" json:"boundary_message_id,omitempty"`
 	Limit             int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	RetrieveUsers     bool                   `protobuf:"varint,5,opt,name=retrieve_users,json=retrieveUsers,proto3" json:"retrieve_users,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -248,6 +249,13 @@ func (x *GetGroupMessagesRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *GetGroupMessagesRequest) GetRetrieveUsers() bool {
+	if x != nil {
+		return x.RetrieveUsers
+	}
+	return false
 }
 
 // Response message for group messages retrieval.
@@ -1020,12 +1028,13 @@ const file_chat_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x129\n" +
 	"\n" +
-	"deleted_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"\x97\x01\n" +
+	"deleted_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"\xbe\x01\n" +
 	"\x17GetGroupMessagesRequest\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\x03R\agroupId\x12\x1b\n" +
 	"\tmember_id\x18\x02 \x01(\x03R\bmemberId\x12.\n" +
 	"\x13boundary_message_id\x18\x03 \x01(\x03R\x11boundaryMessageId\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit\"g\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12%\n" +
+	"\x0eretrieve_users\x18\x05 \x01(\bR\rretrieveUsers\"g\n" +
 	"\x18GetGroupMessagesResponse\x12\x1b\n" +
 	"\thave_more\x18\x01 \x01(\bR\bhaveMore\x12.\n" +
 	"\bmessages\x18\x02 \x03(\v2\x12.chat.GroupMessageR\bmessages\"\x8e\x01\n" +
