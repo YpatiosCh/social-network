@@ -9,6 +9,7 @@ import (
 	"social-network/shared/gen-go/users"
 	middleware "social-network/shared/go/http-middleware"
 	"social-network/shared/go/ratelimit"
+	"social-network/shared/go/retrieveusers"
 )
 
 type Handlers struct {
@@ -18,6 +19,7 @@ type Handlers struct {
 	ChatService  chat.ChatServiceClient
 	MediaService media.MediaServiceClient
 	NotifService notifications.NotificationServiceClient
+	RetriveUsers *retrieveusers.UserRetriever
 }
 
 func NewHandlers(
@@ -28,6 +30,7 @@ func NewHandlers(
 	ChatService chat.ChatServiceClient,
 	MediaService media.MediaServiceClient,
 	NotifService notifications.NotificationServiceClient,
+	RetrieveUsers *retrieveusers.UserRetriever,
 ) *http.ServeMux {
 	handlers := Handlers{
 		CacheService: CacheService,
@@ -36,6 +39,7 @@ func NewHandlers(
 		ChatService:  ChatService,
 		MediaService: MediaService,
 		NotifService: NotifService,
+		RetriveUsers: RetrieveUsers,
 	}
 	return handlers.BuildMux(serviceName)
 }
@@ -405,6 +409,14 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 		EnrichContext().
 		RateLimit(USERID, 20, 5).
 		Finalize(h.retrieveUser())
+
+	SetEndpoint("/users/retrieve").
+		AllowedMethod("GET").
+		RateLimit(IP, 20, 5).
+		Auth().
+		EnrichContext().
+		RateLimit(USERID, 20, 5).
+		Finalize(h.retrieveUsers())
 
 	SetEndpoint("/users/{user_id}/posts").
 		AllowedMethod("GET").

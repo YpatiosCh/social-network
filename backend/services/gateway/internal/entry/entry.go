@@ -17,6 +17,8 @@ import (
 	"social-network/shared/go/ct"
 	"social-network/shared/go/gorpc"
 	redis_connector "social-network/shared/go/redis"
+	"social-network/shared/go/retrievemedia"
+	"social-network/shared/go/retrieveusers"
 	tele "social-network/shared/go/telemetry"
 	"syscall"
 	"time"
@@ -103,6 +105,15 @@ func Run() {
 		tele.Fatalf("failed to connect to media service: %v", err)
 	}
 
+	retrieveMedia := retrievemedia.NewMediaRetriever(MediaService, CacheService, 3*time.Minute)
+
+	retriveUsers := retrieveusers.NewUserRetriever(
+		UsersService,
+		CacheService,
+		retrieveMedia,
+		3*time.Minute,
+	)
+
 	//
 	//
 	//
@@ -115,6 +126,7 @@ func Run() {
 		ChatService,
 		MediaService,
 		NotifService,
+		retriveUsers,
 	)
 
 	//
