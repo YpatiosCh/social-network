@@ -31,7 +31,7 @@ func (h *ChatHandler) GetPrivateConversationById(
 	})
 	if err != nil {
 		tele.Error(ctx, "get private conversations by id @1 \n\n@2\n\n",
-			"request", params.String(),
+			"request", params,
 			"error", err.Error(),
 		)
 		return nil, ce.EncodeProto(err)
@@ -40,7 +40,7 @@ func (h *ChatHandler) GetPrivateConversationById(
 	res := mp.MapConversationToProto(conv)
 
 	tele.Info(ctx, "get private conversations succes: @1 @2",
-		"response", res.String(),
+		"response", res,
 	)
 	return res, nil
 }
@@ -50,7 +50,7 @@ func (h *ChatHandler) GetPrivateConversations(
 	ctx context.Context,
 	params *pb.GetPrivateConversationsRequest,
 ) (*pb.GetPrivateConversationsResponse, error) {
-	tele.Info(ctx, "get private conversations called: @1", "params", params.String())
+	tele.Info(ctx, "get private conversations called: @1", "params", params)
 
 	convs, err := h.Application.GetPrivateConversations(ctx, md.GetPrivateConvsReq{
 		UserId:            ct.Id(params.UserId),
@@ -59,7 +59,7 @@ func (h *ChatHandler) GetPrivateConversations(
 	})
 	if err != nil {
 		tele.Error(ctx, "get private conversations @1 \n\n@2\n\n",
-			"request", params.String(),
+			"request", params,
 			"error", err.Error(),
 		)
 		return nil, ce.EncodeProto(err)
@@ -70,7 +70,7 @@ func (h *ChatHandler) GetPrivateConversations(
 	}
 
 	tele.Info(ctx, "get private conversations success: @1",
-		"response", res.String(),
+		"response", res,
 	)
 	return res, nil
 }
@@ -83,7 +83,7 @@ func (h *ChatHandler) GetConvsWithUnreadsCount(
 	count, err := h.Application.GetConvsWithUnreadsCount(ctx, ct.Id(params.UserId))
 	if err != nil {
 		tele.Error(ctx, "get conversations with unread count @1 \n\n@2\n\n",
-			"request", params.String(),
+			"request", params,
 			"error", err.Error(),
 		)
 		return nil, ce.EncodeProto(err)
@@ -96,7 +96,7 @@ func (h *ChatHandler) CreatePrivateMessage(
 	ctx context.Context,
 	params *pb.CreatePrivateMessageRequest,
 ) (*pb.PrivateMessage, error) {
-	tele.Info(ctx, "creating private message: @1", "params", params.String())
+	tele.Info(ctx, "creating private message: @1", "params", params)
 
 	// Call application layer
 	msg, Err := h.Application.CreatePrivateMessage(ctx, md.CreatePrivateMsgReq{
@@ -106,7 +106,7 @@ func (h *ChatHandler) CreatePrivateMessage(
 	})
 	if Err != nil {
 		tele.Error(ctx, "create private message @1 \n\n@2\n\n",
-			"request", params.String(),
+			"request", params,
 			"error", Err.Error(),
 		)
 		return nil, ce.EncodeProto(Err)
@@ -115,7 +115,7 @@ func (h *ChatHandler) CreatePrivateMessage(
 	resp := mp.MapPMToProto(msg)
 
 	tele.Info(ctx, "create private message success. @1",
-		"response", resp.String(),
+		"response", resp,
 	)
 
 	return resp, nil
@@ -127,7 +127,7 @@ func (h *ChatHandler) GetPreviousPrivateMessages(
 	params *pb.GetPrivateMessagesRequest,
 ) (*pb.GetPrivateMessagesResponse, error) {
 
-	tele.Info(ctx, "get previous private messages called @1", "request", params.String())
+	tele.Info(ctx, "get previous private messages called @1", "request", params)
 
 	// Call application layer
 	res, err := h.Application.GetPreviousPMs(ctx, md.GetPrivateMsgsReq{
@@ -139,7 +139,7 @@ func (h *ChatHandler) GetPreviousPrivateMessages(
 	})
 	if err != nil {
 		tele.Error(ctx, "get previous private messages error",
-			"request", params.String(),
+			"request", params,
 			"error", err.Error(),
 		)
 		return nil, ce.EncodeProto(err)
@@ -148,8 +148,8 @@ func (h *ChatHandler) GetPreviousPrivateMessages(
 	resp := mp.MapGetPMsResp(res)
 
 	tele.Info(ctx, "get previous private messages success. @1 @2",
-		"request", params.String(),
-		"response", resp.String(),
+		"request", params,
+		"response", resp,
 	)
 
 	return resp, nil
@@ -161,7 +161,7 @@ func (h *ChatHandler) GetNextPrivateMessages(
 	params *pb.GetPrivateMessagesRequest,
 ) (*pb.GetPrivateMessagesResponse, error) {
 
-	tele.Info(ctx, "get next private messages called @1", "request", params.String())
+	tele.Info(ctx, "get next private messages called @1", "request", params)
 
 	// Call application layer
 	res, err := h.Application.GetNextPMs(ctx, md.GetPrivateMsgsReq{
@@ -173,7 +173,7 @@ func (h *ChatHandler) GetNextPrivateMessages(
 	})
 	if err != nil {
 		tele.Error(ctx, "get next private messages error",
-			"request", params.String(),
+			"request", params,
 			"error", err.Error(),
 		)
 		return nil, ce.EncodeProto(err)
@@ -182,8 +182,8 @@ func (h *ChatHandler) GetNextPrivateMessages(
 	resp := mp.MapGetPMsResp(res)
 
 	tele.Info(ctx, "get next private messages success. @1 @2",
-		"request", params.String(),
-		"response", resp.String(),
+		"request", params,
+		"response", resp,
 	)
 
 	return resp, nil
@@ -195,7 +195,7 @@ func (h *ChatHandler) UpdateLastReadPrivateMessage(
 	params *pb.UpdateLastReadPrivateMessageRequest,
 ) (*emptypb.Empty, error) {
 
-	tele.Info(ctx, "update last read private message called @1", "request", params.String())
+	tele.Info(ctx, "update last read private message called @1", "request", params)
 
 	// Call application layer
 	err := h.Application.UpdateLastReadPrivateMsg(ctx, md.UpdateLastReadMsgParams{
@@ -205,7 +205,7 @@ func (h *ChatHandler) UpdateLastReadPrivateMessage(
 	})
 	if err != nil {
 		tele.Error(ctx, "update last read private message error",
-			"request", params.String(),
+			"request", params,
 			"error", err.Error(),
 		)
 		return nil, ce.EncodeProto(err)
@@ -214,8 +214,8 @@ func (h *ChatHandler) UpdateLastReadPrivateMessage(
 	resp := &emptypb.Empty{}
 
 	tele.Info(ctx, "update last read private message success. @1 @2",
-		"request", params.String(),
-		"response", resp.String(),
+		"request", params,
+		"response", resp,
 	)
 
 	return resp, nil

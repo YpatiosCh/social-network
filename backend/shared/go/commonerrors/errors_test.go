@@ -4,11 +4,13 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestError_Error(t *testing.T) {
@@ -458,4 +460,12 @@ func TestNestedStruct(t *testing.T) {
       }
    }
 }`, n)
+}
+
+func TestProtobufFormating(t *testing.T) {
+
+	protoStamp := timestamppb.Now()
+	stamp := protoStamp.AsTime().Format(time.RFC3339)
+	n := FormatValue(protoStamp)
+	assert.Equal(t, n, stamp)
 }

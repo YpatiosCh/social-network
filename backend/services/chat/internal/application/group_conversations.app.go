@@ -35,6 +35,11 @@ func (c *ChatService) CreateMessageInGroup(ctx context.Context,
 		MessageText: req.MessageBody,
 	})
 
+	res.Sender, err = c.RetriveUsers.GetUser(ctx, res.Sender.UserId)
+	if err != nil {
+		return res, ce.Wrap(nil, err, input)
+	}
+
 	messageBytes, err := json.Marshal(res)
 	if err != nil {
 		err = ce.New(ce.ErrInternal, err, input)

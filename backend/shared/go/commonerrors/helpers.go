@@ -8,9 +8,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Returns c error if c is not nil and is a defined error
@@ -139,6 +141,18 @@ func formatValueIndented(v any, depth int, seen map[uintptr]bool) (out string) {
 		return "nil"
 	}
 
+	// PROTOBUF
+
+	// Protobuf Timestamp (pointer)
+	if ts, ok := v.(*timestamppb.Timestamp); ok {
+		if ts == nil {
+			return "nil"
+		}
+		if ts.IsValid() {
+			return ts.AsTime().Format(time.RFC3339)
+		}
+		return "<invalid timestamp>"
+	}
 	val := reflect.ValueOf(v)
 	typ := reflect.TypeOf(v)
 
@@ -166,6 +180,7 @@ func formatValueIndented(v any, depth int, seen map[uintptr]bool) (out string) {
 
 	indent := strings.Repeat("   ", depth)
 	nextIndent := strings.Repeat("   ", depth+1)
+
 	stringerType := reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
 	// Value implements Stringer
