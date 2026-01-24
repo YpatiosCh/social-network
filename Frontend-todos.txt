@@ -1,13 +1,14 @@
 ======== This week TODOs ========
 
-Chat 
+group chat WS
 
-update navbar msg counts (backend new endpoint??)
+update navbar msg counts (backend new endpoint??) - still lags if i havent loaded convs.. neeed to check this out
 
-change mark as read behaviour in pm. msg should be marked as read when clicked on a conv.
+
+
 
 ======== LATER TODOs ========
 
 PROPER RESPONSE HANDLING - ERROR HANDLING
 ENSURE VALIDATION EVERYWHERE
-GLOBAL LOGGER
+GLOBAL LOGGER - search for open telemetry exporter 

@@ -78,11 +78,14 @@ export default function Navbar() {
         console.log("[Navbar] conversations length:", conversations.length, "existingConv:", existingConv);
 
         if (existingConv) {
+            console.log("LOC: ", window.location)
             // Increment unread count if this conversation had no unread messages before
-            if (existingConv.UnreadCount === 0 || !existingConv.UnreadCount) {
+            const isViewingConv = window.location.pathname === `/messages/${existingConv.Interlocutor?.id}`;
+            if (existingConv.UnreadCount === 0 && !isViewingConv || !existingConv.UnreadCount && !isViewingConv) {
                 console.log("[Navbar] Incrementing unread (existing conv with 0 unread)");
                 incrementUnreadCount();
             }
+            console.log("Hey")
 
             // Update existing conversation
             setConversations((prev) => {

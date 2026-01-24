@@ -418,7 +418,7 @@ export default function MessagesContent({
         setConversations((prev) =>
             prev.map((c) =>
                 c.ConversationId === selectedConv.ConversationId ||
-                c.Interlocutor?.id === selectedConv.Interlocutor?.id
+                    c.Interlocutor?.id === selectedConv.Interlocutor?.id
                     ? {
                         ...c,
                         LastMessage: {

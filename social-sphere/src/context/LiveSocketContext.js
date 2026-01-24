@@ -236,6 +236,27 @@ export function LiveSocketProvider({ children }) {
         });
     }, []);
 
+    // Send a group message through WebSocket
+    const sendGroupMessage = useCallback((groupId, messageText) => {
+        return new Promise((resolve, reject) => {
+            if (wsRef.current?.readyState !== WebSocket.OPEN) {
+                reject(new Error("WebSocket not connected"));
+                return;
+            }
+
+            const payload = JSON.stringify({
+                group_id: groupId,
+                message_text: messageText,
+            });
+
+            wsRef.current.send(`group_chat:${payload}`);
+            console.log("[LiveSocket] Sent group message");
+
+            // The server will send the created message back directly to the sender
+            resolve({ sent: true });
+        });
+    }, []);
+
     // Connect when user logs in, disconnect when user logs out
     useEffect(() => {
         if (user) {
@@ -267,6 +288,7 @@ export function LiveSocketProvider({ children }) {
         addOnNotification,
         removeOnNotification,
         sendPrivateMessage,
+        sendGroupMessage,
         disconnect,
     };
 
