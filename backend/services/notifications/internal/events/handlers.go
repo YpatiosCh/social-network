@@ -55,6 +55,10 @@ func (h *EventHandler) Handle(ctx context.Context, event *pb.NotificationEvent) 
 		return h.handleGroupJoinRequestAccepted(ctx, payload.GroupJoinRequestAccepted)
 	case *pb.NotificationEvent_GroupJoinRequestRejected:
 		return h.handleGroupJoinRequestRejected(ctx, payload.GroupJoinRequestRejected)
+	case *pb.NotificationEvent_FollowRequestCancelled:
+		return h.handleFollowRequestCancelled(ctx, payload.FollowRequestCancelled)
+	case *pb.NotificationEvent_GroupJoinRequestCancelled:
+		return h.handleGroupJoinRequestCancelled(ctx, payload.GroupJoinRequestCancelled)
 	default:
 		return fmt.Errorf("unknown notification event payload type: %T", payload)
 	}
@@ -90,6 +94,23 @@ func (h *EventHandler) handleFollowRequestCreated(ctx context.Context, event *pb
 		event.TargetUserId,      // targetUserID
 		event.RequesterUserId,   // requesterUserID
 		event.RequesterUsername, // requesterUsername
+	)
+}
+
+func (h *EventHandler) handleFollowRequestCancelled(ctx context.Context, event *pb.FollowRequestCancelled) error {
+	return h.App.DeleteFollowRequestNotification(
+		ctx,
+		event.TargetUserId,    // targetUserID
+		event.RequesterUserId, // requesterUserID
+	)
+}
+
+func (h *EventHandler) handleGroupJoinRequestCancelled(ctx context.Context, event *pb.GroupJoinRequestCancelled) error {
+	return h.App.DeleteGroupJoinRequestNotification(
+		ctx,
+		event.GroupOwnerId,    // groupOwnerID
+		event.RequesterUserId, // requesterUserID
+		event.GroupId,         // groupID
 	)
 }
 

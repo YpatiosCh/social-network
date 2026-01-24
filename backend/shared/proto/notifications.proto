@@ -392,6 +392,8 @@ enum EventType {
   GROUP_INVITE_REJECTED = 13;
   GROUP_JOIN_REQUEST_ACCEPTED = 14;
   GROUP_JOIN_REQUEST_REJECTED = 15;
+  FOLLOW_REQUEST_CANCELLED = 16;
+  GROUP_JOIN_REQUEST_CANCELLED = 17;
 }
 
 // Specific event payload messages
@@ -511,6 +513,17 @@ message GroupJoinRequestRejected {
   string group_name = 4;
 }
 
+message FollowRequestCancelled {
+  int64 target_user_id = 1;
+  int64 requester_user_id = 2;
+}
+
+message GroupJoinRequestCancelled {
+  int64 group_owner_id = 1;
+  int64 requester_user_id = 2;
+  int64 group_id = 3;
+}
+
 // Main notification event wrapper
 message NotificationEvent {
   string event_id = 1;
@@ -534,5 +547,14 @@ message NotificationEvent {
     GroupInviteRejected group_invite_rejected = 22;
     GroupJoinRequestAccepted group_join_request_accepted = 23;
     GroupJoinRequestRejected group_join_request_rejected = 24;
+    FollowRequestCancelled follow_request_cancelled = 25;
+    GroupJoinRequestCancelled group_join_request_cancelled = 26;
   }
+}
+
+// Message for notification deletion events
+message NotificationDeletion {
+  int64 notification_id = 1;  // ID of the notification that was deleted
+  int64 user_id = 2;          // ID of the user who owned the notification
+  google.protobuf.Timestamp deleted_at = 3;  // When the notification was deleted
 }
