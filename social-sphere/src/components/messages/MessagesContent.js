@@ -4,13 +4,12 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getConv } from "@/actions/chat/get-conv";
 import { getMessages } from "@/actions/chat/get-messages";
-import { sendMsg } from "@/actions/chat/send-msg";
 import { getConvByID } from "@/actions/chat/get-conv-by-id";
 import { useStore } from "@/store/store";
-import { User, Send, MessageCircle, Loader2, ChevronLeft, Wifi, WifiOff } from "lucide-react";
+import { User, Send, MessageCircle, Loader2, ChevronLeft, Wifi, WifiOff, Smile } from "lucide-react";
 import { motion } from "motion/react";
 import { useLiveSocket, ConnectionState } from "@/context/LiveSocketContext";
-import { markAsRead } from "@/actions/chat/mark-read";
+import EmojiPicker from "emoji-picker-react";
 import { useMsgReceiver } from "@/store/store";
 
 export default function MessagesContent({
@@ -29,13 +28,14 @@ export default function MessagesContent({
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
     const [hasMoreMessages, setHasMoreMessages] = useState(() => initialMessages.length >= 20);
-    const [isSending, setIsSending] = useState(false);
     const [messageText, setMessageText] = useState("");
     const [showMobileChat] = useState(!!initialSelectedId);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const selectedConvRef = useRef(null);
     const isLoadingMoreRef = useRef(false);
+    const emojiPickerRef = useRef(null);
     const receiver = useMsgReceiver((state) => state.msgReceiver);
     const clearMsgReceiver = useMsgReceiver((state) => state.clearMsgReceiver);
     const [conversations, setConversations] = useState(() => {
@@ -66,8 +66,6 @@ export default function MessagesContent({
         }
     }, [firstMessage, receiver, clearMsgReceiver]);
 
-    console.log("CONVS: ", conversations);
-
     // Find selected conversation from ID
     const selectedConv = useMemo(() => {
         if (!initialSelectedId) return null;
@@ -86,22 +84,42 @@ export default function MessagesContent({
     }, [selectedConv]);
 
     // WebSocket connection from context
-    const { connectionState, isConnected, addOnPrivateMessage, removeOnPrivateMessage } = useLiveSocket();
+    const { connectionState, isConnected, addOnPrivateMessage, removeOnPrivateMessage, sendPrivateMessage } = useLiveSocket();
 
     // Handle incoming private messages from WebSocket
     const handlePrivateMessage = useCallback(async (msg) => {
         console.log("[Chat] Received private message:", msg);
 
         const senderId = msg.sender?.id;
+        const isOwnMessage = senderId === user?.id;
 
         // Add message to the current conversation if it matches
         const currentConv = selectedConvRef.current;
-        console.log("CUrrent: ", currentConv)
+        console.log("Current: ", currentConv)
         if (currentConv) {
             const interlocutorId = currentConv.Interlocutor?.id;
 
-            // Check if this message belongs to the current conversation
-            if (senderId === interlocutorId) {
+            if (isOwnMessage) {
+                // This is a confirmation of our sent message - replace pending with confirmed
+                setMessages((prev) => {
+                    // Find the pending message with matching text (most recent)
+                    const pendingIndex = prev.findIndex(
+                        (m) => m._pending && m.message_text === msg.message_text
+                    );
+
+                    if (pendingIndex !== -1) {
+                        // Replace the pending message with the confirmed one
+                        const updated = [...prev];
+                        updated[pendingIndex] = { ...msg, _pending: false };
+                        return updated;
+                    }
+
+                    // If no pending message found (edge case), add if not duplicate
+                    if (prev.some((m) => m.id === msg.id)) return prev;
+                    return [...prev, msg];
+                });
+            } else if (senderId === interlocutorId) {
+                // Message from the other person in this conversation
                 setMessages((prev) => {
                     // Prevent duplicates
                     if (prev.some((m) => m.id === msg.id)) return prev;
@@ -113,41 +131,43 @@ export default function MessagesContent({
         // Track if we need to fetch new conversation data
         let isNewConversation = false;
 
-        // Update conversation list with new message preview
-        setConversations((prev) => {
-            // Check if conversation exists
-            const existingIndex = prev.findIndex((conv) => conv.Interlocutor?.id === senderId);
+        // Update conversation list with new message preview (only for incoming messages)
+        // Skip for own messages since handleSendMessage already updates the conversation
+        if (!isOwnMessage) {
+            setConversations((prev) => {
+                // Check if conversation exists
+                const existingIndex = prev.findIndex((conv) => conv.Interlocutor?.id === senderId);
 
-            if (existingIndex !== -1) {
-                console.log("conversation exists")
-                // Update existing conversation
-                const updated = prev.map((conv, idx) => {
-                    if (idx === existingIndex) {
-                        return {
-                            ...conv,
-                            LastMessage: {
-                                message_text: msg.message_text,
-                                sender: msg.sender,
-                            },
-                            UpdatedAt: msg.created_at,
-                            // Always increment unread count for incoming messages
-                            UnreadCount: (conv.UnreadCount || 0) + 1,
-                        };
-                    }
-                    return conv;
-                });
-                return updated.sort((a, b) => new Date(b.UpdatedAt) - new Date(a.UpdatedAt));
-            } else {
-                // New conversation - mark for fetching full data
-                isNewConversation = true;
-                console.log("New")
-                return prev;
-            }
-        });
-        console.log("OK")
+                if (existingIndex !== -1) {
+                    console.log("conversation exists")
+                    // Update existing conversation
+                    const updated = prev.map((conv, idx) => {
+                        if (idx === existingIndex) {
+                            return {
+                                ...conv,
+                                LastMessage: {
+                                    message_text: msg.message_text,
+                                    sender: msg.sender,
+                                },
+                                UpdatedAt: msg.created_at,
+                                // Increment unread count for incoming messages
+                                UnreadCount: (conv.UnreadCount || 0) + 1,
+                            };
+                        }
+                        return conv;
+                    });
+                    return updated.sort((a, b) => new Date(b.UpdatedAt) - new Date(a.UpdatedAt));
+                } else {
+                    // New conversation - mark for fetching full data
+                    isNewConversation = true;
+                    console.log("New")
+                    return prev;
+                }
+            });
+        }
 
-        // If new conversation, fetch full data from server
-        if (isNewConversation) {
+        // If new conversation from someone else, fetch full data from server
+        if (isNewConversation && !isOwnMessage) {
             console.log("Fetching new conversation with:", { senderId, convId: msg.conversation_id });
 
             const result = await getConvByID({
@@ -173,7 +193,7 @@ export default function MessagesContent({
                 });
             }
         }
-    }, []);
+    }, [user?.id]);
 
     // Register message handler when on messages page
     useEffect(() => {
@@ -376,74 +396,54 @@ export default function MessagesContent({
         router.push(`/messages/${id}`);
     };
 
-    // Handle send message - uses HTTP API (WebSocket sends via backend publish to recipient)
+    // Handle send message - uses WebSocket
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!messageText.trim() || !selectedConv || isSending) return;
+        if (!messageText.trim() || !selectedConv || !isConnected) return;
 
-        setIsSending(true);
         const msgToSend = messageText.trim();
         setMessageText("");
 
-        // Optimistically add message to UI
+        // Generate a temporary ID to track this optimistic message
+        const tempId = `temp-${Date.now()}`;
+
+        // Optimistically add message to UI with pending state (will show with low opacity)
         const optimisticMessage = {
-            id: `temp-${Date.now()}`,
+            id: tempId,
             message_text: msgToSend,
             sender: { id: user?.id },
             created_at: new Date().toISOString(),
-            _optimistic: true,
+            _pending: true, // Flag for showing low opacity until confirmed
         };
         setMessages((prev) => [...prev, optimisticMessage]);
 
+        // Update conversation's last message preview immediately
+        setConversations((prev) =>
+            prev.map((c) =>
+                c.ConversationId === selectedConv.ConversationId ||
+                    c.Interlocutor?.id === selectedConv.Interlocutor?.id
+                    ? {
+                        ...c,
+                        LastMessage: {
+                            ...c.LastMessage,
+                            message_text: msgToSend,
+                            sender: { id: user?.id },
+                        },
+                        UpdatedAt: new Date().toISOString(),
+                    }
+                    : c
+            ).sort((a, b) => new Date(b.UpdatedAt) - new Date(a.UpdatedAt))
+        );
+
         try {
-            const result = await sendMsg({
-                interlocutor: selectedConv.Interlocutor.id,
-                msg: msgToSend,
-            });
-
-            if (result.success) {
-                // Replace optimistic message with real one
-                setMessages((prev) =>
-                    prev.map((m) =>
-                        m.id === optimisticMessage.id
-                            ? {
-                                id: result.id || optimisticMessage.id,
-                                message_text: msgToSend,
-                                sender: { id: user?.id },
-                                created_at: result.created_at || optimisticMessage.created_at,
-                            }
-                            : m
-                    )
-                );
-
-                // Update conversation's last message and move to top
-                setConversations((prev) =>
-                    prev.map((c) =>
-                        c.ConversationId === selectedConv.ConversationId
-                            ? {
-                                ...c,
-                                LastMessage: {
-                                    ...c.LastMessage,
-                                    message_text: msgToSend,
-                                    sender: { id: user?.id },
-                                },
-                                UpdatedAt: new Date().toISOString(),
-                            }
-                            : c
-                    ).sort((a, b) => new Date(b.UpdatedAt) - new Date(a.UpdatedAt))
-                );
-            } else {
-                // Remove optimistic message on failure
-                setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
-                setMessageText(msgToSend);
-            }
+            await sendPrivateMessage(selectedConv.Interlocutor.id, msgToSend);
+            // Server will send the confirmed message back through WebSocket
+            // The handlePrivateMessage callback will update the message to remove _pending
         } catch (error) {
             console.error("Error sending message:", error);
-            // Remove optimistic message and restore text
-            setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+            // Remove optimistic message and restore text on WebSocket error
+            setMessages((prev) => prev.filter((m) => m.id !== tempId));
             setMessageText(msgToSend);
-        } finally {
-            setIsSending(false);
         }
     };
 
@@ -451,6 +451,29 @@ export default function MessagesContent({
     const handleBackToList = () => {
         router.push("/messages");
     };
+
+    // Handle emoji selection
+    const onEmojiClick = (emojiData) => {
+        setMessageText((prev) => prev + emojiData.emoji);
+        setShowEmojiPicker(false);
+    };
+
+    // Close emoji picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        if (showEmojiPicker) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showEmojiPicker]);
 
     // Load conversations on mount if not provided (skip for firstMessage mode)
     useEffect(() => {
@@ -646,11 +669,12 @@ export default function MessagesContent({
                                     )}
                                     {messages.map((msg, index) => {
                                         const isMe = msg.sender?.id === user?.id;
+                                        const isPending = msg._pending;
                                         return (
                                             <motion.div
                                                 key={msg.id || index}
                                                 initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
+                                                animate={{ opacity: isPending ? 0.5 : 1, y: 0 }}
                                                 transition={{ duration: 0.2 }}
                                                 className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                                             >
@@ -690,24 +714,39 @@ export default function MessagesContent({
                             className="p-4 border-t border-(--border)"
                         >
                             <div className="flex items-center gap-3">
+                                {/* Emoji Picker */}
+                                <div className="relative" ref={emojiPickerRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        className="p-3 text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-all"
+                                    >
+                                        <Smile className="w-5 h-5" />
+                                    </button>
+                                    {showEmojiPicker && (
+                                        <div className="absolute bottom-14 left-0 z-50">
+                                            <EmojiPicker
+                                                onEmojiClick={onEmojiClick}
+                                                width={320}
+                                                height={400}
+                                                previewConfig={{ showPreview: false }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                                 <input
                                     type="text"
                                     value={messageText}
                                     onChange={(e) => setMessageText(e.target.value)}
                                     placeholder="Type a message..."
                                     className="flex-1 px-4 py-3 border border-(--border) rounded-full text-sm bg-(--muted)/5 text-foreground placeholder-(--muted) hover:border-foreground focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all"
-                                    disabled={isSending}
                                 />
                                 <button
                                     type="submit"
-                                    disabled={!messageText.trim() || isSending}
+                                    disabled={!messageText.trim() || !isConnected}
                                     className="p-3 bg-(--accent) text-white rounded-full hover:bg-(--accent-hover) transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isSending ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <Send className="w-5 h-5" />
-                                    )}
+                                    <Send className="w-5 h-5" />
                                 </button>
                             </div>
                         </form>

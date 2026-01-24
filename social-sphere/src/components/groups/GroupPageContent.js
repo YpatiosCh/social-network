@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Send, MessageCircle, Loader2, User, Wifi, WifiOff } from "lucide-react";
+import { Plus, Send, MessageCircle, Loader2, User, Wifi, WifiOff, Smile } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
 import Container from "@/components/layout/Container";
 import CreatePostGroup from "@/components/groups/CreatePostGroup";
 import GroupPostCard from "@/components/groups/GroupPostCard";
@@ -13,7 +14,6 @@ import EventCard from "@/components/groups/EventCard";
 import { getGroupPosts } from "@/actions/groups/get-group-posts";
 import { getGroupEvents } from "@/actions/events/get-group-events";
 import { getGroupMessages } from "@/actions/chat/get-group-messages";
-import { sendGroupMsg } from "@/actions/chat/send-group-msg";
 import { useLiveSocket, ConnectionState } from "@/context/LiveSocketContext";
 import { useStore } from "@/store/store";
 import Tooltip from "../ui/Tooltip";
@@ -52,11 +52,12 @@ export default function GroupPageContent({ group, firstPosts }) {
     const [messages, setMessages] = useState([]);
     const [messageText, setMessageText] = useState("");
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-    const [isSending, setIsSending] = useState(false);
     const [messagesFetched, setMessagesFetched] = useState(false);
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const emojiPickerRef = useRef(null);
 
     // WebSocket connection
     const {
@@ -65,7 +66,8 @@ export default function GroupPageContent({ group, firstPosts }) {
         subscribeToGroup,
         unsubscribeFromGroup,
         addOnGroupMessage,
-        removeOnGroupMessage
+        removeOnGroupMessage,
+        sendGroupMessage
     } = useLiveSocket();
 
     const handleNewEvent = (newEvent) => {
@@ -101,13 +103,34 @@ export default function GroupPageContent({ group, firstPosts }) {
 
     // Handle incoming group messages from WebSocket
     const handleGroupMessage = useCallback((msg) => {
-        if (msg.GroupId !== group.group_id) return;
+        // Handle both snake_case (from direct response) and PascalCase (from NATS)
+        const groupId = msg.group_id || msg.GroupId;
+        if (groupId !== group.group_id) return;
+
+        const isOwnMessage = (msg.Sender?.id || msg.sender?.id) === user?.id;
 
         setMessages((prev) => {
-            if (prev.some((m) => m.Id === msg.Id)) return prev;
+            if (isOwnMessage) {
+                // This is a confirmation of our sent message - replace pending with confirmed
+                const messageText = msg.MessageText || msg.message_text;
+                const pendingIndex = prev.findIndex(
+                    (m) => m._pending && m.MessageText === messageText
+                );
+
+                if (pendingIndex !== -1) {
+                    // Replace the pending message with the confirmed one
+                    const updated = [...prev];
+                    updated[pendingIndex] = { ...msg, _pending: false };
+                    return updated;
+                }
+            }
+
+            // Prevent duplicates
+            const msgId = msg.Id || msg.id;
+            if (prev.some((m) => (m.Id || m.id) === msgId)) return prev;
             return [...prev, msg];
         });
-    }, [group.group_id]);
+    }, [group.group_id, user?.id]);
 
     // Fetch group messages
     const fetchMessages = useCallback(async (isInitial = false) => {
@@ -143,52 +166,62 @@ export default function GroupPageContent({ group, firstPosts }) {
         }
     }, [isLoadingMessages, hasMoreMessages, messages, group.group_id]);
 
-    // Send group message
+    // Send group message via WebSocket
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!messageText.trim() || isSending) return;
+        if (!messageText.trim() || !isConnected) return;
 
-        setIsSending(true);
         const msgToSend = messageText.trim();
         setMessageText("");
 
-        // Optimistically add message (using backend field format)
+        // Generate a temporary ID to track this optimistic message
+        const tempId = `temp-${Date.now()}`;
+
+        // Optimistically add message with pending state (will show with low opacity)
         const optimisticMessage = {
-            Id: `temp-${Date.now()}`,
+            Id: tempId,
             MessageText: msgToSend,
             Sender: { id: user?.id, username: user?.username, avatar_url: user?.avatar_url },
             GroupId: group.group_id,
             CreatedAt: new Date().toISOString(),
-            _optimistic: true,
+            _pending: true, // Flag for showing low opacity until confirmed
         };
         setMessages((prev) => [...prev, optimisticMessage]);
 
         try {
-            const result = await sendGroupMsg({
-                groupId: group.group_id,
-                msg: msgToSend,
-            });
-
-            if (result.success) {
-                setMessages((prev) =>
-                    prev.map((m) =>
-                        m.Id === optimisticMessage.Id
-                            ? { ...m, Id: result.Id, _optimistic: false }
-                            : m
-                    )
-                );
-            } else {
-                setMessages((prev) => prev.filter((m) => m.Id !== optimisticMessage.Id));
-                setMessageText(msgToSend);
-            }
+            await sendGroupMessage(group.group_id, msgToSend);
+            // Server will send the confirmed message back through WebSocket
+            // The handleGroupMessage callback will update the message to remove _pending
         } catch (error) {
             console.error("Error sending message:", error);
-            setMessages((prev) => prev.filter((m) => m.Id !== optimisticMessage.Id));
+            // Remove optimistic message and restore text on WebSocket error
+            setMessages((prev) => prev.filter((m) => m.Id !== tempId));
             setMessageText(msgToSend);
-        } finally {
-            setIsSending(false);
         }
     };
+
+    // Handle emoji selection
+    const onEmojiClick = (emojiData) => {
+        setMessageText((prev) => prev + emojiData.emoji);
+        setShowEmojiPicker(false);
+    };
+
+    // Close emoji picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        if (showEmojiPicker) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showEmojiPicker]);
 
     // Keep handleGroupMessage ref updated
     const handleGroupMessageRef = useRef(handleGroupMessage);
@@ -641,11 +674,12 @@ export default function GroupPageContent({ group, firstPosts }) {
                                             <>
                                                 {messages.map((msg, index) => {
                                                     const isMe = msg.Sender?.id === user?.id;
+                                                    const isPending = msg._pending;
                                                     return (
                                                         <motion.div
                                                             key={msg.Id || index}
                                                             initial={{ opacity: 0, y: 10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
+                                                            animate={{ opacity: isPending ? 0.5 : 1, y: 0 }}
                                                             transition={{ duration: 0.2 }}
                                                             className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                                                         >
@@ -708,24 +742,39 @@ export default function GroupPageContent({ group, firstPosts }) {
                                 <div className="border-t border-(--border) bg-background">
                                     <Container className="py-4">
                                         <form onSubmit={handleSendMessage} className="flex items-center gap-3">
+                                            {/* Emoji Picker */}
+                                            <div className="relative" ref={emojiPickerRef}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                                    className="p-3 text-(--muted) hover:text-foreground hover:bg-(--muted)/10 rounded-full transition-all"
+                                                >
+                                                    <Smile className="w-5 h-5" />
+                                                </button>
+                                                {showEmojiPicker && (
+                                                    <div className="absolute bottom-14 left-0 z-50">
+                                                        <EmojiPicker
+                                                            onEmojiClick={onEmojiClick}
+                                                            width={320}
+                                                            height={400}
+                                                            previewConfig={{ showPreview: false }}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
                                             <input
                                                 type="text"
                                                 value={messageText}
                                                 onChange={(e) => setMessageText(e.target.value)}
                                                 placeholder="Type a message..."
                                                 className="flex-1 px-4 py-3 border border-(--border) rounded-full text-sm bg-(--muted)/5 text-foreground placeholder-(--muted) hover:border-foreground focus:outline-none focus:border-(--accent) focus:ring-2 focus:ring-(--accent)/10 transition-all"
-                                                disabled={isSending}
                                             />
                                             <button
                                                 type="submit"
-                                                disabled={!messageText.trim() || isSending}
+                                                disabled={!messageText.trim() || !isConnected}
                                                 className="p-3 bg-(--accent) text-white rounded-full hover:bg-(--accent-hover) transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                             >
-                                                {isSending ? (
-                                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                                ) : (
-                                                    <Send className="w-5 h-5" />
-                                                )}
+                                                <Send className="w-5 h-5" />
                                             </button>
                                         </form>
                                     </Container>
