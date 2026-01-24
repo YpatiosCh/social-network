@@ -175,7 +175,12 @@ func (h *Handlers) websocketListener(ctx context.Context, websocketConn *websock
 			//TODO verify that they are allowed to subscribe there
 			tele.Info(ctx, msgType+", attempting to subscribe to conversation @1", "conversation", payload)
 
-			sub, err := h.Nats.Subscribe(ct.GroupMessageKey(payload), handler)
+			id, err := ct.DecodeId(payload)
+			if err != nil {
+				tele.Error(ctx, msgType+", invalid @1 @2", "groupId", payload, "error", err.Error())
+				continue
+			}
+			sub, err := h.Nats.Subscribe(ct.GroupMessageKey(id.Int64()), handler)
 			if err != nil {
 				tele.Error(ctx, msgType+", websocket subscription @1", "error", err.Error())
 				continue
