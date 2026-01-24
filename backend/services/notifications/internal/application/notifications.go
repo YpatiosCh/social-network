@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	db "social-network/services/notifications/internal/db/sqlc"
 	ct "social-network/shared/go/ct"
 	tele "social-network/shared/go/telemetry"
+	pb "social-network/shared/gen-go/notifications"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // CreateNotification creates a new notification
@@ -473,5 +476,157 @@ func (a *Application) publishNotificationToNATS(ctx context.Context, notificatio
 	}
 
 	tele.Info(ctx, "Published notification to nats for user @1", "userId", notification.UserID)
+	return nil
+}
+
+// DeleteFollowRequestNotification deletes a follow request notification when the request is cancelled
+func (a *Application) DeleteFollowRequestNotification(ctx context.Context, targetUserID, requesterUserID int64) error {
+	// Find the specific follow request notification to delete
+	// This looks for an existing notification of type FollowRequest where the source entity is the requester
+	dbNotification, err := a.DB.GetUnreadNotificationByTypeAndEntity(ctx, db.GetUnreadNotificationByTypeAndEntityParams{
+		UserID:         targetUserID,
+		NotifType:      string(FollowRequest),
+		SourceEntityID: pgtype.Int8{Int64: requesterUserID, Valid: true},
+	})
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// If no notification exists, that's fine - nothing to delete
+			tele.Info(ctx, "No follow request notification found to delete for user @1 from requester @2", "targetUserID", targetUserID, "requesterUserID", requesterUserID)
+			return nil
+		}
+		return fmt.Errorf("failed to find follow request notification: %w", err)
+	}
+
+	notificationID := dbNotification.ID
+
+	// Delete the notification
+	err = a.DB.DeleteNotification(ctx, db.DeleteNotificationParams{
+		ID:     notificationID,
+		UserID: targetUserID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete follow request notification: %w", err)
+	}
+
+	// Publish notification deletion to NATS for real-time updates
+	go func() {
+		// Create a background context for the NATS publish operation
+		natsCtx := context.Background()
+		if err := a.publishNotificationDeletionToNATS(natsCtx, notificationID, targetUserID); err != nil {
+			// Log the error but don't fail the notification deletion
+			tele.Error(natsCtx, "failed to publish notification deletion to nats in background: @1", "error", err.Error())
+		}
+	}()
+
+	tele.Info(ctx, "Deleted follow request notification for user @1 from requester @2", "targetUserID", targetUserID, "requesterUserID", requesterUserID)
+	return nil
+}
+
+// DeleteGroupJoinRequestNotification deletes a group join request notification when the request is cancelled
+func (a *Application) DeleteGroupJoinRequestNotification(ctx context.Context, groupOwnerID, requesterUserID, groupID int64) error {
+	// Find the specific group join request notification to delete
+	// This looks for an existing notification of type GroupJoinRequest where the source entity is the group
+	dbNotification, err := a.DB.GetUnreadNotificationByTypeAndEntity(ctx, db.GetUnreadNotificationByTypeAndEntityParams{
+		UserID:         groupOwnerID,
+		NotifType:      string(GroupJoinRequest),
+		SourceEntityID: pgtype.Int8{Int64: groupID, Valid: true},
+	})
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// If no notification exists, that's fine - nothing to delete
+			tele.Info(ctx, "No group join request notification found to delete for owner @1 from requester @2 for group @3", "groupOwnerID", groupOwnerID, "requesterUserID", requesterUserID, "groupID", groupID)
+			return nil
+		}
+		return fmt.Errorf("failed to find group join request notification: %w", err)
+	}
+
+	// Check if the notification is for the correct requester by looking at the payload
+	var payload map[string]string
+	if len(dbNotification.Payload) > 0 {
+		err = json.Unmarshal(dbNotification.Payload, &payload)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal notification payload: %w", err)
+		}
+
+		// Verify this notification is for the specific requester
+		requesterIDStr, exists := payload["requester_id"]
+		if !exists {
+			return fmt.Errorf("requester_id not found in notification payload")
+		}
+
+		requesterID, err := strconv.ParseInt(requesterIDStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse requester_id from payload: %w", err)
+		}
+
+		if requesterID != requesterUserID {
+			tele.Info(ctx, "Found group join request notification but requester doesn't match - ignoring")
+			return nil
+		}
+	}
+
+	notificationID := dbNotification.ID
+
+	// Delete the notification
+	err = a.DB.DeleteNotification(ctx, db.DeleteNotificationParams{
+		ID:     notificationID,
+		UserID: groupOwnerID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete group join request notification: %w", err)
+	}
+
+	// Publish notification deletion to NATS for real-time updates
+	go func() {
+		// Create a background context for the NATS publish operation
+		natsCtx := context.Background()
+		if err := a.publishNotificationDeletionToNATS(natsCtx, notificationID, groupOwnerID); err != nil {
+			// Log the error but don't fail the notification deletion
+			tele.Error(natsCtx, "failed to publish notification deletion to nats in background: @1", "error", err.Error())
+		}
+	}()
+
+	tele.Info(ctx, "Deleted group join request notification for owner @1 from requester @2 for group @3", "groupOwnerID", groupOwnerID, "requesterUserID", requesterUserID, "groupID", groupID)
+	return nil
+}
+
+// publishNotificationDeletionToNATS publishes a notification deletion to NATS for real-time delivery to the live service
+func (a *Application) publishNotificationDeletionToNATS(ctx context.Context, notificationID, userID int64) error {
+	if a.NatsConn == nil {
+		tele.Warn(ctx, "NATS connection is nil, skipping notification deletion publish")
+		return nil
+	}
+
+	// Create a notification deletion message
+	deletionMsg := &pb.NotificationDeletion{
+		NotificationId: notificationID,
+		UserId:         userID,
+		DeletedAt:      timestamppb.Now(),
+	}
+
+	// Marshal the deletion message to JSON format
+	deletionJSON, err := json.Marshal(deletionMsg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal notification deletion to JSON: %w", err)
+	}
+
+	// Publish to the user-specific NATS subject for notification deletions
+	subject := ct.NotificationDeletionKey(userID)
+	err = a.NatsConn.Publish(subject, deletionJSON)
+	if err != nil {
+		// Log the error but don't fail the notification deletion
+		tele.Error(ctx, "failed to publish notification deletion to nats: @1", "error", err.Error())
+		return fmt.Errorf("failed to publish notification deletion to nats: %w", err)
+	}
+
+	// Flush to ensure the message is sent
+	err = a.NatsConn.Flush()
+	if err != nil {
+		tele.Error(ctx, "failed to flush nats connection: @1", "error", err.Error())
+	}
+
+	tele.Info(ctx, "Published notification deletion to nats for user @1, notification @2", "userId", userID, "notificationId", notificationID)
 	return nil
 }

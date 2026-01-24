@@ -31,6 +31,8 @@ type ApplicationService interface {
 	CreateGroupInviteRejectedNotification(ctx context.Context, inviterUserID, invitedUserID, groupID int64, invitedUsername, groupName string) error
 	CreateGroupJoinRequestAcceptedNotification(ctx context.Context, requesterUserID, groupOwnerID, groupID int64, groupName string) error
 	CreateGroupJoinRequestRejectedNotification(ctx context.Context, requesterUserID, groupOwnerID, groupID int64, groupName string) error
+	DeleteFollowRequestNotification(ctx context.Context, targetUserID, requesterUserID int64) error
+	DeleteGroupJoinRequestNotification(ctx context.Context, groupOwnerID, requesterUserID, groupID int64) error
 	CreateDefaultNotificationTypes(ctx context.Context) error
 	GetNotification(ctx context.Context, notificationID, userID int64) (*application.Notification, error)
 	GetUserNotifications(ctx context.Context, userID int64, limit, offset int32) ([]*application.Notification, error)

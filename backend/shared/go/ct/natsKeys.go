@@ -13,3 +13,7 @@ func GroupMessageKey(groupId any) string {
 func NotificationKey(receiverId any) string {
 	return fmt.Sprintf("ntf.%v", receiverId)
 }
+
+func NotificationDeletionKey(receiverId any) string {
+	return fmt.Sprintf("ntfd.%v", receiverId)
+}
