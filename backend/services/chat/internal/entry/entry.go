@@ -138,9 +138,6 @@ func Run() error {
 	defer pool.Close()
 	tele.Info(ctx, "Connected to DB")
 
-	postgresql.RegisterMetrics()
-	postgresql.StartPoolMetrics(pool, 10*time.Second)
-
 	//
 	//
 	//
