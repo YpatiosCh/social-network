@@ -71,7 +71,7 @@ func TestNew(t *testing.T) {
 	err := New(nil, root())
 	assert.Equal(t, `
    class: unknown error
-  origin: level 1 -> commonerrors.TestNew at l. 69
+  origin: level 1 -> commonerrors.TestNew at l. 71
           level 2 -> testing.tRunner at l. 1934
    Generic Error: sql: no rows
 `, err.Error())
@@ -268,7 +268,7 @@ func Test_ErrorFormating(t *testing.T) {
 	assert.Equal(t, `
    class: internal error
    input: handler
-  origin: level 1 -> commonerrors.Test_ErrorFormating at l. 264
+  origin: level 1 -> commonerrors.Test_ErrorFormating at l. 266
           level 2 -> testing.tRunner at l. 1934
    Generic Error: panic
 `, s)
@@ -281,10 +281,10 @@ func Test_Stack(t *testing.T) {
 	e3 := Wrap(ErrInternal, e2)
 	stack := e3.Stack()
 	assert.Equal(t, `
-        -> commonerrors.Test_Stack at l. 279 class: internal error
-        -> commonerrors.Test_Stack at l. 278 class: not found
-        -> commonerrors.Test_Stack at l. 277 class: not found
-        -> commonerrors.Test_Stack at l. 276 class: not found error: sql: no rows`, stack)
+        -> commonerrors.Test_Stack at l. 281 class: internal error
+        -> commonerrors.Test_Stack at l. 280 class: not found
+        -> commonerrors.Test_Stack at l. 279 class: not found
+        -> commonerrors.Test_Stack at l. 278 class: not found error: sql: no rows`, stack)
 }
 
 func Test_Source(t *testing.T) {
@@ -377,6 +377,27 @@ Sample {
 }
 [ 1, 2 ]`),
 		},
+		{
+			name: "slice of structs",
+			input: []any{
+				Sample{A: 1, B: "one"},
+				Sample{A: 2, B: "two"},
+				Sample{A: 3, B: "three"},
+			},
+			expected: strings.TrimSpace(`
+Sample {
+   A: 1
+   B: one
+}
+Sample {
+   A: 2
+   B: two
+}
+Sample {
+   A: 3
+   B: three
+}`),
+		},
 	}
 
 	for _, tt := range tests {
@@ -468,4 +489,10 @@ func TestProtobufFormating(t *testing.T) {
 	stamp := protoStamp.AsTime().Format(time.RFC3339)
 	n := FormatValue(protoStamp)
 	assert.Equal(t, n, stamp)
+}
+
+func TestErrFormating(t *testing.T) {
+	err := errors.New("error")
+	n := FormatValue(err)
+	assert.Equal(t, err.Error(), n)
 }
