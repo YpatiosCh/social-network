@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	ct "social-network/shared/go/ct"
-	"social-network/shared/go/db"
+	postgresql "social-network/shared/go/postgre"
 	"testing"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -24,7 +24,7 @@ func setupTestDB(t *testing.T) (*Queries, func()) {
 	migrationsPath := filepath.Join("..", "migrations")
 	dir, _ := os.Getwd()
 	t.Log("Applying migrations from:", dir)
-	err := db.RunMigrations(
+	err := postgresql.RunMigrations(
 		testDBURL,
 		migrationsPath,
 	)

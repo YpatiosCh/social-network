@@ -73,7 +73,7 @@ tmux send-keys -t "$SESSION:chat" "
   export DATABASE_URL=postgres://postgres:secret@localhost:5435/social_chat?sslmode=disable
   export MIGRATE_PATH=services/chat/internal/db/migrations
   export GRPC_SERVER_PORT=:50053
-  cd \"$BACKEND_DIR\" && go run ./services/chat/cmd/server/main.go 2>&1 | sed 's/^/[CHAT] /'
+  cd \"$BACKEND_DIR\" && go run ./services/chat/cmd/server/main.go
 " C-m
 
 ######################################
@@ -83,7 +83,7 @@ tmux new-window -t "$SESSION" -n posts
 tmux send-keys -t "$SESSION:posts" "
   export DATABASE_URL=postgres://postgres:secret@localhost:5434/social_posts?sslmode=disable
   export GRPC_SERVER_PORT=:50052
-  cd \"$BACKEND_DIR\" && go run ./services/posts/cmd/server/main.go 2>&1 | sed 's/^/[POSTS] /'
+  cd \"$BACKEND_DIR\" && go run ./services/posts/cmd/server/main.go
 " C-m
 
 ######################################
@@ -94,7 +94,7 @@ tmux send-keys -t "$SESSION:users" "
   export DATABASE_URL=postgres://postgres:secret@localhost:5433/social_users?sslmode=disable
   export MIGRATE_PATH=services/users/internal/db/migrations
   export GRPC_SERVER_PORT=:50051
-  cd \"$BACKEND_DIR\" && go run ./services/users/cmd/server/main.go 2>&1 | sed 's/^/[USERS] /'
+  cd \"$BACKEND_DIR\" && go run ./services/users/cmd/server/main.go
 " C-m
 
 ######################################
@@ -105,7 +105,7 @@ tmux send-keys -t "$SESSION:notifications" "
   export DATABASE_URL=postgres://postgres:secret@localhost:5436/social_notifications?sslmode=disable
   export MIGRATE_PATH=services/notifications/internal/db/migrations
   export GRPC_SERVER_PORT=:50054
-  cd \"$BACKEND_DIR\" && go run ./services/notifications/cmd/server/main.go 2>&1 | sed 's/^/[NOTIFICATIONS] /'
+  cd \"$BACKEND_DIR\" && go run ./services/notifications/cmd/server/main.go
 " C-m
 
 ######################################
@@ -113,7 +113,7 @@ tmux send-keys -t "$SESSION:notifications" "
 ######################################
 tmux new-window -t "$SESSION" -n live
 tmux send-keys -t "$SESSION:live" "
-  cd \"$BACKEND_DIR\" && go run ./services/live/cmd/main.go 2>&1 | sed 's/^/[LIVE] /'
+  cd \"$BACKEND_DIR\" && go run ./services/live/cmd/main.go
 " C-m
 
 ######################################
