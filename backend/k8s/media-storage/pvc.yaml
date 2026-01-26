@@ -1,10 +1,8 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: data
+  name: minio-pvc
   namespace: storage
-  labels:
-    stage: pvc
 spec:
   accessModes:
     - ReadWriteOnce
