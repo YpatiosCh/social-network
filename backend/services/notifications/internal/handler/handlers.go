@@ -12,6 +12,7 @@ import (
 
 	"social-network/services/notifications/internal/application"
 	pb "social-network/shared/gen-go/notifications"
+	"social-network/shared/go/ct"
 )
 
 // CreateNotification creates a new notification
@@ -212,7 +213,7 @@ func (s *Server) CreateFollowRequest(ctx context.Context, req *pb.CreateFollowRe
 		Type:           application.FollowRequest,
 		Title:          "New Follow Request",
 		Message:        fmt.Sprintf("%s wants to follow you", req.RequesterUsername),
-		SourceEntityID: req.RequesterUserId,
+		SourceEntityID: ct.Id(req.RequesterUserId),
 		SourceService:  "users",
 		NeedsAction:    true,
 		Payload: map[string]string{
@@ -241,7 +242,7 @@ func (s *Server) CreateNewFollower(ctx context.Context, req *pb.CreateNewFollowe
 		Type:           application.NewFollower,
 		Title:          "New Follower",
 		Message:        fmt.Sprintf("%s is now following you", req.FollowerUsername),
-		SourceEntityID: req.FollowerUserId,
+		SourceEntityID: ct.Id(req.FollowerUserId),
 		SourceService:  "users",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -269,7 +270,7 @@ func (s *Server) CreateGroupInvite(ctx context.Context, req *pb.CreateGroupInvit
 		Type:           application.GroupInvite,
 		Title:          "Group Invitation",
 		Message:        fmt.Sprintf("%s invited you to join the group \"%s\"", req.InviterUsername, req.GroupName),
-		SourceEntityID: req.GroupId,
+		SourceEntityID: ct.Id(req.GroupId),
 		SourceService:  "users",
 		NeedsAction:    true,
 		Payload: map[string]string{
@@ -316,7 +317,7 @@ func (s *Server) CreateGroupJoinRequest(ctx context.Context, req *pb.CreateGroup
 		Type:           application.GroupJoinRequest,
 		Title:          "New Group Join Request",
 		Message:        fmt.Sprintf("%s wants to join your group \"%s\"", req.RequesterUsername, req.GroupName),
-		SourceEntityID: req.GroupId,
+		SourceEntityID: ct.Id(req.GroupId),
 		SourceService:  "users",
 		NeedsAction:    true,
 		Payload: map[string]string{
@@ -347,7 +348,7 @@ func (s *Server) CreateNewEvent(ctx context.Context, req *pb.CreateNewEventReque
 		Type:           application.NewEvent,
 		Title:          "New Event in Group",
 		Message:        fmt.Sprintf("New event \"%s\" was created in group \"%s\"", req.EventTitle, req.GroupName),
-		SourceEntityID: req.EventId,
+		SourceEntityID: ct.Id(req.EventId),
 		SourceService:  "posts",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -394,7 +395,7 @@ func (s *Server) CreatePostLike(ctx context.Context, req *pb.CreatePostLikeReque
 		Type:           application.PostLike,
 		Title:          "Post Liked",
 		Message:        fmt.Sprintf("%s liked your post", req.LikerUsername),
-		SourceEntityID: req.PostId,
+		SourceEntityID: ct.Id(req.PostId),
 		SourceService:  "posts",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -424,7 +425,7 @@ func (s *Server) CreatePostComment(ctx context.Context, req *pb.CreatePostCommen
 		Type:           application.PostComment,
 		Title:          "New Comment",
 		Message:        fmt.Sprintf("%s commented on your post", req.CommenterUsername),
-		SourceEntityID: req.PostId,
+		SourceEntityID: ct.Id(req.PostId),
 		SourceService:  "posts",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -455,7 +456,7 @@ func (s *Server) CreateMention(ctx context.Context, req *pb.CreateMentionRequest
 		Type:           application.Mention,
 		Title:          "You were mentioned",
 		Message:        fmt.Sprintf("%s mentioned you in a post", req.MentionerUsername),
-		SourceEntityID: req.PostId,
+		SourceEntityID: ct.Id(req.PostId),
 		SourceService:  "posts",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -487,7 +488,7 @@ func (s *Server) CreateNewMessage(ctx context.Context, req *pb.CreateNewMessageR
 		Type:           application.NewMessage,
 		Title:          "New Message",
 		Message:        fmt.Sprintf("%s sent you a message", req.SenderUsername),
-		SourceEntityID: req.ChatId,
+		SourceEntityID: ct.Id(req.ChatId),
 		SourceService:  "chat",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -534,7 +535,7 @@ func (s *Server) CreateFollowRequestAccepted(ctx context.Context, req *pb.Create
 		Type:           application.FollowRequestAccepted,
 		Title:          "Follow Request Accepted",
 		Message:        fmt.Sprintf("%s accepted your follow request", req.TargetUsername),
-		SourceEntityID: req.TargetUserId,
+		SourceEntityID: ct.Id(req.TargetUserId),
 		SourceService:  "users",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -562,7 +563,7 @@ func (s *Server) CreateFollowRequestRejected(ctx context.Context, req *pb.Create
 		Type:           application.FollowRequestRejected,
 		Title:          "Follow Request Rejected",
 		Message:        fmt.Sprintf("%s rejected your follow request", req.TargetUsername),
-		SourceEntityID: req.TargetUserId,
+		SourceEntityID: ct.Id(req.TargetUserId),
 		SourceService:  "users",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -590,7 +591,7 @@ func (s *Server) CreateGroupInviteAccepted(ctx context.Context, req *pb.CreateGr
 		Type:           application.GroupInviteAccepted,
 		Title:          "Group Invite Accepted",
 		Message:        fmt.Sprintf("%s accepted your group invitation to '%s'", req.InvitedUsername, req.GroupName),
-		SourceEntityID: req.GroupId,
+		SourceEntityID: ct.Id(req.GroupId),
 		SourceService:  "users",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -620,7 +621,7 @@ func (s *Server) CreateGroupInviteRejected(ctx context.Context, req *pb.CreateGr
 		Type:           application.GroupInviteRejected,
 		Title:          "Group Invite Rejected",
 		Message:        fmt.Sprintf("%s declined your group invitation to '%s'", req.InvitedUsername, req.GroupName),
-		SourceEntityID: req.GroupId,
+		SourceEntityID: ct.Id(req.GroupId),
 		SourceService:  "users",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -650,7 +651,7 @@ func (s *Server) CreateGroupJoinRequestAccepted(ctx context.Context, req *pb.Cre
 		Type:           application.GroupJoinRequestAccepted,
 		Title:          "Group Join Request Accepted",
 		Message:        fmt.Sprintf("Your request to join group '%s' was approved", req.GroupName),
-		SourceEntityID: req.GroupId,
+		SourceEntityID: ct.Id(req.GroupId),
 		SourceService:  "users",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -679,7 +680,7 @@ func (s *Server) CreateGroupJoinRequestRejected(ctx context.Context, req *pb.Cre
 		Type:           application.GroupJoinRequestRejected,
 		Title:          "Group Join Request Rejected",
 		Message:        fmt.Sprintf("Your request to join group '%s' was declined", req.GroupName),
-		SourceEntityID: req.GroupId,
+		SourceEntityID: ct.Id(req.GroupId),
 		SourceService:  "users",
 		NeedsAction:    false,
 		Payload: map[string]string{
@@ -745,13 +746,13 @@ func (s *Server) convertToProtoNotification(notification *application.Notificati
 	}
 
 	return &pb.Notification{
-		Id:             notification.ID,
-		UserId:         notification.UserID,
+		Id:             notification.ID.Int64(),
+		UserId:         notification.UserID.Int64(),
 		Type:           convertApplicationNotificationTypeToProto(notification.Type),
 		Title:          notification.Title,
 		Message:        notification.Message,
 		SourceService:  notification.SourceService,
-		SourceEntityId: notification.SourceEntityID,
+		SourceEntityId: notification.SourceEntityID.Int64(),
 		NeedsAction:    notification.NeedsAction,
 		Acted:          notification.Acted,
 		Count:          notification.Count,

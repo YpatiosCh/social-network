@@ -65,8 +65,8 @@ func (a *Application) CreateNotificationWithAggregation(ctx context.Context, use
 
 	// Convert database notification to our model
 	notification := &Notification{
-		ID:            updatedNotification.ID,
-		UserID:        updatedNotification.UserID,
+		ID:            ct.Id(updatedNotification.ID),
+		UserID:        ct.Id(updatedNotification.UserID),
 		Type:          NotificationType(updatedNotification.NotifType),
 		SourceService: updatedNotification.SourceService,
 		Title:         a.formatAggregatedTitle(title, int64(newCount)),
@@ -76,7 +76,7 @@ func (a *Application) CreateNotificationWithAggregation(ctx context.Context, use
 
 	// Handle optional fields with proper type conversion
 	if updatedNotification.SourceEntityID.Valid {
-		notification.SourceEntityID = updatedNotification.SourceEntityID.Int64
+		notification.SourceEntityID = ct.Id(updatedNotification.SourceEntityID.Int64)
 	}
 	notification.Seen = updatedNotification.Seen.Bool
 	notification.NeedsAction = updatedNotification.NeedsAction.Bool
@@ -143,8 +143,8 @@ func (a *Application) createNotification(ctx context.Context, userID int64, noti
 
 	// Convert database notification to our model
 	notification := &Notification{
-		ID:            dbNotification.ID,
-		UserID:        dbNotification.UserID,
+		ID:            ct.Id(dbNotification.ID),
+		UserID:        ct.Id(dbNotification.UserID),
 		Type:          NotificationType(dbNotification.NotifType),
 		SourceService: dbNotification.SourceService,
 		Title:         title,
@@ -153,7 +153,7 @@ func (a *Application) createNotification(ctx context.Context, userID int64, noti
 
 	// Handle optional fields with proper type conversion
 	if dbNotification.SourceEntityID.Valid {
-		notification.SourceEntityID = dbNotification.SourceEntityID.Int64
+		notification.SourceEntityID = ct.Id(dbNotification.SourceEntityID.Int64)
 	}
 	notification.Seen = dbNotification.Seen.Bool
 	notification.NeedsAction = dbNotification.NeedsAction.Bool
@@ -271,15 +271,15 @@ func (a *Application) GetNotification(ctx context.Context, notificationID, userI
 	}
 
 	notification := &Notification{
-		ID:            dbNotification.ID,
-		UserID:        dbNotification.UserID,
+		ID:            ct.Id(dbNotification.ID),
+		UserID:        ct.Id(dbNotification.UserID),
 		Type:          NotificationType(dbNotification.NotifType),
 		SourceService: dbNotification.SourceService,
 	}
 
 	// Handle optional fields with proper type conversion
 	if dbNotification.SourceEntityID.Valid {
-		notification.SourceEntityID = dbNotification.SourceEntityID.Int64
+		notification.SourceEntityID = ct.Id(dbNotification.SourceEntityID.Int64)
 	}
 	notification.Seen = dbNotification.Seen.Bool
 	notification.NeedsAction = dbNotification.NeedsAction.Bool
@@ -320,15 +320,15 @@ func (a *Application) GetUserNotifications(ctx context.Context, userID int64, li
 	notifications := make([]*Notification, len(dbNotifications))
 	for i, dbNotif := range dbNotifications {
 		notification := &Notification{
-			ID:            dbNotif.ID,
-			UserID:        dbNotif.UserID,
+			ID:            ct.Id(dbNotif.ID),
+			UserID:        ct.Id(dbNotif.UserID),
 			Type:          NotificationType(dbNotif.NotifType),
 			SourceService: dbNotif.SourceService,
 		}
 
 		// Handle optional fields with proper type conversion
 		if dbNotif.SourceEntityID.Valid {
-			notification.SourceEntityID = dbNotif.SourceEntityID.Int64
+			notification.SourceEntityID = ct.Id(dbNotif.SourceEntityID.Int64)
 		}
 		notification.Seen = dbNotif.Seen.Bool
 		notification.NeedsAction = dbNotif.NeedsAction.Bool

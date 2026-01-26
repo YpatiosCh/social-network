@@ -10,12 +10,12 @@ import (
 
 func main() {
 	ctx := context.Background()
-	tele.Info(ctx, "Running database migrations...")
+	tele.Info(ctx, "MEDIA SERVICE DB:Running database migrations...")
 
 	if err := postgresql.RunMigrations(os.Getenv("DATABASE_URL"), os.Getenv("MIGRATE_PATH")); err != nil {
 		tele.Fatal("migration failed, erro: " + err.Error())
 	}
 
-	tele.Info(ctx, "Migrations completed successfully.")
+	tele.Info(ctx, "✅ MEDIA SERVICE DB: Migrations completed successfully.")
 	os.Exit(0)
 }

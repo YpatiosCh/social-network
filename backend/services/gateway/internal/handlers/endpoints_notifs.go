@@ -9,6 +9,7 @@ import (
 	"social-network/shared/go/gorpc"
 	utils "social-network/shared/go/http-utils"
 	"social-network/shared/go/jwt"
+	"social-network/shared/go/mapping"
 	tele "social-network/shared/go/telemetry"
 
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -51,7 +52,7 @@ func (h *Handlers) GetUserNotifications() http.HandlerFunc {
 		}
 
 		httpCode, _ := gorpc.Classify(err)
-		err = utils.WriteJSON(ctx, w, httpCode, grpcResponse)
+		err = utils.WriteJSON(ctx, w, httpCode, mapping.PbToNotifications(grpcResponse.Notifications))
 		if err != nil {
 			utils.ErrorJSON(ctx, w, http.StatusInternalServerError, err.Error())
 		}

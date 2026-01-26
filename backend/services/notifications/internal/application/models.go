@@ -1,6 +1,7 @@
 package application
 
 import (
+	ct "social-network/shared/go/ct"
 	"time"
 )
 
@@ -8,30 +9,30 @@ import (
 type NotificationType string
 
 const (
-	FollowRequest              NotificationType = "follow_request"
-	NewFollower                NotificationType = "new_follower"
-	GroupInvite                NotificationType = "group_invite"
-	GroupJoinRequest           NotificationType = "group_join_request"
-	NewEvent                   NotificationType = "new_event"
-	PostLike                   NotificationType = "like"
-	PostComment                NotificationType = "post_reply"
-	Mention                    NotificationType = "mention"
-	NewMessage                 NotificationType = "new_message"
-	FollowRequestAccepted      NotificationType = "follow_request_accepted"
-	FollowRequestRejected      NotificationType = "follow_request_rejected"
-	GroupInviteAccepted        NotificationType = "group_invite_accepted"
-	GroupInviteRejected        NotificationType = "group_invite_rejected"
-	GroupJoinRequestAccepted   NotificationType = "group_join_request_accepted"
-	GroupJoinRequestRejected   NotificationType = "group_join_request_rejected"
+	FollowRequest            NotificationType = "follow_request"
+	NewFollower              NotificationType = "new_follower"
+	GroupInvite              NotificationType = "group_invite"
+	GroupJoinRequest         NotificationType = "group_join_request"
+	NewEvent                 NotificationType = "new_event"
+	PostLike                 NotificationType = "like"
+	PostComment              NotificationType = "post_reply"
+	Mention                  NotificationType = "mention"
+	NewMessage               NotificationType = "new_message"
+	FollowRequestAccepted    NotificationType = "follow_request_accepted"
+	FollowRequestRejected    NotificationType = "follow_request_rejected"
+	GroupInviteAccepted      NotificationType = "group_invite_accepted"
+	GroupInviteRejected      NotificationType = "group_invite_rejected"
+	GroupJoinRequestAccepted NotificationType = "group_join_request_accepted"
+	GroupJoinRequestRejected NotificationType = "group_join_request_rejected"
 )
 
 // Notification represents a notification entity
 type Notification struct {
-	ID             int64             `json:"id"`
-	UserID         int64             `json:"user_id"`
+	ID             ct.Id             `json:"id"`
+	UserID         ct.Id             `json:"user_id"`
 	Type           NotificationType  `json:"type"`
 	SourceService  string            `json:"source_service"`
-	SourceEntityID int64             `json:"source_entity_id"`
+	SourceEntityID ct.Id             `json:"source_entity_id"`
 	Seen           bool              `json:"seen"`
 	NeedsAction    bool              `json:"needs_action"`
 	Acted          bool              `json:"acted"`

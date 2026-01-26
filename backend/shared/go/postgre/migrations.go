@@ -47,8 +47,6 @@ func run(dbUrl string, migrationsPath string) error {
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("migration failed: %w", err)
 	}
-
-	log.Println("✅ Migrations applied successfully")
 	return nil
 }
 
@@ -64,16 +62,3 @@ func RunMigrations(dbUrl string, migrationsPath string) (err error) {
 	}
 	return err
 }
-
-// // Runs migrations with retries
-// func RunMigrations(dbUrl string, migrationsPath string) (err error) {
-// 	for range 10 {
-// 		if err = run(os.Getenv("DATABASE_URL"), "./migrations"); err != nil {
-// 			log.Println("Migration failed, retrying in 2s:", err)
-// 			time.Sleep(2 * time.Second)
-// 			continue
-// 		}
-// 		return nil
-// 	}
-// 	return err
-// }
