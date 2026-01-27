@@ -43,7 +43,7 @@ type Querier interface {
 	// U4: Users who commented on the same posts as you
 	// Combine scores
 	SuggestUsersByPostActivity(ctx context.Context, creatorID int64) ([]int64, error)
-	ToggleOrInsertReaction(ctx context.Context, arg ToggleOrInsertReactionParams) (string, error)
+	ToggleOrInsertReaction(ctx context.Context, arg ToggleOrInsertReactionParams) (ToggleOrInsertReactionResult, error)
 	UpdatePostAudience(ctx context.Context, arg UpdatePostAudienceParams) (int64, error)
 	UpsertEventResponse(ctx context.Context, arg UpsertEventResponseParams) (int64, error)
 	UpsertImage(ctx context.Context, arg UpsertImageParams) error

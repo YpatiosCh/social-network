@@ -123,7 +123,7 @@ enum NotificationStatus {
 message Notification {
   int64 id = 1;
   int64 user_id = 2; // recipient user id
-  NotificationType type = 3;
+  string type = 3;
   string title = 4;
   string message = 5;
   string source_service = 6; // e.g. "users", "posts", "groups"
@@ -554,7 +554,7 @@ message NotificationEvent {
 
 // Message for notification deletion events
 message NotificationDeletion {
-  int64 notification_id = 1;  // ID of the notification that was deleted
-  int64 user_id = 2;          // ID of the user who owned the notification
-  google.protobuf.Timestamp deleted_at = 3;  // When the notification was deleted
+  int64 notification_id = 1; // ID of the notification that was deleted
+  int64 user_id = 2; // ID of the user who owned the notification
+  google.protobuf.Timestamp deleted_at = 3; // When the notification was deleted
 }

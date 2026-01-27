@@ -100,6 +100,12 @@ func (a *Application) CreateNotificationWithAggregation(ctx context.Context, use
 		}
 	}
 
+	notification.Payload, err = encodePayloadIds(notification.Payload)
+	if err != nil {
+		tele.Error(ctx, "Error in encoding payload ids", "payload", notification.Payload)
+		return nil, nil
+	}
+
 	// Publish the notification to NATS for real-time delivery to the live service
 	// We do this asynchronously to not block the notification creation
 	go func() {
@@ -176,6 +182,12 @@ func (a *Application) createNotification(ctx context.Context, userID int64, noti
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
 		}
+	}
+
+	notification.Payload, err = encodePayloadIds(notification.Payload)
+	if err != nil {
+		tele.Error(ctx, "Error in encoding payload ids", "payload", notification.Payload)
+		return nil, nil
 	}
 
 	// Publish the notification to NATS for real-time delivery to the live service
@@ -303,6 +315,12 @@ func (a *Application) GetNotification(ctx context.Context, notificationID, userI
 		}
 	}
 
+	notification.Payload, err = encodePayloadIds(notification.Payload)
+	if err != nil {
+		tele.Error(ctx, "Error in encoding payload ids", "payload", notification.Payload)
+		return nil, nil
+	}
+
 	return notification, nil
 }
 
@@ -324,6 +342,7 @@ func (a *Application) GetUserNotifications(ctx context.Context, userID int64, li
 			UserID:        ct.Id(dbNotif.UserID),
 			Type:          NotificationType(dbNotif.NotifType),
 			SourceService: dbNotif.SourceService,
+			Count:         dbNotif.Count.Int32,
 		}
 
 		// Handle optional fields with proper type conversion
@@ -350,6 +369,12 @@ func (a *Application) GetUserNotifications(ctx context.Context, userID int64, li
 			if err != nil {
 				return nil, fmt.Errorf("failed to unmarshal payload: %w", err)
 			}
+		}
+
+		notification.Payload, err = encodePayloadIds(notification.Payload)
+		if err != nil {
+			tele.Error(ctx, "Error in encoding payload ids", "payload", notification.Payload)
+			return nil, nil
 		}
 
 		notifications[i] = notification
@@ -629,4 +654,22 @@ func (a *Application) publishNotificationDeletionToNATS(ctx context.Context, not
 
 	tele.Info(ctx, "Published notification deletion to nats for user @1, notification @2", "userId", userID, "notificationId", notificationID)
 	return nil
+}
+
+func encodePayloadIds(payload map[string]string) (map[string]string, error) {
+	for key, value := range payload {
+		if strings.HasSuffix(key, "_id") {
+			id, err := strconv.Atoi(value)
+			if err != nil {
+				return nil, err
+
+			}
+			encryptedId, err := ct.EncodeId(ct.Id(id))
+			if err != nil {
+				return nil, err
+			}
+			payload[key] = encryptedId
+		}
+	}
+	return payload, nil
 }

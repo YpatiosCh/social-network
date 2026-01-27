@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"social-network/services/notifications/internal/db/sqlc"
+	ct "social-network/shared/go/ct"
 )
 
 // Test CreateNotification function
@@ -53,12 +54,12 @@ func TestCreateNotification(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, notification)
-	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, ct.Id(userID), notification.UserID)
 	assert.Equal(t, notifType, notification.Type)
 	assert.Equal(t, title, notification.Title)
 	assert.Equal(t, message, notification.Message)
 	assert.Equal(t, sourceService, notification.SourceService)
-	assert.Equal(t, sourceEntityID, notification.SourceEntityID)
+	assert.Equal(t, ct.Id(sourceEntityID), notification.SourceEntityID)
 	assert.Equal(t, needsAction, notification.NeedsAction)
 	assert.Equal(t, payload, notification.Payload)
 
@@ -100,11 +101,11 @@ func TestGetNotification(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, notification)
-	assert.Equal(t, notificationID, notification.ID)
-	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, ct.Id(notificationID), notification.ID)
+	assert.Equal(t, ct.Id(userID), notification.UserID)
 	assert.Equal(t, FollowRequest, notification.Type)
 	assert.Equal(t, "users", notification.SourceService)
-	assert.Equal(t, int64(2), notification.SourceEntityID)
+	assert.Equal(t, ct.Id(2), notification.SourceEntityID)
 	assert.False(t, notification.Seen)
 	assert.True(t, notification.NeedsAction)
 	assert.False(t, notification.Acted)
@@ -151,8 +152,8 @@ func TestGetUserNotifications(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, notifications, 1)
-	assert.Equal(t, int64(1), notifications[0].ID)
-	assert.Equal(t, userID, notifications[0].UserID)
+	assert.Equal(t, ct.Id(1), notifications[0].ID)
+	assert.Equal(t, ct.Id(userID), notifications[0].UserID)
 
 	mockDB.AssertExpectations(t)
 }
@@ -485,7 +486,7 @@ func TestCreateNotificationWithAggregationNoExisting(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, notification)
 	assert.Equal(t, int32(1), notification.Count) // Should be 1 since no existing notification was found
-	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, ct.Id(userID), notification.UserID)
 	assert.Equal(t, notifType, notification.Type)
 
 	mockDB.AssertExpectations(t)
@@ -555,7 +556,7 @@ func TestCreateNotificationWithAggregationExisting(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, notification)
 	assert.Equal(t, int32(3), notification.Count) // Should be 3 (existing count 2 + 1)
-	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, ct.Id(userID), notification.UserID)
 	assert.Equal(t, notifType, notification.Type)
 
 	mockDB.AssertExpectations(t)
@@ -603,7 +604,7 @@ func TestCreateNotificationWithAggregationDisabled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, notification)
 	assert.Equal(t, int32(1), notification.Count) // Should be 1 since aggregation is disabled
-	assert.Equal(t, userID, notification.UserID)
+	assert.Equal(t, ct.Id(userID), notification.UserID)
 	assert.Equal(t, notifType, notification.Type)
 
 	mockDB.AssertExpectations(t)
