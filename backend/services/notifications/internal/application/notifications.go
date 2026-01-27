@@ -342,6 +342,7 @@ func (a *Application) GetUserNotifications(ctx context.Context, userID int64, li
 			UserID:        ct.Id(dbNotif.UserID),
 			Type:          NotificationType(dbNotif.NotifType),
 			SourceService: dbNotif.SourceService,
+			Count:         dbNotif.Count.Int32,
 		}
 
 		// Handle optional fields with proper type conversion
