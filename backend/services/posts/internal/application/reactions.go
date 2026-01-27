@@ -32,14 +32,14 @@ func (s *Application) ToggleOrInsertReaction(ctx context.Context, req models.Gen
 		return ce.New(ce.ErrPermissionDenied, fmt.Errorf("user has no permission to react to entity %v", req.EntityId), input).WithPublic("permission denied")
 	}
 
-	action, err := s.db.ToggleOrInsertReaction(ctx, ds.ToggleOrInsertReactionParams{
+	res, err := s.db.ToggleOrInsertReaction(ctx, ds.ToggleOrInsertReactionParams{
 		ContentID: req.EntityId.Int64(),
 		UserID:    req.RequesterId.Int64(),
 	})
 	if err != nil {
 		return ce.New(ce.ErrInternal, err, input).WithPublic(genericPublic)
 	}
-	if action == "added" {
+	if res.ShouldNotify {
 		//create notification
 		liker, err := s.userRetriever.GetUser(ctx, ct.Id(req.RequesterId))
 		if err != nil {

@@ -31,23 +31,43 @@ func (q *Queries) GetWhoLikedEntityId(ctx context.Context, contentID int64) ([]i
 }
 
 const toggleOrInsertReaction = `-- name: ToggleReaction :one
-WITH deleted AS (
-    DELETE FROM reactions
+WITH toggled_off AS (
+    UPDATE reactions
+    SET deleted_at = NOW(),
+        updated_at = NOW()
     WHERE content_id = $1
       AND user_id = $2
+      AND deleted_at IS NULL
+    RETURNING 1
+),
+restored AS (
+    UPDATE reactions
+    SET deleted_at = NULL,
+        updated_at = NOW()
+    WHERE content_id = $1
+      AND user_id = $2
+      AND deleted_at IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM toggled_off)
     RETURNING 1
 ),
 inserted AS (
-    INSERT INTO reactions (content_id, user_id)
-    SELECT $1, $2
-    WHERE NOT EXISTS (SELECT 1 FROM deleted)
+    INSERT INTO reactions (content_id, user_id, created_at, updated_at, deleted_at)
+    SELECT $1, $2, NOW(), NOW(), NULL
+    WHERE NOT EXISTS (SELECT 1 FROM toggled_off)
+      AND NOT EXISTS (SELECT 1 FROM restored)
+      AND NOT EXISTS (
+        SELECT 1 FROM reactions WHERE content_id = $1 AND user_id = $2
+      )
     RETURNING 1
 )
 SELECT
     CASE
-        WHEN EXISTS (SELECT 1 FROM deleted) THEN 'removed'
-        ELSE 'added'
-    END AS action;
+        WHEN EXISTS (SELECT 1 FROM toggled_off) THEN 'removed'
+        WHEN EXISTS (SELECT 1 FROM restored)   THEN 'restored'
+        WHEN EXISTS (SELECT 1 FROM inserted)   THEN 'added'
+        ELSE 'noop'
+    END AS action,
+    EXISTS (SELECT 1 FROM inserted) AS should_notify;
 `
 
 type ToggleOrInsertReactionParams struct {
@@ -55,12 +75,17 @@ type ToggleOrInsertReactionParams struct {
 	UserID    int64
 }
 
-func (q *Queries) ToggleOrInsertReaction(ctx context.Context, arg ToggleOrInsertReactionParams) (string, error) {
-	var action string
+type ToggleOrInsertReactionResult struct {
+	Action       string
+	ShouldNotify bool
+}
+
+func (q *Queries) ToggleOrInsertReaction(ctx context.Context, arg ToggleOrInsertReactionParams) (ToggleOrInsertReactionResult, error) {
+	var res ToggleOrInsertReactionResult
 	err := q.db.QueryRow(ctx, toggleOrInsertReaction, arg.ContentID, arg.UserID).
-		Scan(&action)
+		Scan(&res.Action, &res.ShouldNotify)
 	if err != nil {
-		return "", err
+		return ToggleOrInsertReactionResult{}, err
 	}
-	return action, nil
+	return res, nil
 }
