@@ -748,7 +748,7 @@ func (s *Server) convertToProtoNotification(notification *application.Notificati
 	return &pb.Notification{
 		Id:             notification.ID.Int64(),
 		UserId:         notification.UserID.Int64(),
-		Type:           convertApplicationNotificationTypeToProto(notification.Type),
+		Type:           string(notification.Type),
 		Title:          notification.Title,
 		Message:        notification.Message,
 		SourceService:  notification.SourceService,

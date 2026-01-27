@@ -25,10 +25,11 @@ type Notification struct {
 }
 
 func PbToNotification(n *pb.Notification) Notification {
+
 	return Notification{
 		ID:             ct.Id(n.Id),
 		UserID:         ct.Id(n.UserId),
-		Type:           n.Type.String(),
+		Type:           n.Type,
 		SourceService:  n.SourceService,
 		SourceEntityID: ct.Id(n.SourceEntityId),
 		NeedsAction:    n.NeedsAction,
