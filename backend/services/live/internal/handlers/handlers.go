@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"social-network/shared/gen-go/chat"
-	"social-network/shared/go/eventsub"
 	middleware "social-network/shared/go/http-middleware"
 	"social-network/shared/go/ratelimit"
 	"time"
@@ -14,7 +13,6 @@ import (
 
 type Handlers struct {
 	CacheService CacheService
-	EventBox     eventsub.EventBox[int64, []byte]
 	ChatService  chat.ChatServiceClient
 	Nats         *nats.Conn
 }

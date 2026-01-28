@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"social-network/shared/go/ct"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -67,11 +69,37 @@ func Fatalf(format string, args ...any) {
 	os.Exit(1)
 }
 
-func TraceStart(ctx context.Context, message string, args any) (context.Context, trace.Span) {
+// should logger also read and collect spans from ctx?
+
+// for message use something short and descriptive, no high cardinality data! Use args for those things
+func Trace(ctx context.Context, message string, args ...any) (context.Context, trace.Span) {
+	argAttributes := []attribute.KeyValue{}
+
+	//loading common keys from context into span attributes
+	for _, commonKey := range ct.CommonKeys().GetKeys() {
+		strKey := string(commonKey)
+		val := ctx.Value(strKey)
+		if val == nil {
+			continue
+		}
+		argAttributes = append(argAttributes, attribute.String(strKey, fmt.Sprint(val)))
+	}
+
+	//loading args into span attributes
+	for i := 0; i < len(args); i += 2 {
+		if i+1 >= len(args) {
+			argAttributes = append(argAttributes, attribute.String(fmt.Sprint(args[i]), "MISSING_VALUE!"))
+		} else {
+			argAttributes = append(argAttributes, attribute.String(fmt.Sprint(args[i]), fmt.Sprint(args[i+1])))
+		}
+	}
+
 	return telemeter.tracer.tracer.Start(ctx, message,
 		trace.WithTimestamp(time.Now()),
-		trace.WithAttributes(),
+		trace.WithAttributes(attribute.String("_msg", message)),
+		trace.WithAttributes(argAttributes...),
 	)
+
 }
 
 //TODO handle cancillation from ctx?
