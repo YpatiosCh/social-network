@@ -13,15 +13,15 @@ export function constructLiveNotif(notif) {
     }
     if (notif.type === "follow_request") {
         return {
-            who: notif.payload.requester_id,
-            whoID: notif.payload.requester_name,
+            who: notif.payload.requester_name,
+            whoID: notif.payload.requester_id,
             message: " wants to follow you"
         };
 
     }
     if (notif.type === "follow_request_accepted") {
         return {
-            who: notif.payload.taarget_name,
+            who: notif.payload.target_name,
             whoID: notif.payload.target_id,
             message: " accepted your follow request"
          };
@@ -85,5 +85,15 @@ export function constructLiveNotif(notif) {
             whereGroup: notif.payload.group_name,
             whereID: notif.payload.group_id
          };
+    }
+
+    if (notif.type === "new_event") {
+        return {
+            whoEvent: notif.payload.event_title,
+            whoID: notif.payload.group_id,
+            message: " event was created in group: ",
+            whereEvent: notif.payload.group_name,
+            whereID: notif.payload.group_id
+        }
     }
 }

@@ -4,9 +4,7 @@
 obviously /groups/{random id} 
 and /posts/{random id} 
 
-add sounds on gms, notifs
-
-username on navbar
+test all endpoints
 
 ======== LATER TODOs ========
 View permissions (mess with urls to test)

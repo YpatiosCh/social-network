@@ -295,12 +295,9 @@ export function ProfileHeader({ user, onUnfollow=null }) {
 
 
                                 {/* Action Buttons */}
-                                <div className="flex flex-col items-center gap-2 shrink-0">
-                                    <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 shrink-0">
                                     {user.own_profile ? (
-                                        <>
-                                            {/* Privacy Toggle */}
-                                            <Tooltip content="Privacy">
+                                        <Tooltip content="Privacy">
                                             <button
                                                 onClick={handlePrivacyToggle}
                                                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors cursor-pointer ${
@@ -321,97 +318,61 @@ export function ProfileHeader({ user, onUnfollow=null }) {
                                                     </>
                                                 )}
                                             </button>
-                                            </Tooltip>
-                                        </>
+                                        </Tooltip>
                                     ) : (
-                                        <button
-                                            onClick={handleFollow}
-                                            disabled={isLoading}
-                                            onMouseEnter={() => setIsHovering(true)}
-                                            onMouseLeave={() => setIsHovering(false)}
-                                            className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-                                                isLoading
-                                                    ? "opacity-70 cursor-wait"
-                                                    : isFollowing
-                                                    ? "bg-(--muted)/10 text-foreground border border-(--border) hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
-                                                    : isPending
-                                                    ? "bg-(--muted)/10 text-(--muted) border border-(--border)"
-                                                    : "bg-(--accent) text-white hover:bg-(--accent-hover) shadow-lg shadow-(--accent)/20"
-                                            }`}
-                                        >
-                                            {isFollowing ? (
-                                                isHovering ? (
+                                        <>
+                                            {/* Follow Button */}
+                                            <button
+                                                onClick={handleFollow}
+                                                disabled={isLoading}
+                                                onMouseEnter={() => setIsHovering(true)}
+                                                onMouseLeave={() => setIsHovering(false)}
+                                                className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
+                                                    isLoading
+                                                        ? "opacity-70 cursor-wait"
+                                                        : isFollowing
+                                                        ? "bg-(--muted)/10 text-foreground border border-(--border) hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
+                                                        : isPending
+                                                        ? "bg-(--muted)/10 text-(--muted) border border-(--border)"
+                                                        : "bg-(--accent) text-white hover:bg-(--accent-hover) shadow-lg shadow-(--accent)/20"
+                                                }`}
+                                            >
+                                                {isFollowing ? (
+                                                    isHovering ? (
+                                                        <>
+                                                            <UserMinus className="w-4 h-4" />
+                                                            Unfollow
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <UserCheck className="w-4 h-4" />
+                                                            Following
+                                                        </>
+                                                    )
+                                                ) : isPending ? (
                                                     <>
-                                                        <UserMinus className="w-4 h-4" />
-                                                        Unfollow
+                                                        <Clock className="w-4 h-4" />
+                                                        Pending
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <UserCheck className="w-4 h-4" />
-                                                        Following
+                                                        <UserPlus className="w-4 h-4" />
+                                                        Follow
                                                     </>
-                                                )
-                                            ) : isPending ? (
-                                                <>
-                                                    <Clock className="w-4 h-4" />
-                                                    Pending
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <UserPlus className="w-4 h-4" />
-                                                    Follow
-                                                </>
-                                            )}
-                                        </button>
-                                    )}
-                                    </div>
-                                    {/* Pending Follow Request from Profile Owner */}
-                                    {userAskedToFollow && !user.own_profile && (
-                                        <div className="flex flex-col items-center gap-1">
-                                            <span className="text-[13px] text-(--muted)">Pending request from {user.first_name}</span>
-                                            <div className="flex items-center gap-2">
-                                                <Tooltip content="Decline">
-                                                    <button
-                                                        onClick={handleDeclineRequest}
-                                                        disabled={requestLoading}
-                                                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-                                                            requestLoading
-                                                                ? "opacity-70 cursor-wait"
-                                                                : "bg-(--muted)/10 text-(--muted) border border-(--border) hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
-                                                        }`}
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </button>
-                                                </Tooltip>
-                                                <Tooltip content="Accept">
-                                                    <button
-                                                        onClick={handleAcceptRequest}
-                                                        disabled={requestLoading}
-                                                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-                                                            requestLoading
-                                                                ? "opacity-70 cursor-wait"
-                                                                : "bg-(--accent) text-white hover:bg-(--accent-hover) shadow-lg shadow-(--accent)/20"
-                                                        }`}
-                                                    >
-                                                        <Check className="w-4 h-4" />
-                                                    </button>
-                                                </Tooltip>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {canSend && (
-                                        <div className="flex  items-center gap-1">
-                                            
-                                            <Tooltip content="Message">
+                                                )}
+                                            </button>
+                                            {/* Message Button - only when following */}
+                                            {canSend && (
+                                                <Tooltip content="Message">
                                                     <button
                                                         onClick={handleSendMessage}
-                                                        className="bg-(--muted)/10 text-foreground border border-(--border) rounded-xl p-2 cursor-pointer"
+                                                        className="p-2 rounded-full border border-(--border) bg-(--muted)/5 text-(--muted) hover:text-foreground hover:bg-(--muted)/10 transition-colors cursor-pointer"
                                                     >
                                                         <Send className="w-4 h-4" />
                                                     </button>
                                                 </Tooltip>
-                                                </div>
-                                       
+                                            )}
+                                        </>
                                     )}
                                 </div>
 
@@ -456,6 +417,57 @@ export function ProfileHeader({ user, onUnfollow=null }) {
                                 </div>
                             </div>
                         )}
+
+                        {/* Pending Follow Request Banner */}
+                        <AnimatePresence>
+                            {userAskedToFollow && !user.own_profile && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="mt-6 p-4 rounded-xl border border-(--accent)/20 bg-(--accent)/5"
+                                >
+                                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-(--accent)/10 flex items-center justify-center">
+                                                <UserPlus className="w-4 h-4 text-(--accent)" />
+                                            </div>
+                                            <p className="text-sm text-foreground">
+                                                <span className="font-medium">{user.username}</span>
+                                                <span className="text-(--muted)"> wants to follow you</span>
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={handleDeclineRequest}
+                                                disabled={requestLoading}
+                                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
+                                                    requestLoading
+                                                        ? "opacity-70 cursor-wait"
+                                                        : "text-(--muted) hover:bg-(--muted)/10 hover:text-foreground"
+                                                }`}
+                                            >
+                                                <X className="w-4 h-4" />
+                                                <span>Decline</span>
+                                            </button>
+                                            <button
+                                                onClick={handleAcceptRequest}
+                                                disabled={requestLoading}
+                                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
+                                                    requestLoading
+                                                        ? "opacity-70 cursor-wait"
+                                                        : "bg-(--accent) text-white hover:bg-(--accent-hover)"
+                                                }`}
+                                            >
+                                                <Check className="w-4 h-4" />
+                                                <span>Accept</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </Container>
             </div>
