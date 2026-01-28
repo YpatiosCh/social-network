@@ -25,6 +25,15 @@ export const useStore = create(
       incrementUnreadCount: () => set((state) => ({ unreadCount: state.unreadCount + 1 })),
       decrementUnreadCount: () => set((state) => ({ unreadCount: Math.max(0, state.unreadCount - 1) })),
 
+      // unread notifs
+      unreadNotifs: 0,
+      setUnreadNotifs: (count) => set({unreadNotifs: count}),
+      incrementNotifs: () => set((state) => ({unreadNotifs: state.unreadNotifs + 1})),
+      decrementNotifs: () => set((state) => ({unreadCount: Math.max(0, state.unreadNotifs - 1 ) })),
+
+      // groupMsg
+      hasMsg: false,
+      setHasMsg: (hasMsg) => set({hasMsg: hasMsg}),
     }),
     {
       name: 'user',

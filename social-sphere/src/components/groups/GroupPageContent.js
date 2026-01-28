@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Send, MessageCircle, Loader2, User, Wifi, WifiOff, Smile, X, ChevronDown, Users } from "lucide-react";
+import { Plus, Send, MessageCircle, Loader2, User, Smile, X, ChevronDown, Users } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import Container from "@/components/layout/Container";
 import CreatePostGroup from "@/components/groups/CreatePostGroup";
@@ -17,6 +17,7 @@ import { getGroupMessages } from "@/actions/chat/get-group-messages";
 import { useLiveSocket } from "@/context/LiveSocketContext";
 import { useStore } from "@/store/store";
 import Tooltip from "../ui/Tooltip";
+import Link from "next/link";
 
 export default function GroupPageContent({ group, firstPosts }) {
     const searchParams = useSearchParams();
@@ -60,6 +61,19 @@ export default function GroupPageContent({ group, firstPosts }) {
     const messagesContainerRef = useRef(null);
     const emojiPickerRef = useRef(null);
 
+    // Audio refs for group message sound
+    const audioContextRef = useRef(null);
+    const audioBufferRef = useRef(null);
+    const pendingSoundRef = useRef(false);
+
+    // Glow effect state for new messages
+    const [isGroupMsgAlerting, setIsGroupMsgAlerting] = useState(false);
+    const groupMsgAlertTimeoutRef = useRef(null);
+
+    // msg store
+    const hasMsg = useStore((state) => state.hasMsg);
+    const setHasMsg = useStore((state) => state.setHasMsg);
+
     // WebSocket connection
     const {
         isConnected,
@@ -69,6 +83,68 @@ export default function GroupPageContent({ group, firstPosts }) {
         removeOnGroupMessage,
         sendGroupMessage
     } = useLiveSocket();
+
+    // Initialize Web Audio API for group message sound
+    useEffect(() => {
+        const initAudio = async () => {
+            try {
+                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+
+                if (audioContextRef.current.state === "suspended") {
+                    audioContextRef.current.resume().catch(() => {});
+                }
+
+                const response = await fetch("/alerts/groupMessage.mp3");
+                const arrayBuffer = await response.arrayBuffer();
+                audioBufferRef.current = await audioContextRef.current.decodeAudioData(arrayBuffer);
+            } catch (err) {
+                console.error("Failed to load group message audio:", err);
+            }
+        };
+
+        initAudio();
+
+        const unlockAudio = async () => {
+            if (audioContextRef.current?.state === "suspended") {
+                await audioContextRef.current.resume();
+                if (pendingSoundRef.current && audioBufferRef.current) {
+                    pendingSoundRef.current = false;
+                    const source = audioContextRef.current.createBufferSource();
+                    source.buffer = audioBufferRef.current;
+                    source.connect(audioContextRef.current.destination);
+                    source.start(0);
+                }
+            }
+        };
+
+        document.addEventListener("click", unlockAudio);
+        document.addEventListener("touchstart", unlockAudio);
+
+        return () => {
+            document.removeEventListener("click", unlockAudio);
+            document.removeEventListener("touchstart", unlockAudio);
+            if (groupMsgAlertTimeoutRef.current) {
+                clearTimeout(groupMsgAlertTimeoutRef.current);
+            }
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
+        };
+    }, []);
+
+    // Play group message sound
+    const playGroupMessageSound = useCallback(() => {
+        if (audioContextRef.current && audioBufferRef.current) {
+            if (audioContextRef.current.state === "suspended") {
+                pendingSoundRef.current = true;
+            } else {
+                const source = audioContextRef.current.createBufferSource();
+                source.buffer = audioBufferRef.current;
+                source.connect(audioContextRef.current.destination);
+                source.start(0);
+            }
+        }
+    }, []);
 
     const handleNewEvent = (newEvent) => {
         setEvents(prev => [newEvent, ...prev]);
@@ -109,6 +185,23 @@ export default function GroupPageContent({ group, firstPosts }) {
 
         const isOwnMessage = (msg.Sender?.id || msg.sender?.id) === user?.id;
 
+        // Play sound and glow if not own message and not viewing the chat
+        if (!isOwnMessage && activeTab !== "messages" && !showChatPanel) {
+
+            setHasMsg(true);
+
+            playGroupMessageSound();
+
+            // Trigger glow for 4 seconds
+            if (groupMsgAlertTimeoutRef.current) {
+                clearTimeout(groupMsgAlertTimeoutRef.current);
+            }
+            setIsGroupMsgAlerting(true);
+            groupMsgAlertTimeoutRef.current = setTimeout(() => {
+                setIsGroupMsgAlerting(false);
+            }, 4000);
+        }
+
         setMessages((prev) => {
             if (isOwnMessage) {
                 // This is a confirmation of our sent message - replace pending with confirmed
@@ -130,7 +223,7 @@ export default function GroupPageContent({ group, firstPosts }) {
             if (prev.some((m) => (m.Id || m.id) === msgId)) return prev;
             return [...prev, msg];
         });
-    }, [group.group_id, user?.id]);
+    }, [group.group_id, user?.id, activeTab, showChatPanel, playGroupMessageSound]);
 
     // Fetch group messages
     const fetchMessages = useCallback(async (isInitial = false) => {
@@ -261,6 +354,7 @@ export default function GroupPageContent({ group, firstPosts }) {
     useEffect(() => {
         if (activeTab === "messages" && !showChatPanel) {
             setShowChatPanel(true);
+            setHasMsg(false);
         }
     }, []);
 
@@ -416,6 +510,7 @@ export default function GroupPageContent({ group, firstPosts }) {
         // Auto-open chat panel when messages tab is clicked
         if (tabId === "messages") {
             setShowChatPanel(true);
+            setHasMsg(false);
         }
 
         // Update URL without full page reload
@@ -447,6 +542,7 @@ export default function GroupPageContent({ group, firstPosts }) {
                     <div className="flex gap-1">
                         {tabs.map((tab) => {
                             const isActive = activeTab === tab.id;
+                            const showDot = tab.id === "messages" && hasMsg && !isActive;
                             return (
                                 <button
                                     key={tab.id}
@@ -457,6 +553,10 @@ export default function GroupPageContent({ group, firstPosts }) {
                                         }`}
                                 >
                                     <span>{tab.label}</span>
+                                    {showDot && (
+                                        <span className={`absolute top right-0.5 min-w-1 h-1 sm:min-w-1 sm:h-1 bg-foreground rounded-full flex items-center justify-center border-2 border-foreground ${isGroupMsgAlerting ? "animate-pulse-glow-foreground" : ""}`}>
+                                        </span>
+                                    )}
                                     {isActive && (
                                         <motion.span
                                             layoutId="groupTabIndicator"
@@ -650,7 +750,7 @@ export default function GroupPageContent({ group, firstPosts }) {
                                 <MessageCircle className="w-12 h-12 text-(--muted) mb-4 opacity-30" />
                                 <p className="text-(--muted) mb-4">Group chat is available</p>
                                 <button
-                                    onClick={() => setShowChatPanel(true)}
+                                    onClick={() => { setShowChatPanel(true); setHasMsg(false); }}
                                     className="flex items-center gap-2 px-6 py-3 bg-(--accent) text-white rounded-full font-medium hover:bg-(--accent-hover) transition-all shadow-lg shadow-(--accent)/20 cursor-pointer"
                                 >
                                     <MessageCircle className="w-5 h-5" />
@@ -754,9 +854,13 @@ export default function GroupPageContent({ group, firstPosts }) {
                                                             }`}
                                                         >
                                                             {!isMe && (
-                                                                <p className="text-xs font-medium text-(--accent) mb-1">
+                                                                <Link
+                                                                    href={`/profile/${msg.Sender?.id}`}
+                                                                    prefetch={false}
+                                                                    className="text-xs font-medium text-(--accent) mb-1 hover:underline hover:text-(--accent-hover)"
+                                                                >
                                                                     {msg.Sender?.username || "Unknown"}
-                                                                </p>
+                                                                </Link>
                                                             )}
                                                             <p className="text-sm whitespace-pre-wrap wrap-break-word">
                                                                 {msg.MessageText}

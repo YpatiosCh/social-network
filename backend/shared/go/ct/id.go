@@ -1,12 +1,10 @@
 package ct
 
 import (
-	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
-	tele "social-network/shared/go/telemetry"
 	"strconv"
 
 	"github.com/lib/pq"
@@ -206,17 +204,13 @@ func (ids Ids) MarshalJSON() ([]byte, error) {
 }
 
 func (ids *Ids) UnmarshalJSON(data []byte) error {
-	tele.Debug(context.Background(), "unmarshal @1", "data", data, "str", string(data))
 	var raw []string
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
 
-	tele.Debug(context.Background(), "unmarshal @1", "raw", raw)
-
 	out := make(Ids, len(raw))
 	for i, v := range raw {
-		tele.Debug(context.Background(), "unmarshal loop @1", "v", v)
 		decoded, err := hd.DecodeInt64WithError(v)
 		if err != nil || len(decoded) == 0 {
 			return fmt.Errorf("failed to unmarshal Ids: %w and decoded length: %d (should be 1)", err, len(decoded))

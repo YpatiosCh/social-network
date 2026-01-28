@@ -42,6 +42,7 @@ type MiddleSystem struct {
 	mux         *http.ServeMux
 
 	middlewareChain []func(http.ResponseWriter, *http.Request) (bool, *http.Request)
+	middlewareNames []string
 	methods         []string
 }
 
@@ -56,14 +57,15 @@ func (m *middleware) SetEndpoint(endpoint string) *MiddleSystem {
 }
 
 // add appends a middleware function to the chain
-func (m *MiddleSystem) add(f func(http.ResponseWriter, *http.Request) (bool, *http.Request)) {
+func (m *MiddleSystem) add(name string, f func(http.ResponseWriter, *http.Request) (bool, *http.Request)) {
+	m.middlewareNames = append(m.middlewareNames, name)
 	m.middlewareChain = append(m.middlewareChain, f)
 }
 
 // AllowedMethod sets allowed HTTP methods and handles CORS preflight requests
 func (m *MiddleSystem) AllowedMethod(methods ...string) *MiddleSystem {
 	m.methods = methods
-	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
+	m.add("allowedMethods", func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
 		ctx := r.Context()
 		tele.Debug(ctx, fmt.Sprint("endpoint called:", r.URL.Path, " with method: ", r.Method))
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
@@ -97,7 +99,7 @@ func (m *MiddleSystem) AllowedMethod(methods ...string) *MiddleSystem {
 
 // EnrichContext adds metadata to the request context
 func (m *MiddleSystem) EnrichContext() *MiddleSystem {
-	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
+	m.add("EnrichContext", func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
 		r = utils.RequestWithValue(r, ct.ReqID, utils.GenUUID())
 		r = utils.RequestWithValue(r, ct.IP, r.RemoteAddr)
 		return true, r
@@ -107,7 +109,7 @@ func (m *MiddleSystem) EnrichContext() *MiddleSystem {
 
 // Auth middleware to validate JWT and enrich context with claims
 func (m *MiddleSystem) Auth() *MiddleSystem {
-	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
+	m.add("Auth", func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
 		ctx := r.Context()
 
 		tele.Debug(ctx, "authenticating @1 with @2", "endpoint", r.URL, "cookies", r.Cookies())
@@ -153,7 +155,7 @@ var (
 )
 
 func (m *MiddleSystem) RateLimit(rateLimitType rateLimitType, limit int, durationSeconds int64) *MiddleSystem {
-	m.add(func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
+	m.add("RateLimit", func(w http.ResponseWriter, r *http.Request) (bool, *http.Request) {
 		ctx := r.Context()
 		tele.Debug(ctx, "in ratelimit of @1 for @2", "type", rateLimitType, "endpoint", r.URL)
 		rateLimitKey := ""
@@ -216,13 +218,21 @@ func (m *MiddleSystem) Finalize(next http.HandlerFunc) {
 
 		//create a custom handler func that runs our custom middleware
 		handlerFunc := func(w http.ResponseWriter, r *http.Request) {
+			newCtx, span := tele.Trace(r.Context(), "http middleware start")
+
+			//swapping the context so that the above trace metadata survives
+			r = r.WithContext(newCtx)
+
 			defer func() {
 				if rec := recover(); rec != nil {
 					tele.Error(r.Context(), "panic occured in @1", r.URL)
 				}
 			}()
 
-			for _, mw := range m.middlewareChain {
+			for i, mw := range m.middlewareChain {
+				ctx, span := tele.Trace(r.Context(), "start of middleware step", "stepIndex", i)
+				defer span.End()
+				r = r.WithContext(ctx)
 				proceed, newReq := mw(w, r)
 				r = newReq
 				if !proceed {
@@ -231,6 +241,7 @@ func (m *MiddleSystem) Finalize(next http.HandlerFunc) {
 			}
 
 			tele.Info(r.Context(), "middleware finished, calling @1", "endpoint", r.URL)
+			span.End()
 			next.ServeHTTP(w, r)
 		}
 

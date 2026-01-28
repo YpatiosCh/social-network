@@ -644,6 +644,14 @@ func (h *Handlers) BuildMux(serviceName string) *http.ServeMux {
 		RateLimit(USERID, 20, 5).
 		Finalize(h.GetUserNotifications())
 
+	SetEndpoint("/notifications-count").
+		AllowedMethod("GET").
+		RateLimit(IP, 20, 5).
+		Auth().
+		EnrichContext().
+		RateLimit(USERID, 20, 5).
+		Finalize(h.GetUnreadNotificationsCount())
+
 		//--DONE
 
 	SetEndpoint("/notifications/mark-all").
