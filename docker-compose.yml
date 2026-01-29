@@ -365,7 +365,7 @@ services:
     environment:
       - NODE_ENV=production
       - GATEWAY=http://api-gateway:8081
-      - NEXT_PUBLIC_LIVE=ws://localhost:8082
+      - LIVE=ws://localhost:8082
 
     restart: unless-stopped
 

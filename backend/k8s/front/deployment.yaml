@@ -29,9 +29,8 @@ spec:
             - name: NODE_ENV
               value: production
             - name: GATEWAY
-            - name: GATEWAY
               value: http://api-gateway.api-gateway.svc.cluster.local:8081
-            - name: NEXT_PUBLIC_LIVE
+            - name: LIVE
               value: ws://live.live.svc.cluster.local:8082
             - name: OTEL_EXPORTER_OTLP_INSECURE
               value: "true"

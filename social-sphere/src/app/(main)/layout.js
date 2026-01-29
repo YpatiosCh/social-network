@@ -5,8 +5,10 @@ import { ToastProvider } from "@/context/ToastContext";
 export const dynamic = 'force-dynamic';
 
 export default function MainLayout({ children }) {
+    const wsUrl = process.env.LIVE;
+
     return (
-        <LiveSocketWrapper>
+        <LiveSocketWrapper wsUrl={wsUrl}>
             <ToastProvider>
                 <div className="min-h-screen flex flex-col bg-(--muted)/6">
                     <Navbar />

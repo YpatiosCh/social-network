@@ -3,10 +3,6 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useStore } from "@/store/store";
 
-const WS_URL = process.env.NEXT_PUBLIC_LIVE;
-
-console.log("WS_URL: ", WS_URL);
-
 const LiveSocketContext = createContext(null);
 
 export const ConnectionState = {
@@ -16,7 +12,7 @@ export const ConnectionState = {
     RECONNECTING: "reconnecting",
 };
 
-export function LiveSocketProvider({ children }) {
+export function LiveSocketProvider({ children, wsUrl }) {
     const user = useStore((state) => state.user);
     const wsRef = useRef(null);
     const reconnectTimeoutRef = useRef(null);
@@ -56,7 +52,7 @@ export function LiveSocketProvider({ children }) {
         );
 
         try {
-            const ws = new WebSocket(`${WS_URL}/live`);
+            const ws = new WebSocket(`${wsUrl}/live`);
             wsRef.current = ws;
 
             ws.onopen = () => {
