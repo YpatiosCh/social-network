@@ -29,7 +29,6 @@ spec:
             - name: NODE_ENV
               value: production
             - name: GATEWAY
-            - name: GATEWAY
               value: http://api-gateway.api-gateway.svc.cluster.local:8081
             - name: NEXT_PUBLIC_LIVE
               value: ws://live.live.svc.cluster.local:8082
