@@ -32,6 +32,12 @@ spec:
               value: http://api-gateway.api-gateway.svc.cluster.local:8081
             - name: NEXT_PUBLIC_API_URL
               value: http://live.live.svc.cluster.local:8082
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "alloy.monitoring.svc.cluster.local:4317"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=frontend,service.namespace=social-network,deployment.environment=dev"
           resources:
             requests:
               cpu: "100m"

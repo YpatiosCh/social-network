@@ -63,3 +63,9 @@ spec:
               value: "kafka.kafka.svc.cluster.local:29092"
             - name: NATS_CLUSTER
               value: "nats://ruser:T0pS3cr3t@nats-client.messaging.svc.cluster.local:4222"
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "alloy.monitoring.svc.cluster.local:4317"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=users,service.namespace=social-network,deployment.environment=dev"

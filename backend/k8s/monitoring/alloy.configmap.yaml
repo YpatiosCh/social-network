@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+  namespace: monitoring
+  labels:
+    stage: config
+data:
+  config.alloy: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      victoria-logs:
+        endpoint: victoria-logs.monitoring.svc.cluster.local:9428
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [victoria-logs]
