@@ -3,7 +3,9 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useStore } from "@/store/store";
 
-const WS_URL = process.env.NEXT_PUBLIC_API_URL || "ws://localhost:8082";
+const WS_URL = process.env.NEXT_PUBLIC_LIVE;
+
+console.log("WS_URL: ", WS_URL);
 
 const LiveSocketContext = createContext(null);
 

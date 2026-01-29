@@ -2,7 +2,9 @@
 
 import { cookies } from "next/headers";
 
-const API_BASE = process.env.SERVER_API_BASE || 'http://localhost:8081'
+const API_BASE = process.env.GATEWAY
+
+console.log("API BASE: ", API_BASE);
 
 export async function serverApiRequest(endpoint, options = {}) {
     const cookieStore = await cookies();
