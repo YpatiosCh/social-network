@@ -10,10 +10,11 @@ import { Lock } from "lucide-react";
 
 export default async function GroupPage({ params }) {
   const { id } = await params;
+  console.log("ID from params: ", id)
   const result = await getGroup(id);
 
   if (!result.success) {
-    redirect("/groups");
+    console.log("group result: ", result)
   }
 
   const group = result.data;

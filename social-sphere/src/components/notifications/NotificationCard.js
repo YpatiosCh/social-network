@@ -187,8 +187,10 @@ export default function NotificationCard({ notification, onDelete, onUpdate }) {
 
     const content = constructMessage();
 
+    const isSeen = notification.seen;
+
     return (
-        <div className="group bg-background border border-(--border) rounded-xl p-4 transition-all hover:border-(--muted)/40 hover:shadow-sm">
+        <div className={`group bg-background border border-(--border) rounded-xl p-4 transition-all hover:border-(--muted)/40 hover:shadow-sm ${isSeen ? "opacity-40" : ""}`}>
             <div className="flex items-start gap-3">
                 {/* Icon */}
                 <div className="shrink-0 w-10 h-10 bg-(--accent)/10 rounded-full flex items-center justify-center text-(--accent)">

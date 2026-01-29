@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus, Send, MessageCircle, Loader2, User, Smile, X, ChevronDown, Users } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
@@ -22,6 +22,7 @@ import Link from "next/link";
 export default function GroupPageContent({ group, firstPosts }) {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const params = useParams();
     const user = useStore((state) => state.user);
 
     // Get initial tab from URL or default to "posts"
@@ -70,6 +71,9 @@ export default function GroupPageContent({ group, firstPosts }) {
     const [isGroupMsgAlerting, setIsGroupMsgAlerting] = useState(false);
     const groupMsgAlertTimeoutRef = useRef(null);
 
+    // Image upload failed alert
+    const [showImageUploadAlert, setShowImageUploadAlert] = useState(false);
+
     // msg store
     const hasMsg = useStore((state) => state.hasMsg);
     const setHasMsg = useStore((state) => state.setHasMsg);
@@ -83,6 +87,25 @@ export default function GroupPageContent({ group, firstPosts }) {
         removeOnGroupMessage,
         sendGroupMessage
     } = useLiveSocket();
+
+    // Handle image upload failed alert from query param
+    useEffect(() => {
+        if (searchParams.get("imageUploadFailed") === "true") {
+            setShowImageUploadAlert(true);
+            // Remove the query param from URL without reload
+            router.replace(`/groups/${params.id}`, { scroll: false });
+        }
+    }, [searchParams, router, params.id]);
+
+    // Auto-hide the image upload alert after 2 seconds
+    useEffect(() => {
+        if (showImageUploadAlert) {
+            const timeout = setTimeout(() => {
+                setShowImageUploadAlert(false);
+            }, 2000);
+            return () => clearTimeout(timeout);
+        }
+    }, [showImageUploadAlert]);
 
     // Initialize Web Audio API for group message sound
     useEffect(() => {
@@ -536,6 +559,20 @@ export default function GroupPageContent({ group, firstPosts }) {
 
     return (
         <div className="w-full">
+            {/* Image upload failed alert */}
+            <AnimatePresence>
+                {showImageUploadAlert && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-amber-500/90 text-white text-sm rounded-lg shadow-lg"
+                    >
+                        Image failed to upload. You can try again later.
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Tabs Navigation */}
             <div className="border-b border-(--border) bg-background sticky top-0 z-10">
                 <Container>

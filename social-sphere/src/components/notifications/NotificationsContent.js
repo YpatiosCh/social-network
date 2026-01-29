@@ -28,6 +28,9 @@ export default function NotificationsContent({ initialNotifications }) {
             const result = await markAllNotificationsAsRead();
             if (result.success) {
                 // Optionally update UI to reflect all read
+                setNotifications((prev) =>
+                    prev.map((notif) => ({ ...notif, seen: true }))
+                )
             }
         } catch (error) {
             console.error("Error marking all as read:", error);

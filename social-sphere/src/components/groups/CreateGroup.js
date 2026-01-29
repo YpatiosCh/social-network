@@ -83,30 +83,38 @@ export default function CreateGroup({ isOpen, onClose }) {
                 return;
             }
 
-            // If there's an image, upload it
+
+            // If there's an image, try to upload it (non-blocking)
+            let imageUploadFailed = false;
             if (imageFile && response.FileId && response.UploadUrl) {
-                const uploadRes = await fetch(response.UploadUrl, {
-                    method: "PUT",
-                    body: imageFile,
-                });
+                try {
+                    const yo = "hi"
+                    const uploadRes = await fetch(`${response.UploadUrl}${yo}`, {
+                        method: "PUT",
+                        body: imageFile,
+                    });
 
-                if (!uploadRes.ok) {
-                    setError("Failed to upload group image");
-                    setIsSubmitting(false);
-                    return;
-                }
-
-                const validateResp = await validateUpload(response.FileId);
-                if (!validateResp.success) {
-                    setError("Failed to validate image upload");
-                    setIsSubmitting(false);
-                    return;
+                    if (uploadRes.ok) {
+                        const validateResp = await validateUpload(response.FileId);
+                        if (!validateResp.success) {
+                            imageUploadFailed = true;
+                        }
+                    } else {
+                        imageUploadFailed = true;
+                    }
+                } catch (uploadErr) {
+                    console.error("Image upload failed:", uploadErr);
+                    imageUploadFailed = true;
                 }
             }
 
-            // Success!
+            // Navigate to group page (group was created successfully)
             setIsSubmitting(false);
-            router.push(`/groups/${response.GroupId}`);
+            const url = imageUploadFailed
+                ? `/groups/${response.GroupId}?imageUploadFailed=true`
+                : `/groups/${response.GroupId}`;
+            console.log("Navigating to:", url, "GroupId:", response.GroupId);
+            router.push(url);
         } catch (err) {
             console.error("Failed to create group:", err);
             setError("Failed to create group. Please try again.");
@@ -123,12 +131,6 @@ export default function CreateGroup({ isOpen, onClose }) {
         setError("");
         onClose();
     };
-
-    // const handleSuccClose = () => {
-    //     if (isSubmitting) return;
-
-    //     setError("");
-    // };
 
     return (
         <Modal
