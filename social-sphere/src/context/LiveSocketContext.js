@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useStore } from "@/store/store";
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8082";
+const WS_URL = process.env.NEXT_PUBLIC_API_URL || "ws://localhost:8082";
 
 const LiveSocketContext = createContext(null);
 

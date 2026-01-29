@@ -7,10 +7,7 @@ import Link from "next/link";
 
 export default function Toast({ notification, onDismiss, onMouseEnter, onMouseLeave, onClick }) {
 
-    const action = notification?.needs_action || null;
-
     const notif = constructLiveNotif(notification);
-    console.log("constructed: ", notif)
 
     return (
         <motion.div
@@ -87,10 +84,10 @@ export default function Toast({ notification, onDismiss, onMouseEnter, onMouseLe
                             {notif.extra}
                         </p>
                     )}
-                    <br></br>
-                    {action && (
+                    {/* <br></br>
+                    {notif?.needs_action && (
                         <span>act</span>
-                    )}
+                    )} */}
                 </div>
                 <button
                     onClick={(e) => {

@@ -59,6 +59,7 @@ export default function Navbar() {
             setUnreadCount(result.data?.count ?? 0);
 
             const unreadNotifs = await getNotifCount();
+            console.log("UREAD NOTIFS", unreadNotifs?.value);
             setUnreadNotifs(unreadNotifs?.value ?? 0);
         }
         getUnread();

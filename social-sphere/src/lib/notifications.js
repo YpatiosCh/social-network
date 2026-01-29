@@ -1,7 +1,8 @@
-import nextConfig from "../../next.config.mjs";
+import { handleFollowRequest } from '@/actions/requests/handle-request';
+import { respondToGroupInvite } from '@/actions/groups/respond-to-invite';
+import {handleJoinRequest} from '@/actions/groups/handle-join-request';
 
 export function constructLiveNotif(notif) {
-    console.log("constructing!", notif)
     
     // FOLLOWERS 
     if (notif.type === "new_follower") {
@@ -15,7 +16,11 @@ export function constructLiveNotif(notif) {
         return {
             who: notif.payload.requester_name,
             whoID: notif.payload.requester_id,
-            message: " wants to follow you"
+            message: " wants to follow you",
+            action: notif.needs_action,
+            callback: async (response) => {
+                await handleFollowRequest({requesterId:notif.payload.requester_id, accept: response})
+            }
         };
 
     }
@@ -55,7 +60,11 @@ export function constructLiveNotif(notif) {
             whoID: notif.payload.inviter_id,
             message: " invited you to join group: ",
             whereGroup: notif.payload.group_name,
-            whereID: notif.payload.group_id
+            whereID: notif.payload.group_id,
+            action: notif.needs_action,
+            callback: async (response) => {
+                await respondToGroupInvite({groupId: notif.payload.group_id, accept: response})
+            }
          };
     }
 
@@ -65,7 +74,11 @@ export function constructLiveNotif(notif) {
             whoID: notif.payload.requester_id,
             message: " wants to join your group: ",
             whereGroup: notif.payload.group_name,
-            whereID: notif.payload.group_id
+            whereID: notif.payload.group_id,
+            action: notif.needs_action,
+            callback: async (response) => {
+                await handleJoinRequest({groupId: notif.payload.group_id, requesterId: notif.payload.requester_id, accept: response})
+            }
          };
     }
 

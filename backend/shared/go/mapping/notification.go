@@ -12,7 +12,7 @@ type Notification struct {
 	Type           string            `json:"type"`
 	SourceService  string            `json:"source_service"`
 	SourceEntityID ct.Id             `json:"source_entity_id"`
-	Seen           bool              `json:"seen,omitempty"`
+	Seen           bool              `json:"seen"`
 	NeedsAction    bool              `json:"needs_action"`
 	Acted          bool              `json:"acted"`
 	Count          int32             `json:"count"`
@@ -26,7 +26,7 @@ type Notification struct {
 
 func PbToNotification(n *pb.Notification) Notification {
 
-	return Notification{
+	notification := Notification{
 		ID:             ct.Id(n.Id),
 		UserID:         ct.Id(n.UserId),
 		Type:           n.Type,
@@ -41,6 +41,11 @@ func PbToNotification(n *pb.Notification) Notification {
 		Title:          n.Title,
 		Message:        n.Message,
 	}
+
+	if n.Status == pb.NotificationStatus_NOTIFICATION_STATUS_READ {
+		notification.Seen = true
+	}
+	return notification
 }
 
 func PbToNotifications(ns []*pb.Notification) []Notification {
