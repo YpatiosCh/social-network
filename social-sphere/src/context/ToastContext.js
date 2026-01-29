@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { useLiveSocket } from "./LiveSocketContext";
 import ToastContainer from "@/components/ui/ToastContainer";
-import { useRouter } from "next/navigation";
 
 const ToastContext = createContext(null);
 
@@ -19,7 +18,6 @@ export function ToastProvider({ children }) {
     const remainingTimeRef = useRef(new Map());
     const pausedAtRef = useRef(new Map());
     const dismissToastRef = useRef(null);
-    const router = useRouter();
 
     const startTimer = useCallback((id, duration = AUTO_DISMISS_MS) => {
         const timer = setTimeout(() => {
@@ -117,44 +115,12 @@ export function ToastProvider({ children }) {
         };
     }, []);
 
-    // handle Click
-    const handleClick = (notif) => {
-        console.log("Clicked", notif)
-
-        // mark notif as READ - await backend to tell me whats happening with the IDs
-
-        // FOLLOW REQUESTS
-        if (notif.type === "new_follower") {
-            router.push(`/profile/${notif.payload.follower_id}`)
-        }
-        if (notif.type === "follow_request") {
-            router.push(`/profile/${notif.payload.requester_id}`)
-        }
-        if (notif.type === "follow_request_accepted") {
-            router.push(`/profile/${notif.payload.target_id}`)
-        }
-
-        // POST NOTIFS
-        if (notif.type === "like" || notif.type === "post_reply") {
-            router.push(`/posts/${notif.payload.post_id}`)
-        }
-
-        // GROUP NOTIFS
-        if (notif.type === "group_invite" || notif.type === "group_join_request" || notif.type === "group_join_request_accepted" || notif.type === "group_invite_accepted") {
-            router.push(`/groups/${notif.payload.group_id}`)
-        }
-        if (notif.type === "new_event") {
-            router.push(`/groups/${notif.payload.group_id}?t=events`)
-        }
-    }
-
     const value = {
         toasts,
         showToast,
         dismissToast,
         pauseToast,
         resumeToast,
-        handleClick,
     };
 
     return (
@@ -165,7 +131,6 @@ export function ToastProvider({ children }) {
                 onDismiss={dismissToast}
                 onPause={pauseToast}
                 onResume={resumeToast}
-                onClick={handleClick}
             />
         </ToastContext.Provider>
     );

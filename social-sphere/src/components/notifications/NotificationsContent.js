@@ -5,12 +5,14 @@ import { Bell, CheckCheck } from "lucide-react";
 import NotificationCard from "./NotificationCard";
 import { markAllNotificationsAsRead } from "@/actions/notifs/mark-all-as-read";
 import { getNotifs } from "@/actions/notifs/get-user-notifs";
+import { useStore } from '@/store/store';
 
 export default function NotificationsContent({ initialNotifications }) {
     const [notifications, setNotifications] = useState(initialNotifications || []);
     const [isMarkingAll, setIsMarkingAll] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(initialNotifications?.length >= 20);
+    const setUnreadNotifs = useStore((state) => state.setUnreadNotifs);
 
     const handleDelete = (notificationId) => {
         setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
@@ -31,6 +33,8 @@ export default function NotificationsContent({ initialNotifications }) {
                 setNotifications((prev) =>
                     prev.map((notif) => ({ ...notif, seen: true }))
                 )
+                // update unreadNotif state
+                setUnreadNotifs(0)
             }
         } catch (error) {
             console.error("Error marking all as read:", error);

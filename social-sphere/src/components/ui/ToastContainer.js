@@ -14,7 +14,6 @@ export default function ToastContainer({ toasts, onDismiss, onPause, onResume, o
                         onDismiss={() => onDismiss(toast.id)}
                         onMouseEnter={() => onPause(toast.id)}
                         onMouseLeave={() => onResume(toast.id)}
-                        onClick={() => onClick(toast.notification)}
                     />
                 ))}
             </AnimatePresence>

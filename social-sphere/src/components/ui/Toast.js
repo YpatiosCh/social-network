@@ -4,8 +4,9 @@ import { motion } from "motion/react";
 import { X, Bell } from "lucide-react";
 import { constructLiveNotif } from "@/lib/notifications";
 import Link from "next/link";
+import { markNotificationAsRead } from "@/actions/notifs/mark-as-read";
 
-export default function Toast({ notification, onDismiss, onMouseEnter, onMouseLeave, onClick }) {
+export default function Toast({ notification, onDismiss, onMouseEnter, onMouseLeave }) {
 
     const notif = constructLiveNotif(notification);
 
@@ -18,7 +19,6 @@ export default function Toast({ notification, onDismiss, onMouseEnter, onMouseLe
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            onClick={onClick}
             className="pointer-events-auto w-80 bg-background border border-(--border) border-l-4 border-l-(--accent) rounded-xl shadow-lg backdrop-blur-md overflow-hidden"
         >
             <div className="flex items-center gap-3 p-4">
@@ -27,67 +27,83 @@ export default function Toast({ notification, onDismiss, onMouseEnter, onMouseLe
                 </div>
                 <div className="flex-1 text-sm text-foreground leading-snug">
                     {notif?.who && (
-                        <Link
-                            href={`/profile/${notif.whoID}`}
-                            prefetch={false}
-                            onClick={(e) => e.stopPropagation()}
+                        <button
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                await markNotificationAsRead(notification.id);
+                                onDismiss();
+                                window.location.href = `/profile/${notif.whoID}`;
+                            }}
                             className="text-sm text-(--accent) hover:text-(--accent-hover) hover:underline cursor-pointer"
                         >
                             {notif.who}
-                        </Link>
+                        </button>
                     )}
                     {notif?.whoEvent && (
-                        <Link
-                            href={`/groups/${notif.whoID}?t=events`}
-                            prefetch={false}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-sm text-(--accent) hover:text-(--accent-hover) hover:underline truncate cursor-pointer"
+                        <button
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                await markNotificationAsRead(notification.id);
+                                onDismiss();
+                                window.location.href = `/groups/${notif.whoID}?t=events`;
+                            }}
+                            className="text-sm text-(--accent) hover:text-(--accent-hover) hover:underline cursor-pointer"
                         >
                             {notif.whoEvent}
-                        </Link>
+                        </button>
                     )}
                     <span className="text-sm text-foreground mt-0.5">
                         {notif.message}
                     </span>
                     {notif?.wherePost && (
-                        <Link
-                            href={`/posts/${notif.whereID}`}
-                            prefetch={false}
-                            onClick={(e) => e.stopPropagation()}
+                        <button
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                await markNotificationAsRead(notification.id);
+                                onDismiss();
+                                window.location.href = `/posts/${notif.whereID}`;
+                            }}
                             className="text-sm text-(--accent) hover:text-(--accent-hover) hover:underline cursor-pointer"
                         >
                             {notif.wherePost}
-                        </Link>
+                        </button>
                     )}
                     {notif?.whereGroup && (
-                        <Link
-                            href={`/groups/${notif.whereID}`}
-                            prefetch={false}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-sm text-(--accent) hover:text-(--accent-hover) hover:underline truncate cursor-pointer"
+                        <button
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                await markNotificationAsRead(notification.id);
+                                onDismiss();
+                                window.location.href = `/groups/${notif.whereID}`;
+                            }}
+                            className="text-sm text-(--accent) hover:text-(--accent-hover) hover:underline cursor-pointer"
                         >
                             {notif.whereGroup}
-                        </Link>
+                        </button>
                     )}
                     {notif?.whereEvent && (
-                        <Link
-                            href={`/groups/${notif.whereID}?t=events`}
-                            prefetch={false}
-                            onClick={(e) => e.stopPropagation()}
+                        <button
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                await markNotificationAsRead(notification.id);
+                                onDismiss();
+                                window.location.href = `/groups/${notif.whereID}?t=events`
+                            }}
                             className="text-sm text-(--accent) hover:text-(--accent-hover) hover:underline truncate cursor-pointer"
                         >
                             {notif.whereEvent}
-                        </Link>
+                        </button>
                     )}
                     {notif?.extra && (
                         <p className="text-sm text-foreground mt-0.5">
                             {notif.extra}
                         </p>
                     )}
-                    {/* <br></br>
-                    {notif?.needs_action && (
-                        <span>act</span>
-                    )} */}
                 </div>
                 <button
                     onClick={(e) => {
