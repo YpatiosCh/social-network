@@ -8,3 +8,5 @@ Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remot
 - Kafka Implement
 
 - Check Envs on front
+
+- Check static files upload

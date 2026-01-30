@@ -6,9 +6,9 @@ metadata:
   labels:
     stage: app
 spec:
-  type: ClusterIP
   selector:
     app: minio
   ports:
-    - port: 9000
+    - name: api
+      port: 9000
       targetPort: 9000

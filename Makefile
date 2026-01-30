@@ -1,6 +1,6 @@
 NAMESPACE=social-network
 
-.PHONY: build-base delete-volumes build-cnpg build-all apply-namespace apply-pvc apply-db build-services deploy-users run-migrations logs-users logs-db deploy-all reset
+.PHONY: build-base apply-cors delete-volumes build-cnpg build-all apply-namespace apply-pvc apply-db build-services deploy-users run-migrations logs-users logs-db deploy-all reset
 
 # === Utils ===
 
@@ -103,13 +103,20 @@ apply-pvc:
 apply-apps:
 	kubectl apply -f backend/k8s/ --recursive --selector stage=app
 
+
+
 # 8.
-apply-ingress:
-	kubectl apply -f backend/k8s/nginx/api-gateway-ingress.yaml
+apply-cors:
+	kubectl apply -f backend/k8s/ --recursive --selector stage=cors
 
 # 9.
 port-forward:
 	kubectl port-forward -n frontend svc/nextjs-frontend 3000:80 
+	kubectl port-forward -n storage svc/minio 9000:9000
+
+# 10.
+apply-ingress:
+	kubectl apply -f backend/k8s/ --recursive --selector stage=ingress
 
 # Builds all nessary docker images
 build-all:
@@ -126,13 +133,22 @@ deploy-all:
 	$(MAKE) apply-namespace
 	$(MAKE) apply-configs
 	$(MAKE) apply-db
-	$(MAKE) deploy-nginx 
+
+#	Prod mode
+# 	$(MAKE) deploy-nginx 
+
 	$(MAKE) apply-pvc
 	sleep 60  
 	$(MAKE) run-migrations 
 	$(MAKE) apply-apps
-	$(MAKE) apply-ingress
-	$(MAKE) port-forward
+	$(MAKE) apply-cors
+
+# 	Dev mode
+	sleep 30  
+	$(MAKE) port-forward 
+
+#	Prod mode
+# 	$(MAKE) apply-ingress
 
 # Runs the docker and k8s from top to bottom
 first-time:

@@ -9,7 +9,7 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - host: frontend.example.com
+    - host: frontend.social.com
       http:
         paths:
           - path: /

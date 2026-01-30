@@ -32,6 +32,13 @@ spec:
                 secretKeyRef:
                   name: minio-secret
                   key: MINIO_SECRET_KEY
+            - name: MINIO_PUBLIC_ENDPOINT
+              value: http://localhost:9000
+            - name: MINIO_SERVER_URL
+              value: http://localhost:9000
+
+            - name: MINIO_BROWSER_REDIRECT_URL
+              value: http://localhost:9000
           ports:
             - containerPort: 9000
           volumeMounts:
