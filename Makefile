@@ -26,7 +26,15 @@ build-services:
 	docker build -f backend/docker/front/front.Dockerfile -t social-network/front:dev .
 
 # apparently minikube neesd to load the images
-# minikube image load social-network/api-gateway:dev ; minikube image load social-network/chat:dev ; minikube image load social-network/live:dev ; minikube image load social-network/media:dev ; minikube image load social-network/notifications:dev ; minikube image load social-network/posts:dev ; minikube image load social-network/users:dev ; minikube image load social-network/front:dev ;
+load-images:
+	minikube image load social-network/api-gateway:dev
+	minikube image load social-network/chat:dev
+	minikube image load social-network/live:dev
+	minikube image load social-network/media:dev
+	minikube image load social-network/notifications:dev
+	minikube image load social-network/posts:dev
+	minikube image load social-network/users:dev
+	minikube image load social-network/front:dev
 
 build-cnpg:
 	docker buildx bake -f backend/docker/cnpg/bake.hcl postgres16-cloud-native
@@ -66,11 +74,12 @@ create-network:
 # --- Preliminary ---
 # install cnpg operator
 op-manifest:
-	kubectl apply --server-side -f \
-	https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.28/releases/cnpg-1.28.0.yaml
+	kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.28/releases/cnpg-1.28.0.yaml
 
 
 # --- Deployment Order ---
+
+#-2. A
 
 #-1. CHANGE TO BASH TERMINAL!
 
@@ -80,6 +89,7 @@ build-all:
 	$(MAKE) op-manifest 
 	$(MAKE) build-cnpg 
 	$(MAKE) build-services 
+	$(MAKE) load-images 
 
 # 1.
 apply-namespace:
