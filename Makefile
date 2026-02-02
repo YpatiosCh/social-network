@@ -130,7 +130,6 @@ apply-pvc:
 
 # 7.
 apply-apps:
-# 	kubectl apply -f https://strimzi.io/install/latest?namespace=kafka -n kafka
 	kubectl apply -f backend/k8s/ --recursive --selector stage=app
 
 # 8.
@@ -158,7 +157,7 @@ apply-ingress:
 # Run all these in order but check that all pods are complete and 
 # running before running migrations
 deploy-all: 
-# 	$(MAKE) apply-kafka
+	$(MAKE) apply-kafka
 	$(MAKE) op-manifest
 	$(MAKE) apply-namespace
 	$(MAKE) apply-configs
