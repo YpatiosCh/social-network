@@ -3,20 +3,19 @@ kind: ConfigMap
 metadata:
   name: alloy-config
   namespace: monitoring
-  labels:
-    stage: config
 data:
   config.alloy: |
-    receivers:
-      otlp:
-        protocols:
-          grpc:
-          http:
-    exporters:
-      victoria-logs:
-        endpoint: victoria-logs.monitoring.svc.cluster.local:9428
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          exporters: [victoria-logs]
+    otelcol.receiver.otlp "default" {
+      grpc {}
+      http {}
+
+      output {
+        logs = [otelcol.exporter.otlphttp.victoria.input]
+      }
+    }
+
+    otelcol.exporter.otlphttp "victoria" {
+      client {
+        endpoint = "victoria-logs.monitoring.svc.cluster.local:9428"
+      }
+    }
