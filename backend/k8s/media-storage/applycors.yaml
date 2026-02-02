@@ -33,8 +33,7 @@ spec:
             - |
               set -e
 
-              mc alias set minio http://minio.storage.svc.cluster.local:9000 \
-                "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+              mc alias set minio http://minio.storage.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
 
               mc cors set minio/uploads-originals /config/cors.json
               mc cors set minio/uploads-variants /config/cors.json
