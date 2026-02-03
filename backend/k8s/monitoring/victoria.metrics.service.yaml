@@ -1,14 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: grafana
+  name: victoria-metrics
   namespace: monitoring
   labels:
     stage: monitoring
 spec:
   selector:
-    app: grafana
+    app: victoria-metrics
   ports:
-    - port: 3001
-      targetPort: 3001
+    - protocol: TCP
+      port: 8428
+      targetPort: 8428
   type: ClusterIP

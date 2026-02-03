@@ -1,6 +1,6 @@
 NAMESPACE=social-network
 
-.PHONY: build-base apply-cors apply-kafka delete-volumes build-cnpg build-all apply-namespace apply-pvc apply-db build-services deploy-users run-migrations logs-users logs-db deploy-all reset
+.PHONY: build-base apply-monitoring apply-cors apply-kafka delete-volumes build-cnpg build-all apply-namespace apply-pvc apply-db build-services deploy-users run-migrations logs-users logs-db deploy-all reset
 
 # === Utils ===
 
@@ -92,6 +92,11 @@ build-all:
 	$(MAKE) load-images 
 
 # 1.
+apply-kafka:
+	kubectl create namespace kafka
+	kubectl apply -f "https://strimzi.io/install/latest?namespace=kafka" -n kafka
+
+# 1.1
 apply-namespace:
 	kubectl apply -f backend/k8s/ --recursive --selector stage=namespace
 
@@ -99,33 +104,30 @@ apply-namespace:
 apply-configs:
 	kubectl apply -R -f backend/k8s/ --recursive --selector stage=config
 
-# 2.5
-apply-kafka:
-	kubectl create namespace kafka
-	kubectl apply -f "https://strimzi.io/install/latest?namespace=kafka" -n kafka
+# 2.1
+apply-pvc:
+	kubectl apply -f backend/k8s/ --recursive --selector stage=pvc
 
-# 3. (only in production)
+# 3.
+apply-monitoring:
+	kubectl apply -R -f backend/k8s/ --recursive --selector stage=monitoring
+
+# 4. (only in production)
 deploy-nginx:
 	helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 	helm repo update
 	helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx \
 		-n ingress-nginx --create-namespace
 
-
-# 4.
+# 5. CNPG dbs + Redis
 apply-db:
 	kubectl apply -f backend/k8s/ --recursive --selector stage=db
 
-
 # !!! WAIT HERE !!!
 
-# 5.
+# 6.
 run-migrations:
 	kubectl apply -f backend/k8s/ --recursive --selector stage=migration
-
-# 6.
-apply-pvc:
-	kubectl apply -f backend/k8s/ --recursive --selector stage=pvc
 
 
 # 7.
@@ -162,6 +164,7 @@ deploy-all:
 	$(MAKE) op-manifest
 	$(MAKE) apply-namespace
 	$(MAKE) apply-configs
+	$(MAKE) apply-monitoring
 	$(MAKE) apply-db
 
 #	Prod mode
