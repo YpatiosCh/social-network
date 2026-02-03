@@ -87,6 +87,7 @@ func (s *Application) CreateComment(ctx context.Context, req models.CreateCommen
 				CommenterUserId:   req.CreatorId.Int64(),
 				CommenterUsername: commenter.Username.String(),
 				Body:              basicPost.PostBody,
+				Aggregate:         true,
 			},
 		},
 	}
