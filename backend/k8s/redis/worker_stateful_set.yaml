@@ -4,7 +4,7 @@ metadata:
   name: redis
   namespace: redis
   labels:
-    stage: db
+    stage: db1
 spec:
   serviceName: redis
   replicas: 3
@@ -67,7 +67,7 @@ metadata:
   namespace: redis
   name: redis
   labels:
-    stage: db
+    stage: db1
 spec:
   clusterIP: None
   ports:

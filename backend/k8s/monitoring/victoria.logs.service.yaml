@@ -4,7 +4,7 @@ metadata:
   name: victoria-logs
   namespace: monitoring
   labels:
-    stage: app
+    stage: monitoring
 spec:
   selector:
     app: victoria-logs

@@ -4,7 +4,7 @@ metadata:
   name: media-db
   namespace: media
   labels:
-    stage: db
+    stage: db1
 spec:
   instances: 2
   storage:

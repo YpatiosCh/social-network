@@ -6,13 +6,16 @@ metadata:
   labels:
     stage: config
 data:
-  cors.json: |
-    [
-      {
-        "AllowedOrigins": ["http://localhost:3000"],
-        "AllowedMethods": ["GET", "PUT", "POST"],
-        "AllowedHeaders": ["*"],
-        "ExposeHeaders": ["ETag"],
-        "MaxAgeSeconds": 3600
-      }
-    ]
+  cors.xml: |
+    <CORSConfiguration>
+      <CORSRule>
+        <AllowedOrigin>*</AllowedOrigin>
+        <AllowedMethod>GET</AllowedMethod>
+        <AllowedMethod>PUT</AllowedMethod>
+        <AllowedMethod>POST</AllowedMethod>
+        <AllowedMethod>DELETE</AllowedMethod>
+        <AllowedHeader>*</AllowedHeader>
+        <ExposeHeader>ETag</ExposeHeader>
+        <MaxAgeSeconds>3000</MaxAgeSeconds>
+      </CORSRule>
+    </CORSConfiguration>

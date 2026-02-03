@@ -4,7 +4,7 @@ metadata:
   name: grafana
   namespace: monitoring
   labels:
-    stage: app
+    stage: monitoring
 spec:
   replicas: 1
   selector:
@@ -17,9 +17,22 @@ spec:
     spec:
       containers:
         - name: grafana
-          image: grafana/grafana
+          image: grafana/grafana:latest
           ports:
             - containerPort: 3001
+          env:
+            - name: GF_INSTALL_PLUGINS
+              value: redis-datasource,victoriametrics-logs-datasource,hamedkarbasi93-kafka-datasource
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin
+                  key: username
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin
+                  key: password
           volumeMounts:
             - name: grafana-config
               mountPath: /etc/grafana/grafana.ini

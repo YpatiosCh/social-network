@@ -1,6 +1,6 @@
 NAMESPACE=social-network
 
-.PHONY: build-base apply-cors apply-kafka delete-volumes build-cnpg build-all apply-namespace apply-pvc apply-db build-services deploy-users run-migrations logs-users logs-db deploy-all reset
+.PHONY: build-base apply-monitoring apply-cors apply-kafka delete-volumes build-cnpg build-all apply-namespace apply-pvc apply-db1 apply-db2 build-services deploy-users run-migrations logs-users logs-db deploy-all reset
 
 # === Utils ===
 
@@ -77,6 +77,20 @@ op-manifest:
 	kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.28/releases/cnpg-1.28.0.yaml
 
 
+full-start:
+	$(MAKE) build-all; sleep 1
+	$(MAKE) apply-kafka; sleep 1
+	$(MAKE) apply-namespace; sleep 1
+	$(MAKE) apply-configs; sleep 1
+	$(MAKE) apply-pvc; sleep 1
+	$(MAKE) apply-monitoring; sleep 10
+	$(MAKE) apply-db1; sleep 20
+	$(MAKE) apply-db2; sleep 20
+	$(MAKE) run-migrations; sleep 10
+	$(MAKE) apply-apps; sleep 20
+	$(MAKE) apply-cors; sleep 5
+	$(MAKE) port-forward; sleep 1
+
 # --- Deployment Order ---
 
 #-1. CHANGE TO BASH TERMINAL!
@@ -89,11 +103,11 @@ build-all:
 	$(MAKE) build-services 
 	$(MAKE) load-images 
 
-# 0.5
+# 1.
 apply-kafka:
 	kubectl apply -f "https://strimzi.io/install/latest?namespace=kafka" -n kafka
 
-# 1.
+# 1.1
 apply-namespace:
 	kubectl apply -f backend/k8s/ --recursive --selector stage=namespace
 
@@ -101,28 +115,34 @@ apply-namespace:
 apply-configs:
 	kubectl apply -R -f backend/k8s/ --recursive --selector stage=config
 
-# 3. (only in production)
+# 2.1
+apply-pvc:
+	kubectl apply -f backend/k8s/ --recursive --selector stage=pvc
+
+# 3.
+apply-monitoring:
+	kubectl apply -R -f backend/k8s/ --recursive --selector stage=monitoring
+
+# 4. (only in production)
 deploy-nginx:
 	helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 	helm repo update
 	helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx \
 		-n ingress-nginx --create-namespace
 
+# 5. CNPG dbs + Redis
+apply-db1:
+	kubectl apply -f backend/k8s/ --recursive --selector stage=db1
 
-# 4.
-apply-db:
-	kubectl apply -f backend/k8s/ --recursive --selector stage=db
-
+#5.5 redis sentinels
+apply-db2:
+	kubectl apply -f backend/k8s/ --recursive --selector stage=db2
 
 # !!! WAIT HERE !!!
 
-# 5.
+# 6.
 run-migrations:
 	kubectl apply -f backend/k8s/ --recursive --selector stage=migration
-
-# 6.
-apply-pvc:
-	kubectl apply -f backend/k8s/ --recursive --selector stage=pvc
 
 
 # 7.
@@ -142,6 +162,7 @@ port-forward:
 		kubectl port-forward -n storage svc/minio 9000:9000 & \
 		kubectl port-forward -n live svc/live 8082:8082 & \
 		kubectl port-forward -n monitoring svc/grafana 3001:3001 & \
+		kubectl port-forward -n monitoring svc/victoria-logs 9428:9428 & \
 		wait'
 
 
@@ -159,7 +180,9 @@ deploy-all:
 	$(MAKE) op-manifest
 	$(MAKE) apply-namespace
 	$(MAKE) apply-configs
-	$(MAKE) apply-db
+	$(MAKE) apply-monitoring
+	$(MAKE) apply-db1
+	$(MAKE) apply-db2
 
 #	Prod mode
 # $(MAKE) deploy-nginx 
