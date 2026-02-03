@@ -34,6 +34,7 @@ type configs struct {
 	SentinelAddrs             []string `env:"SENTINEL_ADDRS"`
 	RedisPassword             string   `env:"REDIS_PASSWORD"`
 	RedisDB                   int      `env:"REDIS_DB"`
+	RedisMasterName           string   `env:"REDIS_MASTER"`
 	DatabaseConn              string   `env:"DATABASE_URL"`
 	GrpcServerPort            string   `env:"GRPC_SERVER_PORT"`
 	UsersAdress               string   `env:"USERS_GRPC_ADDR"`
@@ -52,13 +53,15 @@ var cfgs configs
 // TODO add missing default values --V
 func init() {
 	cfgs = configs{
-		DatabaseConn:   "postgres://postgres:secret@chat-db:5432/social_chat?sslmode=disable",
-		GrpcServerPort: ":50051",
-		UsersAdress:    "users:50051",
-		NatsHost:       "nats",
-		NatsCluster:    "nats://ruser:T0pS3cr3t@nats-1:4222,nats://ruser:T0pS3cr3t@nats-2:4222",
-		KafkaBrokers:   []string{"kafka:9092"},
-		SentinelAddrs:  []string{"26379"},
+		DatabaseConn:    "postgres://postgres:secret@chat-db:5432/social_chat?sslmode=disable",
+		GrpcServerPort:  ":50051",
+		UsersAdress:     "users:50051",
+		NatsHost:        "nats",
+		RedisPassword:   "admin",
+		RedisMasterName: "mymaster",
+		NatsCluster:     "nats://ruser:T0pS3cr3t@nats-1:4222,nats://ruser:T0pS3cr3t@nats-2:4222",
+		KafkaBrokers:    []string{"kafka:9092"},
+		SentinelAddrs:   []string{"26379"},
 	}
 	configutil.LoadConfigs(&cfgs)
 }
@@ -221,7 +224,7 @@ func initClients() *client.Clients {
 	//
 	// CACHE
 	redisClient := rds.NewRedisClient(
-		cfgs.SentinelAddrs, cfgs.RedisPassword, cfgs.RedisDB,
+		cfgs.SentinelAddrs, cfgs.RedisPassword, cfgs.RedisDB, cfgs.RedisMasterName,
 	)
 	if err := redisClient.TestRedisConnection(); err != nil {
 		tele.Fatalf("connection test failed, ERROR: %v", err)

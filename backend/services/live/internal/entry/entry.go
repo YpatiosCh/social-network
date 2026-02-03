@@ -48,6 +48,7 @@ func Run() {
 		cfgs.SentinelAddrs,
 		cfgs.RedisPassword,
 		cfgs.RedisDB,
+		cfgs.RedisMasterName,
 	)
 	if err := cacheService.TestRedisConnection(); err != nil {
 		tele.Fatalf("connection test failed, ERROR: %v", err)
@@ -138,10 +139,11 @@ func Run() {
 }
 
 type configs struct {
-	RedisAddr     string   `env:"REDIS_ADDR"`
-	SentinelAddrs []string `env:"SENTINEL_ADDRS"`
-	RedisPassword string   `env:"REDIS_PASSWORD"`
-	RedisDB       int      `env:"REDIS_DB"`
+	RedisAddr       string   `env:"REDIS_ADDR"`
+	SentinelAddrs   []string `env:"SENTINEL_ADDRS"`
+	RedisPassword   string   `env:"REDIS_PASSWORD"`
+	RedisMasterName string   `env:"REDIS_MASTER"`
+	RedisDB         int      `env:"REDIS_DB"`
 
 	HTTPAddr        string `env:"HTTP_ADDR"`
 	ShutdownTimeout int    `env:"SHUTDOWN_TIMEOUT_SECONDS"`
@@ -164,7 +166,8 @@ func getConfigs() configs { // sensible defaults
 	cfgs := configs{
 		RedisAddr:                 "redis:6379",
 		SentinelAddrs:             []string{"redis:26379"},
-		RedisPassword:             "",
+		RedisPassword:             "admin",
+		RedisMasterName:           "mymaster",
 		RedisDB:                   0,
 		HTTPAddr:                  "0.0.0.0:8082",
 		ShutdownTimeout:           5,

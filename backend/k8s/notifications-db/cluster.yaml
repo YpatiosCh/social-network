@@ -4,7 +4,7 @@ metadata:
   name: notifications-db
   namespace: notifications
   labels:
-    stage: db
+    stage: db1
 spec:
   instances: 2
   storage:

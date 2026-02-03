@@ -4,7 +4,7 @@ metadata:
   name: chat-db
   namespace: chat
   labels:
-    stage: db
+    stage: db1
 spec:
   instances: 2
   storage:

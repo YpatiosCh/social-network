@@ -72,7 +72,7 @@ func Run() error {
 		tele.Fatal("failed to create chat client")
 	}
 
-	redisConnector := rds.NewRedisClient(cfgs.SentinelAddrs, cfgs.RedisPassword, cfgs.RedisDB)
+	redisConnector := rds.NewRedisClient(cfgs.SentinelAddrs, cfgs.RedisPassword, cfgs.RedisDB, cfgs.RedisMasterName)
 
 	//
 	//
@@ -154,10 +154,11 @@ func Run() error {
 }
 
 type configs struct {
-	RedisAddr     string   `env:"REDIS_ADDR"`
-	SentinelAddrs []string `env:"SENTINEL_ADDRS"`
-	RedisPassword string   `env:"REDIS_PASSWORD"`
-	RedisDB       int      `env:"REDIS_DB"`
+	RedisAddr       string   `env:"REDIS_ADDR"`
+	SentinelAddrs   []string `env:"SENTINEL_ADDRS"`
+	RedisPassword   string   `env:"REDIS_PASSWORD"`
+	RedisMasterName string   `env:"REDIS_MASTER"`
+	RedisDB         int      `env:"REDIS_DB"`
 
 	DatabaseURL           string `env:"DATABASE_URL"`
 	ChatGRPCAddr          string `env:"CHAT_GRPC_ADDR"`
@@ -178,7 +179,8 @@ func getConfigs() configs {
 	cfgs := configs{
 		RedisAddr:                 "redis:6379",
 		SentinelAddrs:             []string{"redis:26379"},
-		RedisPassword:             "",
+		RedisPassword:             "admin",
+		RedisMasterName:           "mymaster",
 		RedisDB:                   0,
 		DatabaseURL:               "postgres://postgres:secret@users-db:5432/social_users?sslmode=disable",
 		ChatGRPCAddr:              "chat:50051",

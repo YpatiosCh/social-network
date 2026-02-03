@@ -21,6 +21,13 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50051
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -34,7 +41,7 @@ spec:
             - name: SENTINEL_ADDRS
               value: redis-sentinel.redis.svc.cluster.local:26379
             - name: REDIS_MASTER_SET
-              value: "master"
+              value: "mymaster"
             - name: TELEMETRY_COLLECTOR_ADDR
               value: "localhost:4317"
 

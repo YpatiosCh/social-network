@@ -6,10 +6,11 @@ import (
 )
 
 type Configs struct {
-	RedisAddr     string   `env:"REDIS_ADDR"`
-	SentinelAddrs []string `env:"SENTINEL_ADDRS"`
-	RedisPassword string   `env:"REDIS_PASSWORD"`
-	RedisDB       int      `env:"REDIS_DB"`
+	RedisAddr       string   `env:"REDIS_ADDR"`
+	SentinelAddrs   []string `env:"SENTINEL_ADDRS"`
+	RedisPassword   string   `env:"REDIS_PASSWORD"`
+	RedisMasterName string   `env:"REDIS_MASTER"`
+	RedisDB         int      `env:"REDIS_DB"`
 
 	UsersGRPCAddr string `env:"USERS_GRPC_ADDR"`
 	PostsGRPCAddr string `env:"POSTS_GRPC_ADDR"`
@@ -24,7 +25,8 @@ func GetConfigs() Configs { // sensible defaults
 	cfgs := Configs{
 		RedisAddr:       "redis:6379",
 		SentinelAddrs:   []string{"redis:26379"},
-		RedisPassword:   "",
+		RedisPassword:   "admin",
+		RedisMasterName: "mymaster",
 		RedisDB:         0,
 		UsersGRPCAddr:   "users:50051",
 		PostsGRPCAddr:   "posts:50051",
