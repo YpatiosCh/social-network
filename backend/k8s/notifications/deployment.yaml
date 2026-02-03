@@ -36,9 +36,9 @@ spec:
             - name: GRPC_SERVER_PORT
               value: :50051
             - name: SENTINEL_ADDRS
-              value: redis-sentinel.redis.svc.cluster.local:26379
+              value: redis-sentinel-lb.redis.svc.cluster.local:26379
             - name: REDIS_MASTER_SET
-              value: "master"
+              value: "mymaster"
             - name: TELEMETRY_COLLECTOR_ADDR
               value: "localhost:4317"
 

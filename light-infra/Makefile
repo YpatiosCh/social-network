@@ -17,7 +17,7 @@
 ######################################
 
 export REDIS_ADDR=localhost:6379
-export REDIS_PASSWORD=
+export REDIS_PASSWORD=admin
 export REDIS_DB=0
 export TELEMETRY_COLLECTOR_ADDR=localhost:4317
 

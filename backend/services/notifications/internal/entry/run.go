@@ -124,10 +124,11 @@ func Run() error {
 }
 
 type configs struct {
-	RedisAddr     string   `env:"REDIS_ADDR"`
-	SentinelAddrs []string `env:"SENTINEL_ADDRS"`
-	RedisPassword string   `env:"REDIS_PASSWORD"`
-	RedisDB       int      `env:"REDIS_DB"`
+	RedisAddr       string   `env:"REDIS_ADDR"`
+	SentinelAddrs   []string `env:"SENTINEL_ADDRS"`
+	RedisPassword   string   `env:"REDIS_PASSWORD"`
+	RedisMasterName string   `env:"REDIS_MASTER"`
+	RedisDB         int      `env:"REDIS_DB"`
 
 	UsersGRPCAddr  string `env:"USERS_GRPC_ADDR"`
 	PostsGRPCAddr  string `env:"POSTS_GRPC_ADDR"`
@@ -142,15 +143,16 @@ type configs struct {
 
 func getConfigs() configs { // sensible defaults
 	cfgs := configs{
-		RedisAddr:     "redis:6379",
-		SentinelAddrs: []string{"redis:26379"},
-		RedisPassword: "",
-		RedisDB:       0,
-		UsersGRPCAddr: "users:50051",
-		PostsGRPCAddr: "posts:50051",
-		ChatGRPCAddr:  "chat:50051",
-		KafkaBrokers:  []string{"kafka:9092"},                                                  // Default Kafka broker
-		NatsCluster:   "nats://ruser:T0pS3cr3t@nats-1:4222,nats://ruser:T0pS3cr3t@nats-2:4222", // Default NATS cluster
+		RedisAddr:       "redis:6379",
+		SentinelAddrs:   []string{"redis:26379"},
+		RedisPassword:   "admin",
+		RedisMasterName: "mymaster",
+		RedisDB:         0,
+		UsersGRPCAddr:   "users:50051",
+		PostsGRPCAddr:   "posts:50051",
+		ChatGRPCAddr:    "chat:50051",
+		KafkaBrokers:    []string{"kafka:9092"},                                                  // Default Kafka broker
+		NatsCluster:     "nats://ruser:T0pS3cr3t@nats-1:4222,nats://ruser:T0pS3cr3t@nats-2:4222", // Default NATS cluster
 	}
 
 	// load environment variables if present

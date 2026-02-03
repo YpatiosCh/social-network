@@ -12,3 +12,7 @@ Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remot
 - Check static files upload
 
 - Make api-gateway to be also accessing externally/public
+
+- Redis stateful set for sentinels and redis workers separately.
+
+- Figure out kafka zookeeper, and set it up in kubernetes

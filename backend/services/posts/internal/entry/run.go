@@ -107,7 +107,7 @@ func Run() error {
 	//
 	//
 	// REDIS
-	redisConnector := rds.NewRedisClient(cfgs.SentinelAddrs, cfgs.RedisPassword, cfgs.RedisDB)
+	redisConnector := rds.NewRedisClient(cfgs.SentinelAddrs, cfgs.RedisPassword, cfgs.RedisDB, cfgs.RedisMasterName)
 	if err := redisConnector.TestRedisConnection(); err != nil {
 		tele.Fatalf("connection test failed, ERROR: %v", err)
 	}
@@ -176,10 +176,11 @@ func Run() error {
 }
 
 type configs struct {
-	RedisAddr     string   `env:"REDIS_ADDR"`
-	SentinelAddrs []string `env:"SENTINEL_ADDRS"`
-	RedisPassword string   `env:"REDIS_PASSWORD"`
-	RedisDB       int      `env:"REDIS_DB"`
+	RedisAddr       string   `env:"REDIS_ADDR"`
+	SentinelAddrs   []string `env:"SENTINEL_ADDRS"`
+	RedisPassword   string   `env:"REDIS_PASSWORD"`
+	RedisMasterName string   `env:"REDIS_MASTER"`
+	RedisDB         int      `env:"REDIS_DB"`
 
 	UsersGRPCAddr  string `env:"USERS_GRPC_ADDR"`
 	PostsGRPCAddr  string `env:"POSTS_GRPC_ADDR"`
@@ -204,10 +205,11 @@ type configs struct {
 
 func getConfigs() configs { // sensible defaults
 	cfgs := configs{
-		RedisAddr:     "redis:6379",
-		SentinelAddrs: []string{"redis:26379"},
-		RedisPassword: "",
-		RedisDB:       0,
+		RedisAddr:       "redis:6379",
+		SentinelAddrs:   []string{"redis:26379"},
+		RedisPassword:   "admin",
+		RedisMasterName: "mymaster",
+		RedisDB:         0,
 
 		UsersGRPCAddr: "users:50051",
 		PostsGRPCAddr: "posts:50051",
