@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+  labels:
+    stage: config
+data:
+  datasources.yaml: |
+    apiVersion: 1
+
+    datasources:
+      - name: VictoriaLogs
+        type: victoriametrics-logs-datasource
+        access: proxy
+        url: http://victoria-logs.monitoring.svc.cluster.local:9428
+        jsonData:
+          # Optional multitenancy settings
+          # multitenancyHeaders:
+          #   AccountID: 0
+          #   ProjectID: 0
+
+      - name: Redis Sentinel
+        type: redis-datasource
+        access: proxy
+        url: redis-sentinel.redis.svc.cluster.local:26379
+        jsonData:
+          # Using Redis Sentinel cluster address
+          poolSize: 5
+          timeout: 10
+          pingInterval: 0
+          pipelineWindow: 0
+        version: 1
+        editable: true
+
+      - name: VictoriaTraces
+        type: jaeger
+        access: proxy
+        url: http://victoria-traces.monitoring.svc.cluster.local:10428/select/jaeger
+        jsonData:
+          # Optional multitenancy settings
+          # multitenancyHeaders:
+          #   AccountID: 0
+          #   ProjectID: 0
